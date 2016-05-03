@@ -22,17 +22,20 @@ def stochastic_compare_dict(x, y):
      r = random.uniform(0,s)
      return 1 if r>np.abs(x) else -1
 
-def random_pull_couples(distribution): # dist. is a set of coulpes
+def random_pull_couples(intensity,distribution): # dist. is a set of coulpes
      if distribution :
-         sorted_couples = sorted(distribution,cmp=stochastic_compare_couples)
-         return sorted_couples[0][0], np.abs(sorted_couples[0][1])
+         listed = list(distribution)
+         for indice in range(len(distribution)):
+             listed[indice][1] = intensity*listed[indice][1]
+         sorted_couples = sorted(listed,cmp=stochastic_compare_couples)
+         return sorted_couples[0][0], sorted_couples[0][1]
      else:
          return None
 
 def random_pull_dict(distribution): # dist. is a dictionnary key->value
      if distribution :
          sorted_couples = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare_dict)
-         return sorted_couples[0][0], np.abs(sorted_couples[0][1])
+         return sorted_couples[0][0]
      else:
          return None
 
@@ -52,7 +55,7 @@ class Model:
     def __init__(self, network=None, current=None):
 
         # DEFAULT:
-        self.intensities = {} # list of cell's intensity between 0 and 1 (intensity or truth)
+        self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
         # self.current = "" # the current activated cell (empty event by default)
         self.weights = [{}] # list of dict of cells->{(following cells,weight,...} between -1 and 1
         # weights[i] is the weigths for transmission after time i
@@ -62,6 +65,9 @@ class Model:
         self.times[""] = {}
         """
         self.activateds = [""] # list of activated cells, the first is the most recently activated (contains by default the empty event)
+
+        self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
+                               # it makes the differrence between the flow of thought and real perception
 
         #self.queue = [] # queue of following (cell,time) to be activated depending on the time
 
@@ -76,8 +82,8 @@ class Model:
                 intensity = link[1]
                 if intensity>1:
                     intensity = 1
-                if intensity<0:
-                    intensity = 0
+                if intensity<-1:
+                    intensity = -1
                 self.intensities[event] = intensity
                 followers = link[2]
 
@@ -105,14 +111,19 @@ class Model:
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
+        new_intensities = {}
 
         # By hebbian rule: (no delay for the moment)
         time = 0
         for activated in self.activateds:
             followers = self.weights[time][activated]
-            next_id, abs_weight = random_pull_couples(followers)
+            next_id, strength = random_pull_couples(intensity[activated],followers) # also need intensity*weight
+
             elligibles.setdefault(next_id,0)
-            elligibles[next_id] += abs_weight
+            elligibles[next_id] += np.abs(strength)
+
+            new_intensities.setdefault(next_id,0)
+            new_intensities[next_id] += strength - np.abs(strength)*intensity[next_id]
             time += 1
 
         # because recently activated:
@@ -120,11 +131,17 @@ class Model:
             elligibles.setdefault(activated,0)
             elligibles[activated] += 0.5 # arbitrary value, should be a global value
 
+            new_intensities.setdefault(next_id,0)
+            new_intensities[next_id] += 0.5*(1 - intensity[next_id])
+
         # because perception:
         if percepts:
             for percept in percepts:
                 elligibles.setdefault(percept,0)
-                elligibles[percept] += 1. # arbitrary
+                elligibles[percept] += 1. # arbitrary ~ how I trust my perception
+
+                new_intensities.setdefault(next_id,0)
+                new_intensities[next_id] += 1*(1 - intensity[next_id])
 
         # because very important percept:
         if reflexes:
@@ -132,13 +149,24 @@ class Model:
                 elligibles.setdefault(reflex,0)
                 elligibles[reflex] += 10. # arbitrary
 
+                new_intensities.setdefault(next_id,0)
+                new_intensities[next_id] += 1*(1 - intensity[next_id]) # 1 is the max in order to stay btween -1 and 1
+
         # stochastic election:
-        next_activated,_ = random_pull_dict(elligibles)
+        next_activated = random_pull_dict(elligibles)
         add_activated(self.activateds,next_activated)
+        if (next_activated in reflexes) or (next_activated in percepts):
+            self.modifieds = set()
 
         # new intensity:
+        for cell in new_intensities:
+            if cell not in self.modifieds:
+                intensities[cell] = new_intensities[cell]
+                self.modifieds.add(cell)
 
         # hebbian reinforcement:
+
+
 
 
 
