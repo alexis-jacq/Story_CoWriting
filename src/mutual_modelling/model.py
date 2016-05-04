@@ -53,70 +53,50 @@ def add_activated(activated, cell):
 #-------------------
 class Model:
     """ an object 'Model' representing hebbian-inspired network that encode dynamics between cells representing concepts learned by an agent."""
-    def __init__(self, network=None, current=None):
+    def __init__(self, network=None, activateds=None, modifieds=None):
 
         # DEFAULT:
         self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
         self.nb_cells = 0
 
-        self.weights = [{}] # list of dict of cells->{(following cells,weight,...} between -1 and 1
-        # weights[i] is the weigths for transmission after time i
-        # self.weights[0][""] = {}
-
-        self.activateds = [] # [""] list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
+        self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
 
         self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
 
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
-        # self.cell_number[""] = 0
 
         self.counts = np.zeros([0,0]) # count the close activations for hebbian learning
         self.times = np.zeros([0,0]) # count the average delay between two close activations
+        sefl.weights = np.zeros([FIRE_TIME,0,0]) # weights of connexion between cells for different possible (interger) delays
 
-        # network:= [cell_id , intensity , followers]
-        # followers:= [name , weight , time]
+        # network:= [intensities , counts, times, weights]
 
         # FILLING:
         if network:
+            self.intensities = network[0]
+            self.nb_cells = len(self.intensities)
 
-            number = 0 # forget about empty concept
-            for link in network:
-                cell_id = link[0]
-                self.cell_number[cell_id] = number
-                number += 1
+            counts = network[1]
+            times = network[2]
+            weights = network[3]
 
-                intensity = link[1]
-                if intensity>1:
-                    intensity = 1
-                if intensity<-1:
-                    intensity = -1
-                self.intensities[cell_id] = intensity
-                followers = link[2]
-
-                for time in range(FIRE_TIME):
-                    time_activation = {}
-                    time_activation.setdefault(cell_id,{})
-                    #time_activation[""][cell_id] = 1
-
-                    for follower in followers:
-                        name = follower[0]
-                        weight = follower[1]
-                        if weight>1:
-                            weight = 1
-                        if weight<-1:
-                            weight = -1
-                        self.intensity.setdefault(name,0.5)
-                        time_activation[cell_id][name] = weight
-
-                    self.weights.append(time_activation)
-
-            self.nb_cells = number
-            self.counts = np.zeros([self.nb_cells, self.nb_cells])
-            self.times = np.zeros([self.nb_cells, self.nb_cells])
+            if (counts.shape==times.shape) and (times.shape==weights.shape) and (times.shape==(self.nb_cells,self.nb_cells)):
+                self.counts = counts
+                self.times = times
+                self.weights = weights
+            else:
+                print "Error of dimension in the loaded network !"
+                print "Default = np.zeros array"
+                self.counts = np.zeros([self.nb_cells,self.nb_cells])
+                self.times = np.zeros([self.nb_cells,self.nb_cells])
+                sefl.weights = np.zeros([FIRE_TIME,self.nb_cells,self.nb_cells])
 
         if activateds:
             self.activateds = activateds
+
+        if modifieds:
+            self.modifieds = modifieds
 
     def __add__(self,cells_id):
         if isinstance(cells_id, list) or isinstance(cells_id, tuple):
@@ -130,9 +110,15 @@ class Model:
             new_counts = np.zeros([number, number])
             new_counts[:self.nb_cells,:sel.nb_cells] = self.counts
             self.counts = new_counts
+
             new_times = np.zeros([number, number])
             new_times[:self.nb_cells,:sel.nb_cells] = self.times
             self.times = new_times
+
+            new_weigths = np.zeros([number, number])
+            new_weights[:self.nb_cells,:sel.nb_cells] = self.weights
+            self.weights = new_weights
+
             self.nb_cells = number
 
     def update(self, percepts=None, reflexes=None):
@@ -144,7 +130,7 @@ class Model:
         # following weights: (no preference for different delays for the moment)
         delay = 0
         for activated in self.activateds:
-            followers = self.weights[delay][activated]
+            followers = self.weights[delay][self.cell_number[activated]][:]
             next_id, strength = random_pull_couples(intensity[activated],followers) # also need intensity*weight
 
             elligibles.setdefault(next_id,0)
@@ -195,6 +181,17 @@ class Model:
             if cell not in self.modifieds:
                 intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
+
+
+    def reinforce(self, cell1, cell2, delay):
+        num_cell1 = self.cell_number[cell1]
+        num_cell2 = self.cell_number[cell2]
+
+        n = self.counts[num_cell1][num_cell2]
+        t = self.times[num_cell1][num_cell2]
+
+        self.counts[num_cell1][num_cell2] = n+1
+        self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iteratif computation of average
 
 
 
