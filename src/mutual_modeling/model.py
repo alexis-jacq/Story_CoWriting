@@ -6,6 +6,7 @@ library of functions/algorithms to build, update and compaire models of differen
 """
 
 import numpy as np
+from bidict import bidict
 
 
 """ functions for spiking cascade following distribution of weights"""
@@ -51,46 +52,52 @@ def add_activated(activated, cell):
 """ object Model """
 #-------------------
 class Model:
-    """ an object 'Model' representing hebbian-inspired network that encode dynamics between events learned by an agent."""
+    """ an object 'Model' representing hebbian-inspired network that encode dynamics between cells representing concepts learned by an agent."""
     def __init__(self, network=None, current=None):
 
         # DEFAULT:
         self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
-        # self.current = "" # the current activated cell (empty event by default)
+        self.nb_cells = 0
+
         self.weights = [{}] # list of dict of cells->{(following cells,weight,...} between -1 and 1
         # weights[i] is the weigths for transmission after time i
-        self.weights[0][""] = {}
-        """
-        self.times = {} # list of cell->(following cells,time for next activation = integer)
-        self.times[""] = {}
-        """
-        self.activateds = [""] # list of activated cells, the first is the most recently activated (contains by default the empty event)
+        # self.weights[0][""] = {}
+
+        self.activateds = [] # [""] list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
 
         self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
 
-        #self.queue = [] # queue of following (cell,time) to be activated depending on the time
+        self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
+        # self.cell_number[""] = 0
 
-        # network:= [event , intensity , followers]
+        self.counts = np.zeros([0,0]) # count the close activations for hebbian learning
+        self.times = np.zeros([0,0]) # count the average delay between two close activations
+
+        # network:= [cell_id , intensity , followers]
         # followers:= [name , weight , time]
 
         # FILLING:
         if network:
 
+            number = 0 # forget about empty concept
             for link in network:
-                event = link[0]
+                cell_id = link[0]
+                self.cell_number[cell_id] = number
+                number += 1
+
                 intensity = link[1]
                 if intensity>1:
                     intensity = 1
                 if intensity<-1:
                     intensity = -1
-                self.intensities[event] = intensity
+                self.intensities[cell_id] = intensity
                 followers = link[2]
 
                 for time in range(FIRE_TIME):
-                    time_event = {}
-                    time_event.setdefault(event,{})
-                    time_event[""][event] = 1
+                    time_activation = {}
+                    time_activation.setdefault(cell_id,{})
+                    #time_activation[""][cell_id] = 1
 
                     for follower in followers:
                         name = follower[0]
@@ -100,23 +107,44 @@ class Model:
                         if weight<-1:
                             weight = -1
                         self.intensity.setdefault(name,0.5)
-                        time_event[event][name] = weight
+                        time_activation[cell_id][name] = weight
 
-                    self.weights.append(time_event)
+                    self.weights.append(time_activation)
+
+            self.nb_cells = number
+            self.counts = np.zeros([self.nb_cells, self.nb_cells])
+            self.times = np.zeros([self.nb_cells, self.nb_cells])
 
         if activateds:
             self.activateds = activateds
 
-    def update(self):
+    def __add__(self,cells_id):
+        if isinstance(cells_id, list) or isinstance(cells_id, tuple):
+            number = self.nb_cells+1
+            for cell_id in cells_id:
+                self.intensities.setdefault(cell_id,0)
+                if cell_id not in self.cell_number:
+                    self.cell_number[cell_id] = number
+                    number += 1
+
+            new_counts = np.zeros([number, number])
+            new_counts[:self.nb_cells,:sel.nb_cells] = self.counts
+            self.counts = new_counts
+            new_times = np.zeros([number, number])
+            new_times[:self.nb_cells,:sel.nb_cells] = self.times
+            self.times = new_times
+            self.nb_cells = number
+
+    def update(self, percepts=None, reflexes=None):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
         new_intensities = {}
 
-        # By hebbian rule: (no delay for the moment)
-        time = 0
+        # following weights: (no preference for different delays for the moment)
+        delay = 0
         for activated in self.activateds:
-            followers = self.weights[time][activated]
+            followers = self.weights[delay][activated]
             next_id, strength = random_pull_couples(intensity[activated],followers) # also need intensity*weight
 
             elligibles.setdefault(next_id,0)
@@ -124,7 +152,7 @@ class Model:
 
             new_intensities.setdefault(next_id,0)
             new_intensities[next_id] += strength - np.abs(strength)*intensity[next_id]
-            time += 1
+            delay += 1
 
         # because recently activated:
         for activated in self.activated[-1]:
@@ -152,19 +180,22 @@ class Model:
                 new_intensities.setdefault(next_id,0)
                 new_intensities[next_id] += 1*(1 - intensity[next_id]) # 1 is the max in order to stay btween -1 and 1
 
-        # stochastic election:
+        # stochastic election and hebbian reinforcement:
         next_activated = random_pull_dict(elligibles)
-        add_activated(self.activateds,next_activated)
         if (next_activated in reflexes) or (next_activated in percepts):
             self.modifieds = set()
+            delay = 0
+            for activated in self.activateds:
+                self.reinforce(activated,next_activated,delay) # need this function
+                delay += 1
+        add_activated(self.activateds,next_activated)
 
-        # new intensity:
+        # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
                 intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
 
-        # hebbian reinforcement:
 
 
 
