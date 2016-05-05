@@ -18,12 +18,12 @@ def stochastic_compare_couples(c1, c2):
      r = random.uniform(0,s)
      return 1 if r>np.abs(b) else -1
 
-def stochastic_compare_dict(x, y):
+def stochastic_compare(x, y):
      s = np.abs(x) + np.abs(y)
      r = random.uniform(0,s)
      return 1 if r>np.abs(x) else -1
 
-def random_pull_couples(intensity,distribution): # dist. is a set of coulpes
+"""def random_pull_couples(intensity,distribution): # dist. is a set of coulpes
      if distribution :
          listed = list(distribution)
          for indice in range(len(distribution)):
@@ -31,12 +31,20 @@ def random_pull_couples(intensity,distribution): # dist. is a set of coulpes
          sorted_couples = sorted(listed,cmp=stochastic_compare_couples)
          return sorted_couples[0][0], sorted_couples[0][1]
      else:
-         return None
+         return None"""
+
+def random_pull_list(distribution): # dist. is a list of values
+    if distribution:
+        couples = zip(range(len(distribution)),distribution)
+        sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
+        return sorted_couples[0][0], sorted_couples[0][1]
+    else:
+        return None
 
 def random_pull_dict(distribution): # dist. is a dictionnary key->value
-     if distribution :
-         sorted_couples = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare_dict)
-         return sorted_couples[0][0]
+     if distribution:
+         sorted_dist = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare_dict)
+         return sorted_dist[0][0]
      else:
          return None
 
@@ -130,8 +138,9 @@ class Model:
         # following weights: (no preference for different delays for the moment)
         delay = 0
         for activated in self.activateds:
-            followers = self.weights[delay][self.cell_number[activated]][:]
-            next_id, strength = random_pull_couples(intensity[activated],followers) # also need intensity*weight
+            intensity = self.intensities[activated]
+            weights_to_sons = self.weights[delay][self.cell_number[activated]][:]
+            next_id, strength = random_pull_list(intensity*weights_to_sons)
 
             elligibles.setdefault(next_id,0)
             elligibles[next_id] += np.abs(strength)
@@ -191,7 +200,7 @@ class Model:
         t = self.times[num_cell1][num_cell2]
 
         self.counts[num_cell1][num_cell2] = n+1
-        self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iteratif computation of average
+        self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iterative computation of average delay
 
 
 
