@@ -14,9 +14,9 @@ from bidict import bidict
 def stochastic_compare_couples(c1, c2):
      a,b = c1
      c,d = c2
-     s = np.abs(b) + np.abs(d)
+     s = np.abs(b)**STIFFNESS + np.abs(d)**STIFFNESS
      r = random.uniform(0,s)
-     return 1 if r>np.abs(b) else -1
+     return 1 if r>np.abs(b)**STIFFNESS else -1
 
 def stochastic_compare(x, y):
      s = np.abs(x) + np.abs(y)
@@ -181,7 +181,8 @@ class Model:
             self.modifieds = set()
             delay = 0
             for activated in self.activateds:
-                self.reinforce(activated,next_activated,delay) # need this function
+                correlation = self.intensitie[next_activated] * self.intensities[activated]
+                self.reinforce(activated,next_activated,delay,correlation)
                 delay += 1
         add_activated(self.activateds,next_activated)
 
@@ -192,17 +193,25 @@ class Model:
                 self.modifieds.add(cell)
 
 
-    def reinforce(self, cell1, cell2, delay):
+    def reinforce(self, cell1, cell2, delay, correlation):
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
 
         n = self.counts[num_cell1][num_cell2]
         t = self.times[num_cell1][num_cell2]
 
-        self.counts[num_cell1][num_cell2] = n+1
+        z = FORGET_RATE*np.sum(self.counts[num_cell1][:])
+        self.counts[num_cell1][:] -= z
+
+        if self.counts[num_cell1][num_cell2]+z+1 > THRESHOLD:
+            self.counts[num_cell1][num_cell2] += z
+        else:
+            self.counts[num_cell1][num_cell2] += z+1
+
         self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iterative computation of average delay
 
-
+        if self.counts[num_cell1][num_cell2]>=THRESHOLD: # thist trheshold could be smaller than the other one
+            self.weights[delay] += correlation - np.abs(correlation)*self.weights[delay]
 
 
 
