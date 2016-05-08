@@ -6,13 +6,15 @@ library of functions/algorithms to build, update and compaire models of differen
 """
 
 import numpy as np
+import random
+import operator
 from bidict import bidict
 
 
 """ GLOBAL PARAMETERS """
 STIFFNESS = 3
 FIRE_TIME = 5
-THERSHOLD = 10.
+THRESHOLD = 10.
 FORGET_RATE = 0.1
 
 """ functions for spiking cascade following distribution of weights"""
@@ -30,8 +32,8 @@ def stochastic_compare(x, y):
     r = random.uniform(0,s)
     return 1 if r>np.abs(x) else -1
 
-def random_pull_list(distribution): # dist. is a list of values
-    if distribution:
+def random_pull_list(distribution): # dist. is a list (np.array) of values
+    if list(distribution):
         couples = zip(range(len(distribution)),distribution)
         sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
         return sorted_couples[0][0], sorted_couples[0][1]
@@ -40,18 +42,11 @@ def random_pull_list(distribution): # dist. is a list of values
 
 def random_pull_dict(distribution): # dist. is a dictionnary key->value
      if distribution:
-         sorted_dist = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare_dict)
+         sorted_dist = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare)
          return sorted_dist[0][0]
      else:
          return None
 
-
-""" functions for updating and using list of activated cells """
-#--------------------------------------------------------------
-def add_activated(activated, cell):
-    for i in range(len(activated)-1):
-        activated[i] = activated[i+1]
-    activated[-1] = cell
 
 
 """ object Model """
@@ -101,8 +96,21 @@ class Model:
         if modifieds:
             self.modifieds = modifieds
 
+    """ functions for updating and using list of activated cells """
+    #--------------------------------------------------------------
+    def add_activated(self, cell):
+        if self.activateds:
+            if len(self.activateds)==FIRE_TIME:
+                for i in range(len(self.activateds)-1):
+                    self.activateds[i] = self.activateds[i+1]
+                self.activateds[-1] = cell
+            else:
+                self.activateds.append(cell)
+        else:
+            self.activateds.append(cell)
 
-    def __add__(self,cells_id):
+
+    def add_cells(self,cells_id):
         if isinstance(cells_id, list) or isinstance(cells_id, tuple):
             number = self.nb_cells+1
             for cell_id in cells_id:
@@ -119,8 +127,8 @@ class Model:
             new_times[:self.nb_cells,:self.nb_cells] = self.times
             self.times = new_times
 
-            new_weigths = np.zeros([number, number])
-            new_weights[:self.nb_cells,:self.nb_cells] = self.weights
+            new_weights = np.zeros([FIRE_TIME, number, number])
+            new_weights[:,:self.nb_cells,:self.nb_cells] = self.weights
             self.weights = new_weights
 
             self.nb_cells = number
@@ -135,65 +143,86 @@ class Model:
         # following weights: (no preference for different delays for the moment)
         delay = 0
         for activated in self.activateds:
+
             intensity = self.intensities[activated]
             weights_to_sons = self.weights[delay][self.cell_number[activated]][:]
-            next_id, strength = random_pull_list(intensity*weights_to_sons)
+            next_num, strength = random_pull_list(intensity*weights_to_sons)
+            next_id = self.cell_number.inv[next_num]
 
             elligibles.setdefault(next_id,0)
             elligibles[next_id] += np.abs(strength)
 
             new_intensities.setdefault(next_id,0)
-            new_intensities[next_id] += strength - np.abs(strength)*intensity[next_id]
+            new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
             delay += 1
 
         # because recently activated:
-        for activated in self.activated[-1]:
+        for activated in self.activateds[:-1]:
             elligibles.setdefault(activated,0)
             elligibles[activated] += 0.5 # arbitrary value, should be a global value
 
-            new_intensities.setdefault(next_id,0)
-            new_intensities[next_id] += 0.5*(1 - intensity[next_id])
+            new_intensities.setdefault(activated,0)
+            new_intensities[activated] += 0.5*(1 - self.intensities[activated])
 
         # because perception:
-        if percepts:
+        if percepts: # percept must be associated with a new intensity !
             for percept in percepts:
-                elligibles.setdefault(percept,0)
-                elligibles[percept] += 1. # arbitrary ~ how I trust my perception
 
-                new_intensities.setdefault(next_id,0)
-                new_intensities[next_id] += 1*(1 - intensity[next_id])
+                percept_id = percept[0]
+                percept_val = percept[1]
+
+                self.intensities[percept_id] = percept_val
+
+                elligibles.setdefault(percept_id,0)
+                elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
+
+                new_intensities.setdefault(percept_id,0)
+                new_intensities[percept_id] += 1*(1 - float(self.intensities[percept_id]))
 
         # because very important percept:
         if reflexes:
             for reflex in reflexes:
-                elligibles.setdefault(reflex,0)
-                elligibles[reflex] += 10. # arbitrary
 
-                new_intensities.setdefault(next_id,0)
-                new_intensities[next_id] += 1*(1 - intensity[next_id]) # 1 is the max in order to stay btween -1 and 1
+                reflex_id = reflex[0]
+                reflex_val = reflex[1]
+
+                self.intensities[reflex_id] = reflex_val
+
+                elligibles.setdefault(reflex_id,0)
+                elligibles[reflex_id] += 10. # arbitrary
+
+                new_intensities.setdefault(reflex_id,0)
+                new_intensities[reflex_id] += 1*(1 - self.intensities[reflex_id]) # 1 is the max in order to stay btween -1 and 1
 
         # stochastic election and hebbian reinforcement:
         next_activated = random_pull_dict(elligibles)
-        if (next_activated in reflexes) or (next_activated in percepts):
+        test = False
+        if reflexes:
+            test = test or (next_activated in np.array(reflexes))
+        if percepts:
+            test = test or (next_activated in np.array(percepts))
+        if test:
             self.modifieds = set()
             delay = 0
             for activated in self.activateds:
-                correlation = self.intensitie[next_activated] * self.intensities[activated]
+                correlation = self.intensities[next_activated] * self.intensities[activated]
                 self.reinforce(activated,next_activated,delay,correlation)
                 delay += 1
-        add_activated(self.activateds,next_activated)
+        self.add_activated(next_activated)
 
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
-                intensities[cell] = new_intensities[cell]
+                self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
 
 
     def reinforce(self, cell1, cell2, delay, correlation):
 
-        global THERSHOLD
+        global THRESHOLD
         global FORGET_RATE
+
+        #print self.cell_number
 
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
