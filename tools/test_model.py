@@ -32,7 +32,7 @@ def print_robot():
     #print "times :"
     #print robot.times
     print "weights :"
-    print robot.weights
+    print robot.weights[0]
     #print "cell_number :"
     #print robot.cell_number
     print "activateds :"
@@ -41,7 +41,7 @@ def print_robot():
     print robot.intensities
     print "----------------"
 
-for i in range(1000):
+for i in range(100):
     robot.update(percepts=[("a1",1),(noise(),1)])
     robot.update(percepts=[(noise(),1),("fire",1)])
     robot.update(reflexes=[("burning",1)], percepts=[(noise(),1)])

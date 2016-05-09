@@ -12,11 +12,12 @@ from bidict import bidict
 
 
 """ GLOBAL PARAMETERS """
-STIFFNESS = 3
-FIRE_TIME = 5
-COUNT_MAX = 10.
-THRESHOLD = 3.
-FORGET_RATE = 0.05
+STIFFNESS = 3 # how I expect the most likely event
+FIRE_TIME = 5 # time a cell is activated
+COUNT_MAX = 10. # plasticity
+THRESHOLD = 3. # start to learn when something is recurrent
+FORGET_RATE = 0.05 # kill the noise
+GAMMA = 0.0 # time discount for learning
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -62,6 +63,7 @@ class Model:
         self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
         self.nb_cells = 0
         self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
+        self.perceiveds = [] # are cells activated because perception (1) or because reasoning (0) ?
         self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
@@ -111,6 +113,16 @@ class Model:
         else:
             self.activateds.append(cell)
 
+    def add_perceived(self, val):
+        if self.activateds:
+            if len(self.perceiveds)==FIRE_TIME:
+                for i in range(len(self.perceiveds)-1):
+                    self.perceiveds[i] = self.perceiveds[i+1]
+                self.perceiveds[-1] = val
+            else:
+                self.perceiveds.append(val)
+        else:
+            self.perceiveds.append(val)
 
     def add_cells(self,cells_id):
         if isinstance(cells_id, list) or isinstance(cells_id, tuple):
@@ -182,8 +194,12 @@ class Model:
                 elligibles.setdefault(percept_id,0)
                 elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
 
-                #new_intensities.setdefault(percept_id,0)
-                #new_intensities[percept_id] += 1*(1 - float(self.intensities[percept_id]))
+                if self.perceiveds:
+                    if self.perceiveds[-1]>0:
+                        activated = self.activateds[-1]
+                        correlation = self.intensities[percept_id] * self.intensities[activated]
+                        if percept_id != activated:
+                            self.reinforce(activated,percept_id,0,correlation)
 
         # because very important percept:
         if reflexes:
@@ -197,8 +213,12 @@ class Model:
                 elligibles.setdefault(reflex_id,0)
                 elligibles[reflex_id] += 10. # arbitrary
 
-                #new_intensities.setdefault(reflex_id,0)
-                #new_intensities[reflex_id] += 1*(1 - self.intensities[reflex_id]) # 1 is the max in order to stay btween -1 and 1
+                if self.perceiveds:
+                    if self.perceiveds[-1]>0:
+                        activated = self.activateds[-1]
+                        correlation = self.intensities[reflex_id] * self.intensities[activated]
+                        if reflex_id != activated:
+                            self.reinforce(activated,reflex_id,0,correlation)
 
         # stochastic election and hebbian reinforcement:
         next_activated = random_pull_dict(elligibles)
@@ -210,18 +230,31 @@ class Model:
         if test:
             self.modifieds = set()
             delay = 0
-            for activated in self.activateds:
-                correlation = self.intensities[next_activated] * self.intensities[activated]
+            for i in range(len(self.activateds)):
+                activated = self.activateds[i]
+                perceived = self.perceiveds[i]
+                weakness = GAMMA**delay
+                correlation = self.intensities[next_activated] * self.intensities[activated] * (weakness+perceived-weakness*perceived)
                 if next_activated != activated:
                     self.reinforce(activated,next_activated,delay,correlation)
                 delay += 1
+            self.add_perceived(1.)
+        if not test:
+            self.add_perceived(0.)
         self.add_activated(next_activated)
 
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
+                #avoid micro values:
+                #if np.abs(new_intensities[cell])<0.0001:
+                #    new_intensities[cell] = 0
+                #
                 self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
+
+        # avoid micro values:
+        # self.weights[np.abs(self.weights)<0.0001] = 0
 
 
     def reinforce(self, cell1, cell2, delay, correlation):
