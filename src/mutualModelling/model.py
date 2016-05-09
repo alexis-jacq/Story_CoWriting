@@ -14,8 +14,9 @@ from bidict import bidict
 """ GLOBAL PARAMETERS """
 STIFFNESS = 3
 FIRE_TIME = 5
-THRESHOLD = 10.
-FORGET_RATE = 0.1
+COUNT_MAX = 10.
+THRESHOLD = 3.
+FORGET_RATE = 0.05
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -74,6 +75,7 @@ class Model:
         if network:
             self.intensities = network[0]
             self.nb_cells = len(self.intensities)
+            # and cell_number !
 
             counts = network[1]
             times = network[2]
@@ -112,7 +114,7 @@ class Model:
 
     def add_cells(self,cells_id):
         if isinstance(cells_id, list) or isinstance(cells_id, tuple):
-            number = self.nb_cells+1
+            number = self.nb_cells
             for cell_id in cells_id:
                 self.intensities.setdefault(cell_id,0)
                 if cell_id not in self.cell_number:
@@ -154,6 +156,10 @@ class Model:
 
             new_intensities.setdefault(next_id,0)
             new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
+            if new_intensities[next_id]>1.:
+                new_intensities[next_id]=1.
+            if new_intensities[next_id]<-1.:
+                new_intensities[next_id] = -1.
             delay += 1
 
         # because recently activated:
@@ -161,8 +167,8 @@ class Model:
             elligibles.setdefault(activated,0)
             elligibles[activated] += 0.5 # arbitrary value, should be a global value
 
-            new_intensities.setdefault(activated,0)
-            new_intensities[activated] += 0.5*(1 - self.intensities[activated])
+            #new_intensities.setdefault(activated,0)
+            #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
 
         # because perception:
         if percepts: # percept must be associated with a new intensity !
@@ -176,8 +182,8 @@ class Model:
                 elligibles.setdefault(percept_id,0)
                 elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
 
-                new_intensities.setdefault(percept_id,0)
-                new_intensities[percept_id] += 1*(1 - float(self.intensities[percept_id]))
+                #new_intensities.setdefault(percept_id,0)
+                #new_intensities[percept_id] += 1*(1 - float(self.intensities[percept_id]))
 
         # because very important percept:
         if reflexes:
@@ -191,8 +197,8 @@ class Model:
                 elligibles.setdefault(reflex_id,0)
                 elligibles[reflex_id] += 10. # arbitrary
 
-                new_intensities.setdefault(reflex_id,0)
-                new_intensities[reflex_id] += 1*(1 - self.intensities[reflex_id]) # 1 is the max in order to stay btween -1 and 1
+                #new_intensities.setdefault(reflex_id,0)
+                #new_intensities[reflex_id] += 1*(1 - self.intensities[reflex_id]) # 1 is the max in order to stay btween -1 and 1
 
         # stochastic election and hebbian reinforcement:
         next_activated = random_pull_dict(elligibles)
@@ -206,7 +212,8 @@ class Model:
             delay = 0
             for activated in self.activateds:
                 correlation = self.intensities[next_activated] * self.intensities[activated]
-                self.reinforce(activated,next_activated,delay,correlation)
+                if next_activated != activated:
+                    self.reinforce(activated,next_activated,delay,correlation)
                 delay += 1
         self.add_activated(next_activated)
 
@@ -220,6 +227,7 @@ class Model:
     def reinforce(self, cell1, cell2, delay, correlation):
 
         global THRESHOLD
+        global COUNT_MAX
         global FORGET_RATE
 
         #print self.cell_number
@@ -232,16 +240,21 @@ class Model:
 
         z = FORGET_RATE*np.sum(self.counts[num_cell1][:])
         self.counts[num_cell1][:] -= z
+        self.counts[num_cell1][self.counts[num_cell1]<0] = 0.
 
-        if self.counts[num_cell1][num_cell2]+z+1 > THRESHOLD:
+        if self.counts[num_cell1][num_cell2]+z+1. > COUNT_MAX:
             self.counts[num_cell1][num_cell2] += z
         else:
-            self.counts[num_cell1][num_cell2] += z+1
+            self.counts[num_cell1][num_cell2] += z+1.
 
         self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iterative computation of average delay
 
         if self.counts[num_cell1][num_cell2]>=THRESHOLD: # thist trheshold could be smaller than the other one
-            self.weights[delay] += correlation - np.abs(correlation)*self.weights[delay]
+            self.weights[delay][num_cell1][num_cell2] += correlation - np.abs(correlation)*self.weights[delay][num_cell1][num_cell2]
+            if self.weights[delay][num_cell1][num_cell2]>1:
+                self.weights[delay][num_cell1][num_cell2]=1.
+            if self.weights[delay][num_cell1][num_cell2]<-1:
+                self.weights[delay][num_cell1][num_cell2]=-1.
 
 
 

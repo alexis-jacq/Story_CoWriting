@@ -29,12 +29,16 @@ def noise():
 def print_robot():
     print "counts :"
     print robot.counts
-    print "times :"
-    print robot.times
+    #print "times :"
+    #print robot.times
     print "weights :"
     print robot.weights
+    #print "cell_number :"
+    #print robot.cell_number
     print "activateds :"
     print robot.activateds
+    print "intensities :"
+    print robot.intensities
     print "----------------"
 
 for i in range(1000):
