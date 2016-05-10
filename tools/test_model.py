@@ -43,12 +43,37 @@ def print_robot():
     print robot.intensities
     print "----------------"
 
+def word_response(action,setofevent):
+    percepts = [(noise(),1)]
+    reflexes = []
+    new_set = set()
+    if action != "":
+        percepts.append((action,1))
+    if action=="a1":
+        percepts.append(("fire",1))
+        new_set.add("burning")
+    if action=="a2":
+        percepts.append(("water",1))
+        new_set.add("water")
+    if action=="a3":
+        percepts.append(("honey",1))
+        new_set.add("honey")
+    if "fire" in setofevent:
+        reflexes.append(("burning",1))
+        new_set.add("burning")
+    if "burning" in setofevent:
+        percepts.append(("d_energy",-1))
+    if "water" in setofevent:
+        percepts.append(("burning",-1))
+    if "honey" in setofevent:
+        percepts.append(("d_energy",1))
+    return percepts,reflexes,new_set
+
 action = "a1"
+s = set()
 for i in range(10):
-    action = robot.update(percepts=[(action,1),(noise(),1)])
-    action = robot.update(percepts=[(noise(),1),("fire",1),(action,1)])
-    action = robot.update(reflexes=[("burning",1)], percepts=[(noise(),1),(action,1)])
-    action = robot.update(percepts=[("d_energy",-1),(noise(),1),(action,1)])
+    p,r,s = word_response(action,s)
+    action = robot.update(percepts=p,reflexes=r)
 print_robot()
 
 
