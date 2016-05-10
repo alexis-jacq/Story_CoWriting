@@ -77,7 +77,7 @@ class Model:
         # reinforcement learning:
         #------------------------
         self.goals = np.zeros([0]) # goal value (1 or -1) for each cells (0 mean no objective)
-        self.actions = set() # set of cells encoding actions
+        self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
         self.strategy = [] # a strategy is a list of (state,action) where state is the last activated cell up to a final reward
         # for actor-critic decision making :
@@ -164,6 +164,14 @@ class Model:
                     new_goals[:self.nb_cells] = self.goals
                     self.goals = new_goals
 
+                    new_vmap = np.zeros([number, self.nb_actions])
+                    new_vmap[:self.nb_cells,:self.nb_actions] = self.value_map
+                    self.value_map = new_vmap
+
+                    new_pmap = np.zeros([number, self.nb_actions])
+                    new_pmap[:self.nb_cells,:self.nb_actions] = self.proba_map
+                    self.proba_map = new_pmap
+
                     self.nb_cells = number
 
     def add_actions(self, cells_id):
@@ -171,14 +179,15 @@ class Model:
             self.add_cells(cells_id)
             number = self.nb_actions
             for cell_id in cells_id:
-                if cell_id not in self.actions:
+                if cell_id not in self.action_number:
+                    self.action_number[cell_id] = number
                     number += 1
 
-                    new_vmap = np.zeros([number, number])
+                    new_vmap = np.zeros([self.nb_cells, number])
                     new_vmap[:,:self.nb_actions] = self.value_map
                     self.value_map = new_vmap
 
-                    new_pmap = np.zeros([number, number])
+                    new_pmap = np.zeros([self.nb_cells, number])
                     new_pmap[:,:self.nb_actions] = self.proba_map
                     self.proba_map = new_pmap
 
@@ -194,7 +203,7 @@ class Model:
                 value=1.
             if value<-1:
                 value=-1.
-            self.goals[cell_id] = value
+            self.goals[self.cell_number[cell_id]] = value
 
 
     def update(self, percepts=None, reflexes=None):
@@ -296,7 +305,7 @@ class Model:
         if not test:
             self.add_perceived(0.)
 
-            if next_activated in self.actions: # I imagine a strategy
+            if next_activated in self.action_number: # I imagine a strategy
                 if self.activateds:
                     self.strategy.append([self.activateds[-1],next_activated])
 
@@ -350,7 +359,9 @@ class Model:
 
 
     def decision(self):
+        return self.action_number.inv[0]
 
     def reward(self):
+        pass
 
 

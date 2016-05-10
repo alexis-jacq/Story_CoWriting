@@ -7,6 +7,8 @@ from mutualModelling import model
 
 robot = model.Model()
 robot.add_cells(["fire","burning","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
+robot.add_actions(["a1","a2","a3"])
+robot.set_goal([["d_energy",1.]])
 
 """ learning actions:
     -----------------
@@ -41,11 +43,12 @@ def print_robot():
     print robot.intensities
     print "----------------"
 
+action = "a1"
 for i in range(10):
-    robot.update(percepts=[("a1",1),(noise(),1)])
-    robot.update(percepts=[(noise(),1),("fire",1)])
-    robot.update(reflexes=[("burning",1)], percepts=[(noise(),1)])
-    robot.update(percepts=[("d_energy",-1),(noise(),1)])
+    action = robot.update(percepts=[(action,1),(noise(),1)])
+    action = robot.update(percepts=[(noise(),1),("fire",1),(action,1)])
+    action = robot.update(reflexes=[("burning",1)], percepts=[(noise(),1),(action,1)])
+    action = robot.update(percepts=[("d_energy",-1),(noise(),1),(action,1)])
 print_robot()
 
 

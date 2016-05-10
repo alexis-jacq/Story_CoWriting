@@ -67,9 +67,22 @@ class Model:
         self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
+
+        # hebbian learning:
+        #------------------
         self.counts = np.zeros([0,0]) # count the close activations for hebbian learning
         self.times = np.zeros([0,0]) # count the average delay between two close activations
         self.weights = np.zeros([FIRE_TIME,0,0]) # weights of connexion between cells for different possible (interger) delays
+
+        # reinforcement learning:
+        #------------------------
+        self.goals = np.zeros([0]) # goal value (1 or -1) for each cells (0 mean no objective)
+        self.action_number = bidict() # set of cells encoding actions
+        self.nb_actions = 0
+        self.strategy = [] # a strategy is a list of (state,action) where state is the last activated cell up to a final reward
+        # for actor-critic decision making :
+        self.value_map = np.zeros([0,0]) # nb_cells*nb_actions := value given for couple (action,event)
+        self.proba_map = np.zeros([0,0]) # nb_cells*nb_actions := proba to chose the action given an event
 
         # network:= [intensities , counts, times, weights]
 
@@ -78,6 +91,8 @@ class Model:
             self.intensities = network[0]
             self.nb_cells = len(self.intensities)
             # and cell_number !
+            # and action 
+            # and ...
 
             counts = network[1]
             times = network[2]
@@ -124,7 +139,7 @@ class Model:
         else:
             self.perceiveds.append(val)
 
-    def add_cells(self,cells_id):
+    def add_cells(self, cells_id):
         if isinstance(cells_id, list) or isinstance(cells_id, tuple):
             number = self.nb_cells
             for cell_id in cells_id:
@@ -133,19 +148,62 @@ class Model:
                     self.cell_number[cell_id] = number
                     number += 1
 
-            new_counts = np.zeros([number, number])
-            new_counts[:self.nb_cells,:self.nb_cells] = self.counts
-            self.counts = new_counts
+                    new_counts = np.zeros([number, number])
+                    new_counts[:self.nb_cells,:self.nb_cells] = self.counts
+                    self.counts = new_counts
 
-            new_times = np.zeros([number, number])
-            new_times[:self.nb_cells,:self.nb_cells] = self.times
-            self.times = new_times
+                    new_times = np.zeros([number, number])
+                    new_times[:self.nb_cells,:self.nb_cells] = self.times
+                    self.times = new_times
 
-            new_weights = np.zeros([FIRE_TIME, number, number])
-            new_weights[:,:self.nb_cells,:self.nb_cells] = self.weights
-            self.weights = new_weights
+                    new_weights = np.zeros([FIRE_TIME, number, number])
+                    new_weights[:,:self.nb_cells,:self.nb_cells] = self.weights
+                    self.weights = new_weights
 
-            self.nb_cells = number
+                    new_goals = np.zeros([number])
+                    new_goals[:self.nb_cells] = self.goals
+                    self.goals = new_goals
+
+                    new_vmap = np.zeros([number, self.nb_actions])
+                    new_vmap[:self.nb_cells,:self.nb_actions] = self.value_map
+                    self.value_map = new_vmap
+
+                    new_pmap = np.zeros([number, self.nb_actions])
+                    new_pmap[:self.nb_cells,:self.nb_actions] = self.proba_map
+                    self.proba_map = new_pmap
+
+                    self.nb_cells = number
+
+    def add_actions(self, cells_id):
+        if isinstance(cells_id, list) or isinstance(cells_id, tuple):
+            self.add_cells(cells_id)
+            number = self.nb_actions
+            for cell_id in cells_id:
+                if cell_id not in self.action_number:
+                    self.action_number[cell_id] = number
+                    number += 1
+
+                    new_vmap = np.zeros([self.nb_cells, number])
+                    new_vmap[:,:self.nb_actions] = self.value_map
+                    self.value_map = new_vmap
+
+                    new_pmap = np.zeros([self.nb_cells, number])
+                    new_pmap[:,:self.nb_actions] = self.proba_map
+                    self.proba_map = new_pmap
+
+                    self.nb_actions = number
+
+    def set_goal(self, goals):
+        for goal in goals:
+            cell_id = goal[0]
+            value = goal[1]
+            if cell_id not in self.cell_number:
+                self.add_cells([cell_id])
+            if value>1:
+                value=1.
+            if value<-1:
+                value=-1.
+            self.goals[self.cell_number[cell_id]] = value
 
 
     def update(self, percepts=None, reflexes=None):
@@ -220,8 +278,10 @@ class Model:
                         if reflex_id != activated:
                             self.reinforce(activated,reflex_id,0,correlation)
 
-        # stochastic election and hebbian reinforcement:
+        # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
+
+        # hebbian reinforcement
         test = False
         if reflexes:
             test = test or (next_activated in np.array(reflexes))
@@ -238,23 +298,31 @@ class Model:
                 if next_activated != activated:
                     self.reinforce(activated,next_activated,delay,correlation)
                 delay += 1
+
             self.add_perceived(1.)
+            self.reward()
+
         if not test:
             self.add_perceived(0.)
+
+            if next_activated in self.action_number: # I imagine a strategy
+                if self.activateds:
+                    self.strategy.append([self.activateds[-1],next_activated])
+
+        # new activated cell
         self.add_activated(next_activated)
+
+        # action learning:
+        self.reward()
 
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
-                #avoid micro values:
-                #if np.abs(new_intensities[cell])<0.0001:
-                #    new_intensities[cell] = 0
-                #
                 self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
 
-        # avoid micro values:
-        # self.weights[np.abs(self.weights)<0.0001] = 0
+        # make decision:
+        return self.decision()
 
 
     def reinforce(self, cell1, cell2, delay, correlation):
@@ -290,7 +358,10 @@ class Model:
                 self.weights[delay][num_cell1][num_cell2]=-1.
 
 
+    def decision(self):
+        return self.action_number.inv[0]
 
-
+    def reward(self):
+        pass
 
 
