@@ -16,8 +16,8 @@ STIFFNESS = 3 # how I expect the most likely event
 FIRE_TIME = 5 # time a cell is activated
 COUNT_MAX = 10. # plasticity
 THRESHOLD = 3. # start to learn when something is recurrent
-FORGET_RATE = 0.05 # kill the noise
-GAMMA = 0.0 # time discount for learning
+FORGET_RATE = 0.01 # kill the noise
+GAMMA = 0.5 # time discount for learning
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
