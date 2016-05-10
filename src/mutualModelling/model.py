@@ -12,6 +12,7 @@ from bidict import bidict
 
 
 """ GLOBAL PARAMETERS """
+# hebbian learning:
 STIFFNESS = 3 # how I expect the most likely event
 FIRE_TIME = 5 # time a cell is activated
 COUNT_MAX = 10. # plasticity
@@ -19,15 +20,29 @@ THRESHOLD = 3. # start to learn when something is recurrent
 FORGET_RATE = 0.01 # kill the noise
 GAMMA = 0.5 # time discount for learning
 
+# reinforcement learning:
+THETA = 1 # exponent for softmax pulling
+DISCOUNT = 0.0 # discount for the impact of futur on the temporal diff algo
+ETA = 0.1 # for ema of expected rewards
+ALPHA = 0.7 # for P-values
+
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
-def stochastic_compare_couples(c1, c2):
+def stochastic_compare_stiffness(c1, c2):
     global STIFFNESS
     a,b = c1
     c,d = c2
     s = np.abs(b)**STIFFNESS + np.abs(d)**STIFFNESS
     r = random.uniform(0,s)
     return 1 if r>np.abs(b)**STIFFNESS else -1
+
+def stochastic_compare_couples(c1, c2):
+    global STIFFNESS
+    a,b = c1
+    c,d = c2
+    s = np.abs(b) + np.abs(d)
+    r = random.uniform(0,s)
+    return 1 if r>np.abs(b) else -1
 
 def stochastic_compare(x, y):
     s = np.abs(x) + np.abs(y)
@@ -37,7 +52,7 @@ def stochastic_compare(x, y):
 def random_pull_list(distribution): # dist. is a list (np.array) of values
     if list(distribution):
         couples = zip(range(len(distribution)),distribution)
-        sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
+        sorted_couples = sorted(couples,cmp=stochastic_compare_stiffness)
         return sorted_couples[0][0], sorted_couples[0][1]
     else:
         return None
@@ -49,6 +64,15 @@ def random_pull_dict(distribution): # dist. is a dictionnary key->value
      else:
          return None
 
+def softmax(distribution): # dist. is a list (np.array) of values
+    if list(distribution):
+        expo = np.exp(distribution)**THETA
+        exponorm = expo/np.sum(expo)
+        couples = zip(range(len(distribution)),exponorm)
+        sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
+        return sorted_couples[0][0]
+    else:
+        return None
 
 
 """ object Model """
@@ -81,8 +105,9 @@ class Model:
         self.nb_actions = 0
         self.strategy = [] # a strategy is a list of (state,action) where state is the last activated cell up to a final reward
         # for actor-critic decision making :
-        self.value_map = np.zeros([0,0]) # nb_cells*nb_actions := value given for couple (action,event)
-        self.proba_map = np.zeros([0,0]) # nb_cells*nb_actions := proba to chose the action given an event
+        self.value_map = np.ones([0,0]) # nb_cells*nb_actions := value given for couple (action,event)
+        self.proba_map = np.ones([0,0]) # nb_cells*nb_actions := proba to chose the action given an event
+        self.hope = 0 # threshold, if the agent imagine a reward >= hope, it reinforce he strategy leading to it
 
         # network:= [intensities , counts, times, weights]
 
@@ -164,11 +189,11 @@ class Model:
                     new_goals[:self.nb_cells] = self.goals
                     self.goals = new_goals
 
-                    new_vmap = np.zeros([number, self.nb_actions])
+                    new_vmap = np.ones([number, self.nb_actions])
                     new_vmap[:self.nb_cells,:self.nb_actions] = self.value_map
                     self.value_map = new_vmap
 
-                    new_pmap = np.zeros([number, self.nb_actions])
+                    new_pmap = np.ones([number, self.nb_actions])
                     new_pmap[:self.nb_cells,:self.nb_actions] = self.proba_map
                     self.proba_map = new_pmap
 
@@ -183,11 +208,11 @@ class Model:
                     self.action_number[cell_id] = number
                     number += 1
 
-                    new_vmap = np.zeros([self.nb_cells, number])
+                    new_vmap = np.ones([self.nb_cells, number])
                     new_vmap[:,:self.nb_actions] = self.value_map
                     self.value_map = new_vmap
 
-                    new_pmap = np.zeros([self.nb_cells, number])
+                    new_pmap = np.ones([self.nb_cells, number])
                     new_pmap[:,:self.nb_actions] = self.proba_map
                     self.proba_map = new_pmap
 
@@ -300,20 +325,20 @@ class Model:
                 delay += 1
 
             self.add_perceived(1.)
-            self.reward()
+            #self.reward()
 
         if not test:
             self.add_perceived(0.)
 
             if next_activated in self.action_number: # I imagine a strategy
                 if self.activateds:
-                    self.strategy.append([self.activateds[-1],next_activated])
+                    self.strategy.append([self.activateds[-1],next_activated]) # (state, action)
 
         # new activated cell
         self.add_activated(next_activated)
 
         # action learning:
-        self.reward()
+        rew = self.reward()
 
         # new intensities:
         for cell in new_intensities:
@@ -322,7 +347,7 @@ class Model:
                 self.modifieds.add(cell)
 
         # make decision:
-        return self.decision()
+        return self.decision(), rew
 
 
     def reinforce(self, cell1, cell2, delay, correlation):
@@ -359,9 +384,28 @@ class Model:
 
 
     def decision(self):
-        return self.action_number.inv[0]
+        state = self.cell_number[self.activateds[-1]]
+        choice = softmax(self.proba_map[state])
+        # todo add empty action ("")
+        return self.action_number.inv[choice]
 
-    def reward(self):
-        pass
+    def reward(self): # todo take into account expected rewards or events
+        if self.activateds:
+            last_state = self.cell_number[self.activateds[-1]]
+            reward = np.abs(self.goals[last_state])*(1.-np.abs(self.goals[last_state]-self.intensities[self.activateds[-1]]))
+            #print reward
+            if self.strategy:
+                for couple in self.strategy:
+                    state = self.cell_number[couple[0]]
+                    action = self.action_number[couple[1]]
+                    TD = reward + DISCOUNT*np.max(self.value_map[state])-self.value_map[state][action]
+                    # ema-value of average reward
+                    self.value_map[state][action] = (1.-ETA)*self.value_map[state][action] + ETA*(reward + DISCOUNT*np.max(self.value_map[state]))
+                    self.proba_map[state][action] = self.proba_map[state][action] + ALPHA*TD
+            self.strategy = []
+            return reward
+        else:
+            return 0
+
 
 

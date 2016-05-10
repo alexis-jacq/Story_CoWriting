@@ -4,6 +4,7 @@
 import numpy as np
 import random
 from mutualModelling import model
+import matplotlib.pyplot as plt
 
 robot = model.Model()
 robot.add_cells(["fire","burning","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
@@ -43,7 +44,15 @@ def print_robot():
     print robot.intensities
     print "----------------"
 
+def print_rl():
+    print robot.value_map
+    #print robot.proba_map
+
+cum_rew = []
+
+
 def word_response(action,setofevent):
+    global a1,a2,a3
     percepts = [(noise(),1)]
     reflexes = []
     new_set = set()
@@ -64,16 +73,23 @@ def word_response(action,setofevent):
     if "burning" in setofevent:
         percepts.append(("d_energy",-1))
     if "water" in setofevent:
-        percepts.append(("burning",-1))
+        reflexes.append(("burning",-1))
     if "honey" in setofevent:
         percepts.append(("d_energy",1))
     return percepts,reflexes,new_set
 
+#print_rl()
+
 action = "a1"
 s = set()
-for i in range(10):
+for i in range(500):
     p,r,s = word_response(action,s)
-    action = robot.update(percepts=p,reflexes=r)
-print_robot()
+    action,reward = robot.update(percepts=p,reflexes=r)
+    if random.random()>0.9:
+        p.append(("fire",1))
+    cum_rew.append(reward)
+print_rl()
 
+plt.plot(np.cumsum(np.array(cum_rew)))
+plt.show()
 
