@@ -22,9 +22,9 @@ GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
 THETA = 1 # exponent for softmax pulling
-DISCOUNT = 0.0 # discount for the impact of futur on the temporal diff algo
+DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 ETA = 0.1 # for ema of expected rewards
-ALPHA = 0.7 # for P-values
+ALPHA = 0.5 # for P-values
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -66,11 +66,11 @@ def random_pull_dict(distribution): # dist. is a dictionnary key->value
 
 def softmax(distribution): # dist. is a list (np.array) of values
     if list(distribution):
-        expo = np.exp(distribution)**THETA
+        expo = np.exp(distribution*THETA)
         exponorm = expo/np.sum(expo)
         couples = zip(range(len(distribution)),exponorm)
         sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
-        return sorted_couples[0][0]
+        return sorted_couples[0][0], sorted_couples[0][1]
     else:
         return None
 
@@ -99,6 +99,8 @@ class Model:
 
         # reinforcement learning:
         #------------------------
+        self.action = None
+        self.expected = 0
         self.goals = np.zeros([0]) # goal value (1 or -1) for each cells
         self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
         self.action_number = bidict() # set of cells encoding actions
@@ -107,10 +109,11 @@ class Model:
         self.V = np.ones([0,0]) # nb_cells*nb_actions := optimal intensity of a cell to use the action
         self.Q = np.ones([0,0]) # reward value learned by association ~ like QLearning with TD
         # used to compute V:
-        self.cum_I = np.ones([0,0]) # cumulative value of intensities while chosing action with this event
-        self.cum_R = np.ones([0,0]) # ---------- reward ---
-        self.cum_IR = np.ones([0,0]) # ---------- intensity * reward ---
+        self.I = np.ones([0,0]) # cumulative value of intensities while chosing action with this event
+        self.R = np.ones([0,0]) # ---------- reward ---
+        self.IR = np.ones([0,0]) # ---------- intensity * reward ---
         self.Rmin = np.ones([0,0]) # minimum reward obtained for couple (event,action)
+        self.n = np.ones([0,0])
 
         # network:= [intensities , counts, times, weights]
 
@@ -165,7 +168,7 @@ class Model:
                     new_rewards[:self.nb_cells] = self.rewards
                     self.rewards = new_rewards
 
-                    new_v = np.ones([number, self.nb_actions])
+                    new_v = np.zeros([number, self.nb_actions])
                     new_v[:self.nb_cells,:self.nb_actions] = self.V
                     self.V = new_v
 
@@ -173,21 +176,25 @@ class Model:
                     new_q[:self.nb_cells,:self.nb_actions] = self.Q
                     self.Q = new_q
 
-                    new_I = np.ones([number, self.nb_actions])
+                    new_I = np.zeros([number, self.nb_actions])
                     new_I[:self.nb_cells,:self.nb_actions] = self.I
                     self.I = new_I
 
-                    new_R = np.ones([number, self.nb_actions])
+                    new_R = np.zeros([number, self.nb_actions])
                     new_R[:self.nb_cells,:self.nb_actions] = self.R
                     self.R = new_R
 
-                    new_IR = np.ones([number, self.nb_actions])
+                    new_IR = np.zeros([number, self.nb_actions])
                     new_IR[:self.nb_cells,:self.nb_actions] = self.IR
                     self.IR = new_IR
 
-                    new_Rmin = np.ones([number, self.nb_actions])
+                    new_Rmin = np.zeros([number, self.nb_actions])
                     new_Rmin[:self.nb_cells,:self.nb_actions] = self.Rmin
                     self.Rmin = new_Rmin
+
+                    new_n = np.zeros([number, self.nb_actions])
+                    new_n[:self.nb_cells,:self.nb_actions] = self.n
+                    self.n = new_n
 
                     self.nb_cells = number
 
@@ -200,7 +207,15 @@ class Model:
                     self.action_number[cell_id] = number
                     number += 1
 
-                    new_V = np.ones([self.nb_cells, number])
+                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells])
+                    new_counts[:self.nb_actions,:,:] = self.counts
+                    self.counts = new_counts
+
+                    new_weights = np.zeros([number, self.nb_cells, self.nb_cells])
+                    new_weights[:self.nb_actions,:,:] = self.weights
+                    self.weights = new_weights
+
+                    new_V = np.zeros([self.nb_cells, number])
                     new_V[:,:self.nb_actions] = self.V
                     self.V = new_V
 
@@ -208,21 +223,25 @@ class Model:
                     new_Q[:,:self.nb_actions] = self.Q
                     self.Q = new_Q
 
-                    new_I = np.ones([self.nb_cells, number])
+                    new_I = np.zeros([self.nb_cells, number])
                     new_I[:,:self.nb_actions] = self.I
                     self.I = new_I
 
-                    new_R = np.ones([self.nb_cells, number])
+                    new_R = np.zeros([self.nb_cells, number])
                     new_R[:,:self.nb_actions] = self.R
                     self.R = new_R
 
-                    new_IR = np.ones([self.nb_cells, number])
+                    new_IR = np.zeros([self.nb_cells, number])
                     new_IR[:,:self.nb_actions] = self.IR
                     self.IR = new_IR
 
-                    new_Rmin = np.ones([self.nb_cells, number])
+                    new_Rmin = np.zeros([self.nb_cells, number])
                     new_Rmin[:,:self.nb_actions] = self.Rmin
                     self.Rmin = new_Rmin
+
+                    new_n = np.zeros([self.nb_cells, number])
+                    new_n[:,:self.nb_actions] = self.n
+                    self.n = new_n
 
                     self.nb_actions = number
 
@@ -230,6 +249,7 @@ class Model:
         for goal in goals:
             cell_id = goal[0]
             value = goal[1]
+            reward = goal[2]
             if cell_id not in self.cell_number:
                 self.add_cells([cell_id])
             if value>1:
@@ -237,13 +257,14 @@ class Model:
             if value<-1:
                 value=-1.
             self.goals[self.cell_number[cell_id]] = value
+            self.rewards[self.cell_number[cell_id]] = reward
 
 
     def update(self, percepts=None, reflexes=None):
 
         #   # FIND THE NEXT ACTIVATED:
-        #   elligibles = {}
-        #   new_intensities = {}
+        elligibles = {}
+        new_intensities = {}
 
         #   # following weights: (no preference for different delays for the moment)
         #   delay = 0
@@ -293,7 +314,7 @@ class Model:
         #                   if percept_id != activated:
         #                       self.reinforce(activated,percept_id,0,correlation)
 
-        # because very important percept:
+
         if reflexes:
             for reflex in reflexes:
 
@@ -305,52 +326,55 @@ class Model:
                 elligibles.setdefault(reflex_id,0)
                 elligibles[reflex_id] += 10. # arbitrary
 
-                if self.perceiveds:
+                if self.perceiveds and self.action:
                     if self.perceiveds[-1]>0:
                         activated = self.activateds[-1]
-                        action = self.last_actions
+                        action = self.action
                         correlation = self.intensities[reflex_id] * self.intensities[activated]
                         #if reflex_id != activated:
-                        self.reinforce(activated,reflex_id,0,correlation,action)
+                        self.reinforce(activated,reflex_id,correlation,action)
+
+                self.add_perceived(1.)
 
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
 
         # hebbian reinforcement
-        test = False
-        if reflexes:
-            test = test or (next_activated in np.array(reflexes))
-        if percepts:
-            test = test or (next_activated in np.array(percepts))
-        if test:
-            self.modifieds = set()
-            delay = 0
-            for i in range(len(self.activateds)):
-                activated = self.activateds[i]
-                perceived = self.perceiveds[i]
-                weakness = GAMMA**delay
-                correlation = self.intensities[next_activated] * self.intensities[activated] * (weakness+perceived-weakness*perceived)
-                if next_activated != activated:
-                    self.reinforce(activated,next_activated,delay,correlation)
-                delay += 1
+        #   test = False
+        #   if reflexes:
+        #       test = test or (next_activated in np.array(reflexes))
+        #   if percepts:
+        #       test = test or (next_activated in np.array(percepts))
+        #   if test:
+        #       self.modifieds = set()
+        #       delay = 0
+        #       for i in range(len(self.activateds)):
+        #           activated = self.activateds[i]
+        #           perceived = self.perceiveds[i]
+        #           weakness = GAMMA**delay
+        #           correlation = self.intensities[next_activated] * self.intensities[activated] * (weakness+perceived-weakness*perceived)
+        #           if next_activated != activated:
+        #               self.reinforce(activated,next_activated,delay,correlation)
+        #           delay += 1
 
-            self.add_perceived(1.)
-            #self.reward()
+        #       self.add_perceived(1.)
+        #       #self.reward()
 
-        if not test:
-            self.add_perceived(0.)
+        #   if not test:
+        #       self.add_perceived(0.)
 
-            if next_activated in self.action_number: # I imagine a strategy
-                if self.activateds:
-                    self.strategy.append([self.activateds[-1],next_activated]) # (state, action)
+        #       if next_activated in self.action_number: # I imagine a strategy
+        #           if self.activateds:
+        #               self.strategy.append([self.activateds[-1],next_activated]) # (state, action)
 
-        self.reward(self.activateds[-1],next_activated,action)
+        # self.reward(self.activateds[-1],next_activated,action)
+
+        # action learning:
+        if self.action:
+            self.reward(next_activated,self.intensities[next_activated])
 
         # new activated cell
         self.add_activated(next_activated)
-
-        # action learning:
-        rew = self.reward()
 
         # new intensities:
         for cell in new_intensities:
@@ -359,10 +383,11 @@ class Model:
                 self.modifieds.add(cell)
 
         # make decision:
-        return self.decision(), rew
+        self.action = self.decision()
+        return self.action
 
 
-    def reinforce(self, cell1, cell2, delay, correlation, action):
+    def reinforce(self, cell1, cell2, correlation, action):
 
         global THRESHOLD
         global COUNT_MAX
@@ -372,48 +397,70 @@ class Model:
 
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
-        num_act = self.cell_number[action]
+        num_act = self.action_number[action]
 
         #n = self.counts[num_cell1][num_cell2]
         #t = self.times[num_cell1][num_cell2]
 
-        s = np.sum(self.counts[delay][num_cell1])
-        v = self.counts[delay][num_cell1][num_cell2]
-        self.counts[delay][num_cell1][:] *= s/(s+1.)
-        self.counts[delay][num_cell1][num_cell2] = (s*v+1.)/(s+1.)
-        self.counts[delay][num_cell1][self.counts[delay][num_cell1]<MIN] = 0.
+        s = np.sum(self.counts[num_act][num_cell1])
+        v = self.counts[num_act][num_cell1][num_cell2]
+        self.counts[num_act][num_cell1][:] *= s/(s+1.)
+        self.counts[num_act][num_cell1][num_cell2] = (s*v+1.)/(s+1.)
+        self.counts[num_act][num_cell1][self.counts[num_act][num_cell1]<MIN] = 0.
 
-        if self.counts[delay][num_cell1][num_cell2]>0: 
-            self.weights[delay][num_cell1][num_cell2] += correlation - np.abs(correlation)*self.weights[delay][num_cell1][num_cell2]
-            if self.weights[delay][num_cell1][num_cell2]>1:
-                self.weights[delay][num_cell1][num_cell2]=1.
-            if self.weights[delay][num_cell1][num_cell2]<-1:
-                self.weights[delay][num_cell1][num_cell2]=-1.
+        if self.counts[num_act][num_cell1][num_cell2]>0: 
+            self.weights[num_act][num_cell1][num_cell2] += correlation - np.abs(correlation)*self.weights[num_act][num_cell1][num_cell2]
+            if self.weights[num_act][num_cell1][num_cell2]>1:
+                self.weights[num_act][num_cell1][num_cell2]=1.
+            if self.weights[num_act][num_cell1][num_cell2]<-1:
+                self.weights[num_act][num_cell1][num_cell2]=-1.
 
 
     def decision(self):
         state = self.cell_number[self.activateds[-1]]
-        choice = softmax(self.proba_map[state])
-        self.expected = self.value_map[state][choice]
+        values = self.Q[state]*(1-np.abs(self.V[state]-self.intensities[self.activateds[-1]]))
+        choice , expect = softmax(values)
+        self.expected = expect
+        self.action = choice
         return self.action_number.inv[choice]
 
-    def reward(self): # todo take into account expected rewards or events
-        if self.activateds:
+    def reward(self,new_activated,new_intensity):
+        if self.activateds and self.action:
+
+            # last state:
+            action = self.action_number[self.action]
             last_state = self.cell_number[self.activateds[-1]]
-            reward = np.abs(self.goals[last_state])*(1.-np.abs(self.goals[last_state]-self.intensities[self.activateds[-1]]))
-            #reward = reward-self.expected
+            last_intensity = self.intensities[self.activateds[-1]]
+
+            # new state:
+            new_state = self.cell_number[new_activated]
+            reward = self.rewards[new_state]*(1.-np.abs(self.goals[new_state]-new_intensity))
+            new_values = self.Q[new_state]*(1-np.abs(self.V[new_state]-new_intensity))
+            reach = 0*np.max(new_values)
+
+            #print self.activateds[-1]
+            #print self.action
             #print reward
 
-            state = self.cell_number[couple[0]]
-            action = self.action_number[couple[1]]
-            TD = reward + DISCOUNT*np.max(self.value_map[state])-self.value_map[state][action]
-            # ema-value of average reward
-            self.value_map[state][action] = (1.-ETA)*self.value_map[state][action] + ETA*(reward + DISCOUNT*np.max(self.value_map[state]))
-            self.proba_map[state][action] = self.proba_map[state][action] + ALPHA*TD
-            self.strategy = []
-            return reward
-        else:
-            return 0
+            TD = reward + DISCOUNT*reach - 0*self.expected
+
+            #print TD
+
+            self.Q[last_state][action] += ALPHA*TD
+            self.I[last_state][action] += last_intensity
+            self.R[last_state][action] += reward + reach
+            self.IR[last_state][action] += (reward + reach)*last_intensity
+            self.n[last_state][action] += 1
+            if (reward+reach) < self.Rmin[last_state][action]:
+                self.Rmin[last_state][action] = reward+reach
+
+            I = self.I[last_state][action]
+            R = self.R[last_state][action]
+            IR = self.IR[last_state][action]
+            Rmin = self.Rmin[last_state][action]
+            n = self.n[last_state][action]
+
+            self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
 
 
 
