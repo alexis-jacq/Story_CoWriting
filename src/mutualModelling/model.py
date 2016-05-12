@@ -14,11 +14,11 @@ from bidict import bidict
 """ GLOBAL PARAMETERS """
 # hebbian learning:
 STIFFNESS = 3 # how I expect the most likely event
-FIRE_TIME = 5 # time a cell is activated
-COUNT_MAX = 10. # plasticity
-THRESHOLD = 3. # start to learn when something is recurrent
-FORGET_RATE = 0.01 # kill the noise
-GAMMA = 0.5 # time discount for learning
+FIRE_TIME = 10 # time a cell is activated
+COUNT_MAX = 0. # plasticity
+THRESHOLD = 2. # start to learn when something is recurrent
+MIN = 0.00001 # minimal transition probability
+GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
 THETA = 1 # exponent for softmax pulling
@@ -94,51 +94,27 @@ class Model:
 
         # hebbian learning:
         #------------------
-        self.counts = np.zeros([0,0]) # count the close activations for hebbian learning
-        self.times = np.zeros([0,0]) # count the average delay between two close activations
-        self.weights = np.zeros([FIRE_TIME,0,0]) # weights of connexion between cells for different possible (interger) delays
+        self.counts = np.zeros([0,0,0]) # count the close activations for hebbian learning
+        self.weights = np.zeros([0,0,0]) # weights of connexion between cells for different possible actions
 
         # reinforcement learning:
         #------------------------
-        self.goals = np.zeros([0]) # goal value (1 or -1) for each cells (0 mean no objective)
+        self.goals = np.zeros([0]) # goal value (1 or -1) for each cells
+        self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
         self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
-        self.strategy = [] # a strategy is a list of (state,action) where state is the last activated cell up to a final reward
         # for actor-critic decision making :
-        self.value_map = np.ones([0,0]) # nb_cells*nb_actions := value given for couple (action,event)
-        self.proba_map = np.ones([0,0]) # nb_cells*nb_actions := proba to chose the action given an event
-        self.hope = 0 # threshold, if the agent imagine a reward >= hope, it reinforce he strategy leading to it
+        self.V = np.ones([0,0]) # nb_cells*nb_actions := optimal intensity of a cell to use the action
+        self.Q = np.ones([0,0]) # reward value learned by association ~ like QLearning with TD
+        # used to compute V:
+        self.cum_I = np.ones([0,0]) # cumulative value of intensities while chosing action with this event
+        self.cum_R = np.ones([0,0]) # ---------- reward ---
+        self.cum_IR = np.ones([0,0]) # ---------- intensity * reward ---
+        self.Rmin = np.ones([0,0]) # minimum reward obtained for couple (event,action)
 
         # network:= [intensities , counts, times, weights]
 
-        # FILLING:
-        if network:
-            self.intensities = network[0]
-            self.nb_cells = len(self.intensities)
-            # and cell_number !
-            # and action 
-            # and ...
 
-            counts = network[1]
-            times = network[2]
-            weights = network[3]
-
-            if (counts.shape==times.shape) and (times.shape==weights.shape) and (times.shape==(self.nb_cells,self.nb_cells)):
-                self.counts = counts
-                self.times = times
-                self.weights = weights
-            else:
-                print "Error of dimension in the loaded network !"
-                print "Default = np.zeros array"
-                self.counts = np.zeros([self.nb_cells,self.nb_cells])
-                self.times = np.zeros([self.nb_cells,self.nb_cells])
-                self.weights = np.zeros([FIRE_TIME,self.nb_cells,self.nb_cells])
-
-        if activateds:
-            self.activateds = activateds
-
-        if modifieds:
-            self.modifieds = modifieds
 
     """ functions for updating and using list of activated cells """
     #--------------------------------------------------------------
@@ -173,15 +149,11 @@ class Model:
                     self.cell_number[cell_id] = number
                     number += 1
 
-                    new_counts = np.zeros([number, number])
-                    new_counts[:self.nb_cells,:self.nb_cells] = self.counts
+                    new_counts = np.zeros([self.nb_actions,number, number])
+                    new_counts[:,:self.nb_cells,:self.nb_cells] = self.counts
                     self.counts = new_counts
 
-                    new_times = np.zeros([number, number])
-                    new_times[:self.nb_cells,:self.nb_cells] = self.times
-                    self.times = new_times
-
-                    new_weights = np.zeros([FIRE_TIME, number, number])
+                    new_weights = np.zeros([self.nb_actions, number, number])
                     new_weights[:,:self.nb_cells,:self.nb_cells] = self.weights
                     self.weights = new_weights
 
@@ -189,13 +161,33 @@ class Model:
                     new_goals[:self.nb_cells] = self.goals
                     self.goals = new_goals
 
-                    new_vmap = np.ones([number, self.nb_actions])
-                    new_vmap[:self.nb_cells,:self.nb_actions] = self.value_map
-                    self.value_map = new_vmap
+                    new_rewards = np.zeros([number])
+                    new_rewards[:self.nb_cells] = self.rewards
+                    self.rewards = new_rewards
 
-                    new_pmap = np.ones([number, self.nb_actions])
-                    new_pmap[:self.nb_cells,:self.nb_actions] = self.proba_map
-                    self.proba_map = new_pmap
+                    new_v = np.ones([number, self.nb_actions])
+                    new_v[:self.nb_cells,:self.nb_actions] = self.V
+                    self.V = new_v
+
+                    new_q = np.ones([number, self.nb_actions])
+                    new_q[:self.nb_cells,:self.nb_actions] = self.Q
+                    self.Q = new_q
+
+                    new_I = np.ones([number, self.nb_actions])
+                    new_I[:self.nb_cells,:self.nb_actions] = self.I
+                    self.I = new_I
+
+                    new_R = np.ones([number, self.nb_actions])
+                    new_R[:self.nb_cells,:self.nb_actions] = self.R
+                    self.R = new_R
+
+                    new_IR = np.ones([number, self.nb_actions])
+                    new_IR[:self.nb_cells,:self.nb_actions] = self.IR
+                    self.IR = new_IR
+
+                    new_Rmin = np.ones([number, self.nb_actions])
+                    new_Rmin[:self.nb_cells,:self.nb_actions] = self.Rmin
+                    self.Rmin = new_Rmin
 
                     self.nb_cells = number
 
@@ -208,13 +200,29 @@ class Model:
                     self.action_number[cell_id] = number
                     number += 1
 
-                    new_vmap = np.ones([self.nb_cells, number])
-                    new_vmap[:,:self.nb_actions] = self.value_map
-                    self.value_map = new_vmap
+                    new_V = np.ones([self.nb_cells, number])
+                    new_V[:,:self.nb_actions] = self.V
+                    self.V = new_V
 
-                    new_pmap = np.ones([self.nb_cells, number])
-                    new_pmap[:,:self.nb_actions] = self.proba_map
-                    self.proba_map = new_pmap
+                    new_Q = np.ones([self.nb_cells, number])
+                    new_Q[:,:self.nb_actions] = self.Q
+                    self.Q = new_Q
+
+                    new_I = np.ones([self.nb_cells, number])
+                    new_I[:,:self.nb_actions] = self.I
+                    self.I = new_I
+
+                    new_R = np.ones([self.nb_cells, number])
+                    new_R[:,:self.nb_actions] = self.R
+                    self.R = new_R
+
+                    new_IR = np.ones([self.nb_cells, number])
+                    new_IR[:,:self.nb_actions] = self.IR
+                    self.IR = new_IR
+
+                    new_Rmin = np.ones([self.nb_cells, number])
+                    new_Rmin[:,:self.nb_actions] = self.Rmin
+                    self.Rmin = new_Rmin
 
                     self.nb_actions = number
 
@@ -233,56 +241,57 @@ class Model:
 
     def update(self, percepts=None, reflexes=None):
 
-        # FIND THE NEXT ACTIVATED:
-        elligibles = {}
-        new_intensities = {}
+        #   # FIND THE NEXT ACTIVATED:
+        #   elligibles = {}
+        #   new_intensities = {}
 
-        # following weights: (no preference for different delays for the moment)
-        delay = 0
-        for activated in self.activateds:
+        #   # following weights: (no preference for different delays for the moment)
+        #   delay = 0
+        #   for activated in self.activateds:
 
-            intensity = self.intensities[activated]
-            weights_to_sons = self.weights[delay][self.cell_number[activated]][:]
-            next_num, strength = random_pull_list(intensity*weights_to_sons)
-            next_id = self.cell_number.inv[next_num]
+        #       intensity = self.intensities[activated]
+        #       proba_of_sons = self.counts[delay][self.cell_number[activated]][:]
+        #       next_num,_ = random_pull_list(proba_of_sons)
+        #       next_id = self.cell_number.inv[next_num]
+        #       strength = intensity*self.counts[delay][self.cell_number[activated]][next_num]
 
-            elligibles.setdefault(next_id,0)
-            elligibles[next_id] += np.abs(strength)
+        #       elligibles.setdefault(next_id,0)
+        #       elligibles[next_id] += np.abs(strength)
 
-            new_intensities.setdefault(next_id,0)
-            new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
-            if new_intensities[next_id]>1.:
-                new_intensities[next_id]=1.
-            if new_intensities[next_id]<-1.:
-                new_intensities[next_id] = -1.
-            delay += 1
+        #       new_intensities.setdefault(next_id,0)
+        #       new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
+        #       if new_intensities[next_id]>1.:
+        #           new_intensities[next_id]=1.
+        #       if new_intensities[next_id]<-1.:
+        #           new_intensities[next_id] = -1.
+        #       delay += 1
 
-        # because recently activated:
-        for activated in self.activateds[:-1]:
-            elligibles.setdefault(activated,0)
-            elligibles[activated] += 0.5 # arbitrary value, should be a global value
+        #   # because recently activated:
+        #   for activated in self.activateds[:-1]:
+        #       elligibles.setdefault(activated,0)
+        #       elligibles[activated] += 0.5 # arbitrary value, should be a global value
 
-            #new_intensities.setdefault(activated,0)
-            #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
+        #       #new_intensities.setdefault(activated,0)
+        #       #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
 
-        # because perception:
-        if percepts: # percept must be associated with a new intensity !
-            for percept in percepts:
+        #   # because perception:
+        #   if percepts: # percept must be associated with a new intensity !
+        #       for percept in percepts:
 
-                percept_id = percept[0]
-                percept_val = percept[1]
+        #           percept_id = percept[0]
+        #           percept_val = percept[1]
 
-                self.intensities[percept_id] = percept_val
+        #           self.intensities[percept_id] = percept_val
 
-                elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
+        #           elligibles.setdefault(percept_id,0)
+        #           elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
 
-                if self.perceiveds:
-                    if self.perceiveds[-1]>0:
-                        activated = self.activateds[-1]
-                        correlation = self.intensities[percept_id] * self.intensities[activated]
-                        if percept_id != activated:
-                            self.reinforce(activated,percept_id,0,correlation)
+        #           if self.perceiveds:
+        #               if self.perceiveds[-1]>0:
+        #                   activated = self.activateds[-1]
+        #                   correlation = self.intensities[percept_id] * self.intensities[activated]
+        #                   if percept_id != activated:
+        #                       self.reinforce(activated,percept_id,0,correlation)
 
         # because very important percept:
         if reflexes:
@@ -299,9 +308,10 @@ class Model:
                 if self.perceiveds:
                     if self.perceiveds[-1]>0:
                         activated = self.activateds[-1]
+                        action = self.last_actions
                         correlation = self.intensities[reflex_id] * self.intensities[activated]
-                        if reflex_id != activated:
-                            self.reinforce(activated,reflex_id,0,correlation)
+                        #if reflex_id != activated:
+                        self.reinforce(activated,reflex_id,0,correlation,action)
 
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
@@ -334,6 +344,8 @@ class Model:
                 if self.activateds:
                     self.strategy.append([self.activateds[-1],next_activated]) # (state, action)
 
+        self.reward(self.activateds[-1],next_activated,action)
+
         # new activated cell
         self.add_activated(next_activated)
 
@@ -350,7 +362,7 @@ class Model:
         return self.decision(), rew
 
 
-    def reinforce(self, cell1, cell2, delay, correlation):
+    def reinforce(self, cell1, cell2, delay, correlation, action):
 
         global THRESHOLD
         global COUNT_MAX
@@ -360,22 +372,18 @@ class Model:
 
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
+        num_act = self.cell_number[action]
 
-        n = self.counts[num_cell1][num_cell2]
-        t = self.times[num_cell1][num_cell2]
+        #n = self.counts[num_cell1][num_cell2]
+        #t = self.times[num_cell1][num_cell2]
 
-        z = FORGET_RATE*np.sum(self.counts[num_cell1][:])
-        self.counts[num_cell1][:] -= z
-        self.counts[num_cell1][self.counts[num_cell1]<0] = 0.
+        s = np.sum(self.counts[delay][num_cell1])
+        v = self.counts[delay][num_cell1][num_cell2]
+        self.counts[delay][num_cell1][:] *= s/(s+1.)
+        self.counts[delay][num_cell1][num_cell2] = (s*v+1.)/(s+1.)
+        self.counts[delay][num_cell1][self.counts[delay][num_cell1]<MIN] = 0.
 
-        if self.counts[num_cell1][num_cell2]+z+1. > COUNT_MAX:
-            self.counts[num_cell1][num_cell2] += z
-        else:
-            self.counts[num_cell1][num_cell2] += z+1.
-
-        self.times[num_cell1][num_cell2] = (n*t + delay)/(n+1.) # iterative computation of average delay
-
-        if self.counts[num_cell1][num_cell2]>=THRESHOLD: # thist trheshold could be smaller than the other one
+        if self.counts[delay][num_cell1][num_cell2]>0: 
             self.weights[delay][num_cell1][num_cell2] += correlation - np.abs(correlation)*self.weights[delay][num_cell1][num_cell2]
             if self.weights[delay][num_cell1][num_cell2]>1:
                 self.weights[delay][num_cell1][num_cell2]=1.
@@ -386,22 +394,22 @@ class Model:
     def decision(self):
         state = self.cell_number[self.activateds[-1]]
         choice = softmax(self.proba_map[state])
-        # todo add empty action ("")
+        self.expected = self.value_map[state][choice]
         return self.action_number.inv[choice]
 
     def reward(self): # todo take into account expected rewards or events
         if self.activateds:
             last_state = self.cell_number[self.activateds[-1]]
             reward = np.abs(self.goals[last_state])*(1.-np.abs(self.goals[last_state]-self.intensities[self.activateds[-1]]))
+            #reward = reward-self.expected
             #print reward
-            if self.strategy:
-                for couple in self.strategy:
-                    state = self.cell_number[couple[0]]
-                    action = self.action_number[couple[1]]
-                    TD = reward + DISCOUNT*np.max(self.value_map[state])-self.value_map[state][action]
-                    # ema-value of average reward
-                    self.value_map[state][action] = (1.-ETA)*self.value_map[state][action] + ETA*(reward + DISCOUNT*np.max(self.value_map[state]))
-                    self.proba_map[state][action] = self.proba_map[state][action] + ALPHA*TD
+
+            state = self.cell_number[couple[0]]
+            action = self.action_number[couple[1]]
+            TD = reward + DISCOUNT*np.max(self.value_map[state])-self.value_map[state][action]
+            # ema-value of average reward
+            self.value_map[state][action] = (1.-ETA)*self.value_map[state][action] + ETA*(reward + DISCOUNT*np.max(self.value_map[state]))
+            self.proba_map[state][action] = self.proba_map[state][action] + ALPHA*TD
             self.strategy = []
             return reward
         else:
