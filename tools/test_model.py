@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 
 def creat_robot():
     robot = model.Model()
-    robot.add_cells(["fire","burning","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
+    robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
     robot.add_actions(["a1","a2","a3"])
-    robot.set_goal([["d_energy",1.,1.]])
+    robot.set_goal([["fire",1.,-1.],["honey",1.,1.]])
     return robot
 
 """ learning actions:
@@ -54,39 +54,34 @@ def word_response(action,setofevent):
 
     energy = 0
 
-    if action != "":
-        percepts.append((action,1))
+    if "fire" in setofevent:
+        new_set.add("fire")
+
     if action=="a1":
         reflexes.append(("fire",1))
-        new_set.add("burning")
-    if action=="a2":
-        reflexes.append(("water",1))
-        new_set.add("water")
-    if action=="a3":
-        reflexes.append(("honey",1))
-        new_set.add("honey")
+        new_set.add("fire")
 
-    if "fire" in setofevent and not "water" in setofevent:
-        reflexes.append(("burning",1))
-        new_set.add("burning")
-    if ("burning" in setofevent) and not ("water" in setofevent):
-        if "honey" in setofevent:
-            pass
+    if action=="a2":
+        reflexes.append(("fire",-1))
+        new_set = set()
+
+    if action=="a3":
+        if "fire" not in new_set:
+            reflexes.append(("honey",1))
         else:
-            reflexes.append(("d_energy",-1))
-            energy-=1
-        new_set.add("burning")
-    if "water" in setofevent:
-        reflexes.append(("burning",-1))
-    if "honey" in setofevent and not ("burning" in setofevent):
-        reflexes.append(("d_energy",1))
-        energy+=1
+            reflexes.append(("fire",1))
+        energy += 1
+
+    if "fire" in new_set:
+        energy -=1
+        #reflexes.append(("fire",1))
+
 
     return percepts,reflexes,new_set,energy
 
 #print_rl()
 
-m = 300
+m = 100
 
 action = "a1"
 s = set()
@@ -103,12 +98,19 @@ for j in range(n):
         p,r,s,e = word_response(action,s)
         action = robot.update(percepts=p,reflexes=r)
 
-        if random.random()>0.9:
+        if random.random()>1:
             s.add("fire")
             optimal.append(-1)
         else:
             optimal.append(1)
         cum_rew.append(e)
+
+        #print robot.action
+        #print r
+        #num_cell = robot.cell_number[r[0][0]]
+        #num_action = robot.action_number[robot.action]
+        #print robot.intensities[num_cell]
+        #print robot.V[num_cell][num_action]
 
         #print_rl()
 

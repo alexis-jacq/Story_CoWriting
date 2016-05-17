@@ -23,8 +23,7 @@ GAMMA = 0.1 # time discount for learning
 # reinforcement learning:
 THETA = 1 # exponent for softmax pulling
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
-ETA = 0.1 # for ema of expected rewards
-ALPHA = 0.5 # for P-values
+ALPHA = 0.1 # for P-values
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -68,7 +67,7 @@ def softmax(distribution): # dist. is a list (np.array) of values
     if list(distribution):
         expo = np.exp(distribution*THETA)
         exponorm = expo/np.sum(expo)
-        couples = zip(range(len(distribution)),exponorm)
+        couples = zip(range(len(exponorm)),exponorm)
         sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
         return sorted_couples[0][0], sorted_couples[0][1]
     else:
@@ -88,6 +87,7 @@ class Model:
         self.nb_cells = 0
         self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
         self.perceiveds = [] # are cells activated because perception (1) or because reasoning (0) ?
+        self.old_intensities = []
         self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
@@ -106,14 +106,14 @@ class Model:
         self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
         # for actor-critic decision making :
-        self.V = np.ones([0,0]) # nb_cells*nb_actions := optimal intensity of a cell to use the action
+        self.V = np.zeros([0,0]) # nb_cells*nb_actions := optimal intensity of a cell to use the action
         self.Q = np.ones([0,0]) # reward value learned by association ~ like QLearning with TD
         # used to compute V:
-        self.I = np.ones([0,0]) # cumulative value of intensities while chosing action with this event
-        self.R = np.ones([0,0]) # ---------- reward ---
-        self.IR = np.ones([0,0]) # ---------- intensity * reward ---
-        self.Rmin = np.ones([0,0]) # minimum reward obtained for couple (event,action)
-        self.n = np.ones([0,0])
+        self.I = np.zeros([0,0]) # cumulative value of intensities while chosing action with this event
+        self.R = np.zeros([0,0]) # ---------- reward ---
+        self.IR = np.zeros([0,0]) # ---------- intensity * reward ---
+        self.Rmin = np.zeros([0,0]) # minimum reward obtained for couple (event,action)
+        self.n = np.zeros([0,0])
 
         # network:= [intensities , counts, times, weights]
 
@@ -132,8 +132,19 @@ class Model:
         else:
             self.activateds.append(cell)
 
+    def add_intensity(self, intensity):
+        if self.old_intensities:
+            if len(self.old_intensities)==FIRE_TIME:
+                for i in range(len(self.old_intensities)-1):
+                    self.old_intensities[i] = self.old_intensities[i+1]
+                self.old_intensities[-1] = intensity
+            else:
+                self.old_intensities.append(intensity)
+        else:
+            self.old_intensities.append(intensity)
+
     def add_perceived(self, val):
-        if self.activateds:
+        if self.perceiveds:
             if len(self.perceiveds)==FIRE_TIME:
                 for i in range(len(self.perceiveds)-1):
                     self.perceiveds[i] = self.perceiveds[i+1]
@@ -334,7 +345,7 @@ class Model:
                         #if reflex_id != activated:
                         self.reinforce(activated,reflex_id,correlation,action)
 
-                self.add_perceived(1.)
+                # self.add_perceived(1.) that can't be here !!!
 
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
@@ -375,6 +386,7 @@ class Model:
 
         # new activated cell
         self.add_activated(next_activated)
+        self.add_intensity(self.intensities[next_activated])
 
         # new intensities:
         for cell in new_intensities:
@@ -383,8 +395,7 @@ class Model:
                 self.modifieds.add(cell)
 
         # make decision:
-        self.action = self.decision()
-        return self.action
+        return self.decision()
 
 
     def reinforce(self, cell1, cell2, correlation, action):
@@ -421,8 +432,8 @@ class Model:
         values = self.Q[state]*(1-np.abs(self.V[state]-self.intensities[self.activateds[-1]]))
         choice , expect = softmax(values)
         self.expected = expect
-        self.action = choice
-        return self.action_number.inv[choice]
+        self.action = self.action_number.inv[choice]
+        return self.action
 
     def reward(self,new_activated,new_intensity):
         if self.activateds and self.action:
@@ -430,29 +441,35 @@ class Model:
             # last state:
             action = self.action_number[self.action]
             last_state = self.cell_number[self.activateds[-1]]
-            last_intensity = self.intensities[self.activateds[-1]]
+            last_intensity = self.old_intensities[-1]
 
             # new state:
             new_state = self.cell_number[new_activated]
             reward = self.rewards[new_state]*(1.-np.abs(self.goals[new_state]-new_intensity))
             new_values = self.Q[new_state]*(1-np.abs(self.V[new_state]-new_intensity))
-            reach = 0*np.max(new_values)
+            reach = np.max(new_values)
 
+            #print "----"
             #print self.activateds[-1]
+            #print last_intensity
             #print self.action
+
+            #print "'------"
+            #print new_activated
+            #print new_intensity
             #print reward
 
             TD = reward + DISCOUNT*reach - self.expected
-
+            R = TD
             #print TD
 
             self.Q[last_state][action] += ALPHA*TD
             self.I[last_state][action] += last_intensity
-            self.R[last_state][action] += reward + reach
-            self.IR[last_state][action] += (reward + reach)*last_intensity
+            self.R[last_state][action] += R
+            self.IR[last_state][action] += R*last_intensity
             self.n[last_state][action] += 1
-            if (reward+reach) < self.Rmin[last_state][action]:
-                self.Rmin[last_state][action] = reward+reach
+            if R < self.Rmin[last_state][action]:
+                self.Rmin[last_state][action] = R
 
             I = self.I[last_state][action]
             R = self.R[last_state][action]
@@ -461,6 +478,7 @@ class Model:
             n = self.n[last_state][action]
 
             self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
+            print self.V[last_state][action]
 
 
 
