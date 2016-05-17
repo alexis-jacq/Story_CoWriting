@@ -69,7 +69,7 @@ def word_response(action,setofevent):
         if "fire" not in new_set:
             reflexes.append(("honey",1))
         else:
-            reflexes.append(("fire",1))
+            reflexes.append(("fire",1-0*random.random()))
         energy += 1
 
     if "fire" in new_set:
@@ -81,7 +81,7 @@ def word_response(action,setofevent):
 
 #print_rl()
 
-m = 100
+m = 500
 
 action = "a1"
 s = set()
@@ -90,7 +90,7 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 1
+n = 30
 
 for j in range(n):
     robot = creat_robot()
@@ -98,7 +98,7 @@ for j in range(n):
         p,r,s,e = word_response(action,s)
         action = robot.update(percepts=p,reflexes=r)
 
-        if random.random()>1:
+        if random.random()>0.7:
             s.add("fire")
             optimal.append(-1)
         else:

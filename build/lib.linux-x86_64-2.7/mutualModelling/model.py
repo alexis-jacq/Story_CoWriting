@@ -21,9 +21,9 @@ MIN = 0.00001 # minimal transition probability
 GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
-THETA = 1 # exponent for softmax pulling
-DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
-ALPHA = 0.1 # for P-values
+THETA = 1.5 # exponent for softmax pulling
+DISCOUNT = 0.50 # discount for the impact of futur on the temporal diff algo
+ALPHA = 0.5 # for P-values
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -460,10 +460,10 @@ class Model:
             #print reward
 
             TD = reward + DISCOUNT*reach - self.expected
-            R = TD
+            R = ALPHA*reward
             #print TD
 
-            self.Q[last_state][action] += ALPHA*TD
+            self.Q[last_state][action] += 0.1*ALPHA*TD
             self.I[last_state][action] += last_intensity
             self.R[last_state][action] += R
             self.IR[last_state][action] += R*last_intensity
@@ -478,7 +478,7 @@ class Model:
             n = self.n[last_state][action]
 
             self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
-            print self.V[last_state][action]
+            #print self.V[last_state][action]
 
 
 
