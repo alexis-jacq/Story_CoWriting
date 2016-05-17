@@ -23,7 +23,8 @@ GAMMA = 0.1 # time discount for learning
 # reinforcement learning:
 THETA = 1.5 # exponent for softmax pulling
 DISCOUNT = 0.50 # discount for the impact of futur on the temporal diff algo
-ALPHA = 0.5 # for P-values
+ALPHA = 0.5 # learning rate imediate (R)
+BETA = 0.05 # learning rate indirect (Q)
 
 """ functions for spiking cascade following distribution of weights"""
 #--------------------------------------------------------------------
@@ -88,7 +89,7 @@ class Model:
         self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
         self.perceiveds = [] # are cells activated because perception (1) or because reasoning (0) ?
         self.old_intensities = []
-        self.modifieds = set() # for each input from exterior (percept or reflex) cell intensities are modified once
+        self.modifieds = set() # for each input from exterior (percept or percept) cell intensities are modified once
                                # it makes the differrence between the flow of thought and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
 
@@ -114,6 +115,7 @@ class Model:
         self.IR = np.zeros([0,0]) # ---------- intensity * reward ---
         self.Rmin = np.zeros([0,0]) # minimum reward obtained for couple (event,action)
         self.n = np.zeros([0,0])
+        self.matter = np.ones([0]) # importance of events
 
         # network:= [intensities , counts, times, weights]
 
@@ -170,6 +172,10 @@ class Model:
                     new_weights = np.zeros([self.nb_actions, number, number])
                     new_weights[:,:self.nb_cells,:self.nb_cells] = self.weights
                     self.weights = new_weights
+
+                    new_matter = np.ones([number])
+                    new_matter[:self.nb_cells] = self.matter
+                    self.matter = new_matter
 
                     new_goals = np.zeros([number])
                     new_goals[:self.nb_cells] = self.goals
@@ -271,7 +277,7 @@ class Model:
             self.rewards[self.cell_number[cell_id]] = reward
 
 
-    def update(self, percepts=None, reflexes=None):
+    def update(self, percepts=None):
 
         #   # FIND THE NEXT ACTIVATED:
         elligibles = {}
@@ -326,24 +332,24 @@ class Model:
         #                       self.reinforce(activated,percept_id,0,correlation)
 
 
-        if reflexes:
-            for reflex in reflexes:
+        if percepts:
+            for percept in percepts:
 
-                reflex_id = reflex[0]
-                reflex_val = reflex[1]
+                percept_id = percept[0]
+                percept_val = percept[1]
 
-                self.intensities[reflex_id] = reflex_val
+                self.intensities[percept_id] = percept_val
 
-                elligibles.setdefault(reflex_id,0)
-                elligibles[reflex_id] += 10. # arbitrary
+                elligibles.setdefault(percept_id,0)
+                elligibles[percept_id] += np.exp(THETA*self.matter[self.cell_number[percept_id]])
 
                 if self.perceiveds and self.action:
                     if self.perceiveds[-1]>0:
                         activated = self.activateds[-1]
                         action = self.action
-                        correlation = self.intensities[reflex_id] * self.intensities[activated]
-                        #if reflex_id != activated:
-                        self.reinforce(activated,reflex_id,correlation,action)
+                        correlation = self.intensities[percept_id] * self.intensities[activated]
+                        #if percept_id != activated:
+                        self.reinforce(activated,percept_id,correlation,action)
 
                 # self.add_perceived(1.) that can't be here !!!
 
@@ -352,8 +358,8 @@ class Model:
 
         # hebbian reinforcement
         #   test = False
-        #   if reflexes:
-        #       test = test or (next_activated in np.array(reflexes))
+        #   if percepts:
+        #       test = test or (next_activated in np.array(percepts))
         #   if percepts:
         #       test = test or (next_activated in np.array(percepts))
         #   if test:
@@ -463,7 +469,11 @@ class Model:
             R = ALPHA*reward
             #print TD
 
-            self.Q[last_state][action] += 0.1*ALPHA*TD
+            n = self.n[last_state][action]+1.
+
+            #self.Q[last_state][action] += BETA*TD
+            self.Q[last_state][action] = 1+(n*self.Q[last_state][action]+TD)/(n+1.)
+
             self.I[last_state][action] += last_intensity
             self.R[last_state][action] += R
             self.IR[last_state][action] += R*last_intensity
@@ -479,6 +489,9 @@ class Model:
 
             self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
             #print self.V[last_state][action]
+
+            #self.matter[new_state] += BETA*np.abs(TD)
+            self.matter[new_state] = 1+(n*self.matter[new_state] + np.abs(TD))/(n+1.)
 
 
 

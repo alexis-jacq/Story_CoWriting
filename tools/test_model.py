@@ -43,13 +43,14 @@ def print_rl():
     print robot.V
     print robot.R
     print robot.n
+    print robot.matter
 
 
 def word_response(action,setofevent):
     global a1,a2,a3
 
-    percepts = [(noise(),1)]
-    reflexes = []
+    percepts = [(noise(),1-2*random.random())]
+    #percepts = []
     new_set = set()
 
     energy = 0
@@ -58,26 +59,26 @@ def word_response(action,setofevent):
         new_set.add("fire")
 
     if action=="a1":
-        reflexes.append(("fire",1))
+        percepts.append(("fire",1))
         new_set.add("fire")
 
     if action=="a2":
-        reflexes.append(("fire",-1))
+        percepts.append(("fire",-1))
         new_set = set()
 
     if action=="a3":
         if "fire" not in new_set:
-            reflexes.append(("honey",1))
+            percepts.append(("honey",1))
         else:
-            reflexes.append(("fire",1-0*random.random()))
+            percepts.append(("fire",1-2*random.random()))
         energy += 1
 
     if "fire" in new_set:
         energy -=1
-        #reflexes.append(("fire",1))
+        #percepts.append(("fire",1))
 
 
-    return percepts,reflexes,new_set,energy
+    return percepts,new_set,energy
 
 #print_rl()
 
@@ -90,13 +91,13 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 30
+n = 1
 
 for j in range(n):
     robot = creat_robot()
     for i in range(m):
-        p,r,s,e = word_response(action,s)
-        action = robot.update(percepts=p,reflexes=r)
+        p,s,e = word_response(action,s)
+        action = robot.update(percepts=p)
 
         if random.random()>0.7:
             s.add("fire")
