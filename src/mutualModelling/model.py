@@ -21,7 +21,9 @@ MIN = 0.00001 # minimal transition probability
 GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
-THETA = 1.5 # exponent for softmax pulling
+THETA1 = 5#1.5 # exponent for softmax pulling
+THETA2 = 5
+THETA3 = 5
 DISCOUNT = 0.50 # discount for the impact of futur on the temporal diff algo
 ALPHA = 0.5 # learning rate imediate (R)
 BETA = 0.05 # learning rate indirect (Q)
@@ -66,7 +68,7 @@ def random_pull_dict(distribution): # dist. is a dictionnary key->value
 
 def softmax(distribution): # dist. is a list (np.array) of values
     if list(distribution):
-        expo = np.exp(distribution*THETA)
+        expo = np.exp(distribution*THETA1)
         exponorm = expo/np.sum(expo)
         couples = zip(range(len(exponorm)),exponorm)
         sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
@@ -341,7 +343,7 @@ class Model:
                 self.intensities[percept_id] = percept_val
 
                 elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] += np.exp(THETA*self.matter[self.cell_number[percept_id]])
+                elligibles[percept_id] += np.exp(THETA2*self.matter[self.cell_number[percept_id]])
 
                 if self.perceiveds and self.action:
                     if self.perceiveds[-1]>0:
@@ -442,6 +444,7 @@ class Model:
         return self.action
 
     def reward(self,new_activated,new_intensity):
+        global THETA
         if self.activateds and self.action:
 
             # last state:
@@ -466,14 +469,16 @@ class Model:
             #print reward
 
             TD = reward + DISCOUNT*reach - self.expected
-            R = ALPHA*reward
+            #R = ALPHA*reward
+            R = np.exp(THETA3*TD)
             #print TD
 
             n = self.n[last_state][action]+1.
 
             #self.Q[last_state][action] += BETA*TD
-            self.Q[last_state][action] = 1+(n*self.Q[last_state][action]+TD)/(n+1.)
+            self.Q[last_state][action] = 1+(n*(self.Q[last_state][action]-1)+TD)/(n+1.)
 
+            """
             self.I[last_state][action] += last_intensity
             self.R[last_state][action] += R
             self.IR[last_state][action] += R*last_intensity
@@ -486,12 +491,32 @@ class Model:
             IR = self.IR[last_state][action]
             Rmin = self.Rmin[last_state][action]
             n = self.n[last_state][action]
+            """
 
-            self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
-            #print self.V[last_state][action]
+            self.I[last_state][action] = (n*self.I[last_state][action] + last_intensity)/(n+1.)
+            self.R[last_state][action] = (n*self.R[last_state][action]+R)/(n+1.)
+            self.IR[last_state][action] = (n*self.IR[last_state][action]+R*last_intensity)/(n+1.)
+            self.n[last_state][action] += 1.
+            if R < self.Rmin[last_state][action]:
+                self.Rmin[last_state][action] = R
+
+            I = self.I[last_state][action]
+            R = self.R[last_state][action]
+            IR = self.IR[last_state][action]
+            Rmin = self.Rmin[last_state][action]
+            n = self.n[last_state][action]
+
+            #self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
+            #self.V[last_state][action] = (IR - I*Rmin)/(R - Rmin + 0.001)
+            self.V[last_state][action] = IR/R
+            #print self.V[last_state][action]:w
+
 
             #self.matter[new_state] += BETA*np.abs(TD)
-            self.matter[new_state] = 1+(n*self.matter[new_state] + np.abs(TD))/(n+1.)
+            self.matter[new_state] = 1+(n*(self.matter[new_state]-1) + np.abs(TD))/(n+1.)
+
+            #if n>100:
+            #    THETA = 3
 
 
 

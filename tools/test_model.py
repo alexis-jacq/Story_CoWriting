@@ -91,7 +91,7 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 1
+n = 30
 
 for j in range(n):
     robot = creat_robot()
