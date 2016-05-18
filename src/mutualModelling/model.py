@@ -21,15 +21,13 @@ MIN = 0.00001 # minimal transition probability
 GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
-THETA1 = 5#1.5 # exponent for softmax pulling
-THETA2 = 5
+THETA1 = 3 # exponent for softmax pulling
+THETA2 = 7
 THETA3 = 5
-DISCOUNT = 0.50 # discount for the impact of futur on the temporal diff algo
-ALPHA = 0.5 # learning rate imediate (R)
-BETA = 0.05 # learning rate indirect (Q)
+DISCOUNT = 0.9 # discount for the impact of futur on the temporal diff algo
 
-""" functions for spiking cascade following distribution of weights"""
-#--------------------------------------------------------------------
+""" functions for random pulling"""
+#----------------------------------
 def stochastic_compare_stiffness(c1, c2):
     global STIFFNESS
     a,b = c1
@@ -86,6 +84,9 @@ class Model:
         global FIRE_TIME
 
         # DEFAULT:
+
+        # cells encoding events:
+        #-----------------------
         self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
         self.nb_cells = 0
         self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
@@ -95,31 +96,27 @@ class Model:
                                # it makes the differrence between the flow of thought and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
 
-        # hebbian learning:
-        #------------------
+        # hebbian learning (world's causality):
+        #--------------------------------------
         self.counts = np.zeros([0,0,0]) # count the close activations for hebbian learning
         self.weights = np.zeros([0,0,0]) # weights of connexion between cells for different possible actions
 
-        # reinforcement learning:
-        #------------------------
+        # reinforcement learning (action):
+        #---------------------------------
         self.action = None
         self.expected = 0
         self.goals = np.zeros([0]) # goal value (1 or -1) for each cells
         self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
         self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
-        # for actor-critic decision making :
+        # for TD learning with fuzzy states:
         self.V = np.zeros([0,0]) # nb_cells*nb_actions := optimal intensity of a cell to use the action
         self.Q = np.ones([0,0]) # reward value learned by association ~ like QLearning with TD
         # used to compute V:
-        self.I = np.zeros([0,0]) # cumulative value of intensities while chosing action with this event
         self.R = np.zeros([0,0]) # ---------- reward ---
         self.IR = np.zeros([0,0]) # ---------- intensity * reward ---
-        self.Rmin = np.zeros([0,0]) # minimum reward obtained for couple (event,action)
         self.n = np.zeros([0,0])
         self.matter = np.ones([0]) # importance of events
-
-        # network:= [intensities , counts, times, weights]
 
 
 
@@ -195,10 +192,6 @@ class Model:
                     new_q[:self.nb_cells,:self.nb_actions] = self.Q
                     self.Q = new_q
 
-                    new_I = np.zeros([number, self.nb_actions])
-                    new_I[:self.nb_cells,:self.nb_actions] = self.I
-                    self.I = new_I
-
                     new_R = np.zeros([number, self.nb_actions])
                     new_R[:self.nb_cells,:self.nb_actions] = self.R
                     self.R = new_R
@@ -206,10 +199,6 @@ class Model:
                     new_IR = np.zeros([number, self.nb_actions])
                     new_IR[:self.nb_cells,:self.nb_actions] = self.IR
                     self.IR = new_IR
-
-                    new_Rmin = np.zeros([number, self.nb_actions])
-                    new_Rmin[:self.nb_cells,:self.nb_actions] = self.Rmin
-                    self.Rmin = new_Rmin
 
                     new_n = np.zeros([number, self.nb_actions])
                     new_n[:self.nb_cells,:self.nb_actions] = self.n
@@ -242,10 +231,6 @@ class Model:
                     new_Q[:,:self.nb_actions] = self.Q
                     self.Q = new_Q
 
-                    new_I = np.zeros([self.nb_cells, number])
-                    new_I[:,:self.nb_actions] = self.I
-                    self.I = new_I
-
                     new_R = np.zeros([self.nb_cells, number])
                     new_R[:,:self.nb_actions] = self.R
                     self.R = new_R
@@ -253,10 +238,6 @@ class Model:
                     new_IR = np.zeros([self.nb_cells, number])
                     new_IR[:,:self.nb_actions] = self.IR
                     self.IR = new_IR
-
-                    new_Rmin = np.zeros([self.nb_cells, number])
-                    new_Rmin[:,:self.nb_actions] = self.Rmin
-                    self.Rmin = new_Rmin
 
                     new_n = np.zeros([self.nb_cells, number])
                     new_n[:,:self.nb_actions] = self.n
@@ -285,54 +266,36 @@ class Model:
         elligibles = {}
         new_intensities = {}
 
-        #   # following weights: (no preference for different delays for the moment)
-        #   delay = 0
-        #   for activated in self.activateds:
+        if self.reasoning: # (no thought for the moment)
 
-        #       intensity = self.intensities[activated]
-        #       proba_of_sons = self.counts[delay][self.cell_number[activated]][:]
-        #       next_num,_ = random_pull_list(proba_of_sons)
-        #       next_id = self.cell_number.inv[next_num]
-        #       strength = intensity*self.counts[delay][self.cell_number[activated]][next_num]
+            # following weights: (no preference for different delays for the moment)
+            delay = 0
+            for activated in self.activateds:
 
-        #       elligibles.setdefault(next_id,0)
-        #       elligibles[next_id] += np.abs(strength)
+                intensity = self.intensities[activated]
+                proba_of_sons = self.counts[delay][self.cell_number[activated]][:]
+                next_num,_ = random_pull_list(proba_of_sons)
+                next_id = self.cell_number.inv[next_num]
+                strength = intensity*self.counts[delay][self.cell_number[activated]][next_num]
 
-        #       new_intensities.setdefault(next_id,0)
-        #       new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
-        #       if new_intensities[next_id]>1.:
-        #           new_intensities[next_id]=1.
-        #       if new_intensities[next_id]<-1.:
-        #           new_intensities[next_id] = -1.
-        #       delay += 1
+                elligibles.setdefault(next_id,0)
+                elligibles[next_id] += np.abs(strength)
 
-        #   # because recently activated:
-        #   for activated in self.activateds[:-1]:
-        #       elligibles.setdefault(activated,0)
-        #       elligibles[activated] += 0.5 # arbitrary value, should be a global value
+                new_intensities.setdefault(next_id,0)
+                new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
+                if new_intensities[next_id]>1.:
+                    new_intensities[next_id]=1.
+                if new_intensities[next_id]<-1.:
+                    new_intensities[next_id] = -1.
+                delay += 1
 
-        #       #new_intensities.setdefault(activated,0)
-        #       #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
+            # because recently activated:
+            for activated in self.activateds[:-1]:
+                elligibles.setdefault(activated,0)
+                elligibles[activated] += 0.5 # arbitrary value, should be a global value
 
-        #   # because perception:
-        #   if percepts: # percept must be associated with a new intensity !
-        #       for percept in percepts:
-
-        #           percept_id = percept[0]
-        #           percept_val = percept[1]
-
-        #           self.intensities[percept_id] = percept_val
-
-        #           elligibles.setdefault(percept_id,0)
-        #           elligibles[percept_id] += 1. # arbitrary ~ how I trust my perception
-
-        #           if self.perceiveds:
-        #               if self.perceiveds[-1]>0:
-        #                   activated = self.activateds[-1]
-        #                   correlation = self.intensities[percept_id] * self.intensities[activated]
-        #                   if percept_id != activated:
-        #                       self.reinforce(activated,percept_id,0,correlation)
-
+                #new_intensities.setdefault(activated,0)
+                #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
 
         if percepts:
             for percept in percepts:
@@ -408,18 +371,9 @@ class Model:
 
     def reinforce(self, cell1, cell2, correlation, action):
 
-        global THRESHOLD
-        global COUNT_MAX
-        global FORGET_RATE
-
-        #print self.cell_number
-
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
         num_act = self.action_number[action]
-
-        #n = self.counts[num_cell1][num_cell2]
-        #t = self.times[num_cell1][num_cell2]
 
         s = np.sum(self.counts[num_act][num_cell1])
         v = self.counts[num_act][num_cell1][num_cell2]
@@ -427,7 +381,7 @@ class Model:
         self.counts[num_act][num_cell1][num_cell2] = (s*v+1.)/(s+1.)
         self.counts[num_act][num_cell1][self.counts[num_act][num_cell1]<MIN] = 0.
 
-        if self.counts[num_act][num_cell1][num_cell2]>0: 
+        if self.counts[num_act][num_cell1][num_cell2]>0:
             self.weights[num_act][num_cell1][num_cell2] += correlation - np.abs(correlation)*self.weights[num_act][num_cell1][num_cell2]
             if self.weights[num_act][num_cell1][num_cell2]>1:
                 self.weights[num_act][num_cell1][num_cell2]=1.
@@ -444,7 +398,6 @@ class Model:
         return self.action
 
     def reward(self,new_activated,new_intensity):
-        global THETA
         if self.activateds and self.action:
 
             # last state:
@@ -458,65 +411,19 @@ class Model:
             new_values = self.Q[new_state]*(1-np.abs(self.V[new_state]-new_intensity))
             reach = np.max(new_values)
 
-            #print "----"
-            #print self.activateds[-1]
-            #print last_intensity
-            #print self.action
-
-            #print "'------"
-            #print new_activated
-            #print new_intensity
-            #print reward
-
+            # TD learning:
+            # (using EMA instead of online average could be better)
             TD = reward + DISCOUNT*reach - self.expected
-            #R = ALPHA*reward
             R = np.exp(THETA3*TD)
-            #print TD
-
             n = self.n[last_state][action]+1.
 
-            #self.Q[last_state][action] += BETA*TD
             self.Q[last_state][action] = 1+(n*(self.Q[last_state][action]-1)+TD)/(n+1.)
-
-            """
-            self.I[last_state][action] += last_intensity
-            self.R[last_state][action] += R
-            self.IR[last_state][action] += R*last_intensity
-            self.n[last_state][action] += 1
-            if R < self.Rmin[last_state][action]:
-                self.Rmin[last_state][action] = R
-
-            I = self.I[last_state][action]
-            R = self.R[last_state][action]
-            IR = self.IR[last_state][action]
-            Rmin = self.Rmin[last_state][action]
-            n = self.n[last_state][action]
-            """
-
-            self.I[last_state][action] = (n*self.I[last_state][action] + last_intensity)/(n+1.)
             self.R[last_state][action] = (n*self.R[last_state][action]+R)/(n+1.)
             self.IR[last_state][action] = (n*self.IR[last_state][action]+R*last_intensity)/(n+1.)
             self.n[last_state][action] += 1.
-            if R < self.Rmin[last_state][action]:
-                self.Rmin[last_state][action] = R
 
-            I = self.I[last_state][action]
             R = self.R[last_state][action]
             IR = self.IR[last_state][action]
-            Rmin = self.Rmin[last_state][action]
-            n = self.n[last_state][action]
 
-            #self.V[last_state][action] = (IR - I*Rmin)/(R - n*Rmin + 0.001)
-            #self.V[last_state][action] = (IR - I*Rmin)/(R - Rmin + 0.001)
             self.V[last_state][action] = IR/R
-            #print self.V[last_state][action]:w
-
-
-            #self.matter[new_state] += BETA*np.abs(TD)
             self.matter[new_state] = 1+(n*(self.matter[new_state]-1) + np.abs(TD))/(n+1.)
-
-            #if n>100:
-            #    THETA = 3
-
-
-

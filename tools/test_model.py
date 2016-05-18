@@ -63,14 +63,14 @@ def word_response(action,setofevent):
         new_set.add("fire")
 
     if action=="a2":
-        percepts.append(("fire",-1))
+        percepts.append(("fire",-1+1*random.random()))
         new_set = set()
 
     if action=="a3":
         if "fire" not in new_set:
             percepts.append(("honey",1))
         else:
-            percepts.append(("fire",1-2*random.random()))
+            percepts.append(("fire",1-1*random.random()))
         energy += 1
 
     if "fire" in new_set:
@@ -82,7 +82,7 @@ def word_response(action,setofevent):
 
 #print_rl()
 
-m = 500
+m = 1000
 
 action = "a1"
 s = set()
@@ -91,7 +91,7 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 30
+n = 50
 
 for j in range(n):
     robot = creat_robot()
@@ -101,7 +101,7 @@ for j in range(n):
 
         if random.random()>0.7:
             s.add("fire")
-            optimal.append(-1)
+            optimal.append(0)
         else:
             optimal.append(1)
         cum_rew.append(e)
