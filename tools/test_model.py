@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 
 def creat_robot():
     robot = model.Model()
-    robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
-    robot.add_actions(["a1","a2","a3"])
-    robot.set_goal([["fire",1.,-1.],["honey",1.,1.]])
+    #robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
+    robot.add_cells(["fire","water","honey","n1","n2","n3"])
+    robot.add_actions(["a1","a2","a3","a4"])
+    robot.set_rewards([["fire",1.,-1.],["honey",1.,1.]])
     return robot
 
 """ learning actions:
@@ -37,16 +38,20 @@ def print_hebbian():
     print "weights :"
     print robot.weights
     print "----------------"
+    print robot.activateds
 
 def print_rl():
+    print "Q:"
     print robot.Q
-    print robot.V
-    print robot.R
+    print "rewards:"
+    print robot.rewards
+    #print robot.R
+    print "n:"
     print robot.n
     print robot.matter
 
 
-def word_response(action,setofevent):
+def world_response(action,setofevent):
     global a1,a2,a3
 
     percepts = [(noise(),1-2*random.random())]
@@ -57,25 +62,28 @@ def word_response(action,setofevent):
 
     if "fire" in setofevent:
         new_set.add("fire")
+        energy -=1
 
     if action=="a1":
         percepts.append(("fire",1))
         new_set.add("fire")
 
     if action=="a2":
-        percepts.append(("fire",-1+1*random.random()))
+        percepts.append(("fire",-1+0*random.random()))
         new_set = set()
 
     if action=="a3":
-        if "fire" not in new_set:
-            percepts.append(("honey",1))
-        else:
-            percepts.append(("fire",1-1*random.random()))
+        percepts.append(("honey",1))
         energy += 1
+    elif action != "a4":
+        percepts.append(("honey",-1))
+
+    if action=="a4":
+        percepts.append(("water",1))
 
     if "fire" in new_set:
-        energy -=1
-        #percepts.append(("fire",1))
+    #    energy -=1
+        percepts.append(("fire",1))
 
 
     return percepts,new_set,energy
@@ -91,29 +99,21 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 50
+n = 30
 
 for j in range(n):
     robot = creat_robot()
+    #print_rl()
     for i in range(m):
-        p,s,e = word_response(action,s)
+        p,s,e = world_response(action,s)
         action = robot.update(percepts=p)
 
         if random.random()>0.7:
             s.add("fire")
-            optimal.append(0)
+            optimal.append(-1)
         else:
             optimal.append(1)
         cum_rew.append(e)
-
-        #print robot.action
-        #print r
-        #num_cell = robot.cell_number[r[0][0]]
-        #num_action = robot.action_number[robot.action]
-        #print robot.intensities[num_cell]
-        #print robot.V[num_cell][num_action]
-
-        #print_rl()
 
     ave_rew += np.cumsum(np.array(cum_rew))
     ave_reg += np.cumsum(np.array(optimal)-np.array(cum_rew))
