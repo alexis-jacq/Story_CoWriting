@@ -116,6 +116,8 @@ class Model:
         self.n = np.zeros([0,0])
         self.matter = np.ones([0,2]) # importance of events
 
+        #self.add_actions(["reason"])
+
 
     """ functions for updating and using list of activated cells """
     #--------------------------------------------------------------
@@ -256,26 +258,30 @@ class Model:
 
         # REASONING:
         #===========
-        if False: # (no reasoning/thought for the moment)
+        #if self.action=="reason": # (no reasoning/thought for the moment)
+        if self.activateds:
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
             #for activated in self.activateds:
             # TODO: loop on all previous activated cells taking account delayed causality
 
-            intensity = self.intensities[activated]
+            intensity = self.old_intensities[-1]
+            activated = self.activateds[-1]
 
-            proba_of_sons = self.counts[self.action_number[self.action]][self.cell_number[activated]][:]
-            next_num,_ = random_pull_list(proba_of_sons)
+            noise = np.random.rand(len(self.counts[0,0,:]))/100.
+            proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
+            next_num = np.argmax(proba_of_sons)
+            proba = np.max(proba_of_sons)
             next_id = self.cell_number.inv[next_num]
-            strength = intensity*self.counts[self.action_number[self.action]][self.cell_number[activated]][next_num]
+            next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,intensity]
 
             if next_id not in percepts:
                 elligibles.setdefault(next_id,0)
-                elligibles[next_id] += 0*np.abs(strength)
+                elligibles[next_id] = np.abs(self.matter[next_num,next_intensity>0])*proba
 
                 new_intensities.setdefault(next_id,0)
-                new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
+                new_intensities[next_id] = next_intensity
                 if new_intensities[next_id]>1.:
                     new_intensities[next_id]=1.
                 if new_intensities[next_id]<-1.:
@@ -321,10 +327,10 @@ class Model:
         next_activated = random_pull_dict(elligibles)
 
         # new intensities:
-        #for cell in new_intensities:
-        #    if cell not in self.modifieds:
-        #        self.intensities[cell] = new_intensities[cell]
-        #        self.modifieds.add(cell)
+        for cell in new_intensities:
+            if cell not in self.modifieds:
+                self.intensities[cell] = new_intensities[cell]
+                self.modifieds.add(cell)
 
         # TODO: loop on the previous percept in past to make reinforcement with delay
 
@@ -339,8 +345,8 @@ class Model:
         # make decision:
         return self.decision()
 
-    def reinforce(self, cell1, cell2, action, I1, I2):
 
+    def reinforce(self, cell1, cell2, action, I1, I2):
         num_cell1 = self.cell_number[cell1]
         num_cell2 = self.cell_number[cell2]
         num_act = self.action_number[action]
@@ -357,6 +363,7 @@ class Model:
     def decision(self):
         state = self.cell_number[self.activateds[-1]]
         I = self.old_intensities[-1]
+        # TODO exploration based on convergence/difficulty to reach a state
         values = self.Q[state,:,I>0]*np.abs(I)+np.random.rand(len(self.Q[state,:,I>0]))/10
         choice , expect = softmax(values)
         #choice = np.argmax(values)
@@ -365,10 +372,8 @@ class Model:
         self.action = self.action_number.inv[choice]
         return self.action
 
-    def learn(self,new_activated,reward):
-        global THETA1
-        global THETA2
 
+    def learn(self,new_activated,reward):
         if self.activateds and self.action:
 
             # last state:
@@ -383,23 +388,12 @@ class Model:
             reach = np.max(new_values)
 
             # TD learning:
-            # (using EMA instead of online average could be better)
+            # TODO : (using EMA instead of online average could be better for world with changing rules)
             TD = ( reward + DISCOUNT*reach - self.expected )
-
             n = self.n[last_state][action]+1.
 
             self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
-
-            #   self.R[last_state][action] = (n*self.R[last_state][action]+R)/(n+1.)
-            #   self.IR[last_state][action] = (n*self.IR[last_state][action]+R*last_intensity)/(n+1.)
-            
             self.n[last_state][action] += 1.
-
-            #   R = self.R[last_state][action]
-            #   IR = self.IR[last_state][action]
-
-            #   self.Q_neg[last_state][action] = IR/(R+0.00001)
-
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
 
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
@@ -407,11 +401,3 @@ class Model:
             print "new "+str(new_activated)+" "+str(new_intensity)
             print "rew "+str(TD)
             print "======================"
-
-            #if THETA1<20:
-            #    THETA1+=0.1
-
-            #if THETA2<20:
-            #    THETA2+=1.1
-
-
