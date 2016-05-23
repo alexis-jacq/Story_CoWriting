@@ -13,28 +13,19 @@ import copy
 
 """ GLOBAL PARAMETERS """
 # hebbian learning:
-STIFFNESS = 3 # how I expect the most likely event
+#==================
 FIRE_TIME = 10 # time a cell is activated
-COUNT_MAX = 0. # plasticity
-THRESHOLD = 2. # start to learn when something is recurrent
-MIN = 0.00001 # minimal transition probability
-GAMMA = 0.1 # time discount for learning
+ETA = 0.9 # for EMA of the correlation between intensity of signals
+# if delayed hebbian: GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
-THETA1 = 30#5 # chose action (exponent for softmax pulling
-THETA2 = 20#8 chose perception
+#========================
+THETA1 = 30 # chose action (exponent for softmax pulling
+THETA2 = 20 # chose perception
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
 #----------------------------------
-def stochastic_compare_stiffness(c1, c2):
-    global STIFFNESS
-    a,b = c1
-    c,d = c2
-    s = np.abs(b)**STIFFNESS + np.abs(d)**STIFFNESS
-    r = random.uniform(0,s)
-    return 1 if r>np.abs(b)**STIFFNESS else -1
-
 def stochastic_compare_couples(c1, c2):
     global STIFFNESS
     a,b = c1
@@ -47,14 +38,6 @@ def stochastic_compare(x, y):
     s = np.abs(x) + np.abs(y)
     r = random.uniform(0,s)
     return 1 if r>np.abs(x) else -1
-
-def random_pull_list(distribution): # dist. is a list (np.array) of values
-    if list(distribution):
-        couples = zip(range(len(distribution)),distribution)
-        sorted_couples = sorted(couples,cmp=stochastic_compare_stiffness)
-        return sorted_couples[0][0], sorted_couples[0][1]
-    else:
-        return None
 
 def random_pull_dict(distribution): # dist. is a dictionnary key->value
      if distribution:
@@ -89,10 +72,9 @@ class Model:
         self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
         self.nb_cells = 0
         self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
-        self.perceiveds = [] # are cells activated because perception (1) or because reasoning (0) ?
         self.old_intensities = []
-        self.modifieds = set() # for each input from exterior (percept or percept) cell intensities are modified once
-                               # it makes the differrence between the flow of thought and real perception
+        self.modifieds = set() # for each input from exterior (percept) cell intensities are modified once
+                               # it makes the differrence between the flow of reasoning and real perception
         self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
 
         # hebbian learning (world's causality):
@@ -104,22 +86,19 @@ class Model:
         #---------------------------------
         self.action = None
         self.expected = 0
-        self.goals = np.zeros([0]) # goal value (1 or -1) for each cells
         self.rewards = np.zeros([0,2]) # reward associated with goals (0 if no objective)
         self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
         # for TD learning with fuzzy states:
         self.Q = np.zeros([0,0,2]) # reward value learned by association ~ like QLearning with TD
-        # used to compute V:
-        self.R = np.zeros([0,0]) # ---------- reward ---
-        self.IR = np.zeros([0,0]) # ---------- intensity * reward ---
         self.n = np.zeros([0,0])
         self.matter = np.ones([0,2]) # importance of events
 
-        #self.add_actions(["reason"])
+        #see "PERCEPTION" loop in "update" method:
+        #self.add_actions(["force_reason"])
 
 
-    """ functions for updating and using list of activated cells """
+    """ functions for creating/updating/using models """
     #--------------------------------------------------------------
     def add_activated(self, cell):
         if self.activateds:
@@ -175,10 +154,6 @@ class Model:
                     new_matter[:self.nb_cells,:] = self.matter
                     self.matter = new_matter
 
-                    new_goals = np.zeros([number])
-                    new_goals[:self.nb_cells] = self.goals
-                    self.goals = new_goals
-
                     new_rewards = np.zeros([number,2])
                     new_rewards[:self.nb_cells,:] = self.rewards
                     self.rewards = new_rewards
@@ -186,14 +161,6 @@ class Model:
                     new_Q = np.zeros([number, self.nb_actions,2])
                     new_Q[:self.nb_cells,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
-
-                    new_R = np.zeros([number, self.nb_actions])
-                    new_R[:self.nb_cells,:self.nb_actions] = self.R
-                    self.R = new_R
-
-                    new_IR = np.zeros([number, self.nb_actions])
-                    new_IR[:self.nb_cells,:self.nb_actions] = self.IR
-                    self.IR = new_IR
 
                     new_n = np.zeros([number, self.nb_actions])
                     new_n[:self.nb_cells,:self.nb_actions] = self.n
@@ -221,14 +188,6 @@ class Model:
                     new_Q = np.zeros([self.nb_cells, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
-
-                    new_R = np.zeros([self.nb_cells, number])
-                    new_R[:,:self.nb_actions] = self.R
-                    self.R = new_R
-
-                    new_IR = np.zeros([self.nb_cells, number])
-                    new_IR[:,:self.nb_actions] = self.IR
-                    self.IR = new_IR
 
                     new_n = np.zeros([self.nb_cells, number])
                     new_n[:,:self.nb_actions] = self.n
@@ -258,8 +217,7 @@ class Model:
 
         # REASONING:
         #===========
-        #if self.action=="reason": # (no reasoning/thought for the moment)
-        if self.activateds:
+        if self.activateds: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
@@ -278,7 +236,7 @@ class Model:
 
             if next_id not in percepts:
                 elligibles.setdefault(next_id,0)
-                elligibles[next_id] = np.abs(self.matter[next_num,next_intensity>0])*proba
+                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,next_intensity>0])*proba)
 
                 new_intensities.setdefault(next_id,0)
                 new_intensities[next_id] = next_intensity
@@ -288,16 +246,10 @@ class Model:
                     new_intensities[next_id] = -1.
                 #delay += 1
 
-            # because recently activated:
-            for activated in self.activateds[:-1]:
-                elligibles.setdefault(activated,0)
-                elligibles[activated] += 0 # arbitrary value, should be a global value
-
-                #new_intensities.setdefault(activated,0)
-                #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
-
         # PERCEPTION:
         #============
+        # could add an action "force_reasoning" where the robot doesnot do the perception loop
+        # like someone closing eyes in order to reason
         tot_reward = 0
         if percepts:
             for percept in percepts:
@@ -312,7 +264,7 @@ class Model:
                     tot_reward += self.rewards[percept_num,percept_val>0]*np.abs(self.old_intensities[-1])
 
                 elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] += np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],percept_val>0]))
+                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],percept_val>0]))
 
                 if self.action:
                     #if not self.thinking[-1]:
@@ -323,6 +275,8 @@ class Model:
                     action = self.action
                     self.reinforce(father,son,action,intensity_father,intensity_son)
 
+        # UPDATES:
+        #=========
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
 
@@ -342,7 +296,8 @@ class Model:
         self.add_activated(next_activated)
         self.add_intensity(self.intensities[next_activated])
 
-        # make decision:
+        # DECISION:
+        #==========
         return self.decision()
 
 
@@ -396,8 +351,10 @@ class Model:
             self.n[last_state][action] += 1.
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
 
+            """
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)
             print "new "+str(new_activated)+" "+str(new_intensity)
             print "rew "+str(TD)
             print "======================"
+            """
