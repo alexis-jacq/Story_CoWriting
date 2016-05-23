@@ -21,9 +21,8 @@ MIN = 0.00001 # minimal transition probability
 GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
-THETA1 = 0#5 # chose action (exponent for softmax pulling
-THETA2 = 0#8 chose perception
-THETA3 = 10 # pondere good intensity with reward
+THETA1 = 30#5 # chose action (exponent for softmax pulling
+THETA2 = 20#8 chose perception
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
@@ -110,7 +109,7 @@ class Model:
         self.action_number = bidict() # set of cells encoding actions
         self.nb_actions = 0
         # for TD learning with fuzzy states:
-        self.Q = np.ones([0,0,2]) # reward value learned by association ~ like QLearning with TD
+        self.Q = np.zeros([0,0,2]) # reward value learned by association ~ like QLearning with TD
         # used to compute V:
         self.R = np.zeros([0,0]) # ---------- reward ---
         self.IR = np.zeros([0,0]) # ---------- intensity * reward ---
@@ -182,7 +181,7 @@ class Model:
                     new_rewards[:self.nb_cells,:] = self.rewards
                     self.rewards = new_rewards
 
-                    new_Q = np.ones([number, self.nb_actions,2])
+                    new_Q = np.zeros([number, self.nb_actions,2])
                     new_Q[:self.nb_cells,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
 
@@ -217,7 +216,7 @@ class Model:
                     new_cor[:self.nb_actions,:,:,:] = self.cor
                     self.cor = new_cor
 
-                    new_Q = np.ones([self.nb_cells, number,2])
+                    new_Q = np.zeros([self.nb_cells, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
 
@@ -251,37 +250,37 @@ class Model:
 
     def update(self, percepts=None):
 
-        #   # FIND THE NEXT ACTIVATED:
+        # FIND THE NEXT ACTIVATED:
         elligibles = {}
         new_intensities = {}
 
-        if False: # (no thought for the moment)
+        # REASONING:
+        #===========
+        if False: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
-            delay = 0
-            for activated in self.activateds:
+            #delay = 0
+            #for activated in self.activateds:
+            # TODO: loop on all previous activated cells taking account delayed causality
 
-                intensity = self.intensities[activated]
-                
+            intensity = self.intensities[activated]
 
+            proba_of_sons = self.counts[self.action_number[self.action]][self.cell_number[activated]][:]
+            next_num,_ = random_pull_list(proba_of_sons)
+            next_id = self.cell_number.inv[next_num]
+            strength = intensity*self.counts[self.action_number[self.action]][self.cell_number[activated]][next_num]
 
+            if next_id not in percepts:
+                elligibles.setdefault(next_id,0)
+                elligibles[next_id] += 0*np.abs(strength)
 
-                proba_of_sons = self.counts[self.action_number[self.action]][self.cell_number[activated]][:]
-                next_num,_ = random_pull_list(proba_of_sons)
-                next_id = self.cell_number.inv[next_num]
-                strength = intensity*self.counts[self.action_number[self.action]][self.cell_number[activated]][next_num]
-                
-                if next_id not in percepts:
-                    elligibles.setdefault(next_id,0)
-                    elligibles[next_id] += 0*np.abs(strength)
-
-                    new_intensities.setdefault(next_id,0)
-                    new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
-                    if new_intensities[next_id]>1.:
-                        new_intensities[next_id]=1.
-                    if new_intensities[next_id]<-1.:
-                        new_intensities[next_id] = -1.
-                    delay += 1
+                new_intensities.setdefault(next_id,0)
+                new_intensities[next_id] += strength - np.abs(strength)*self.intensities[next_id]
+                if new_intensities[next_id]>1.:
+                    new_intensities[next_id]=1.
+                if new_intensities[next_id]<-1.:
+                    new_intensities[next_id] = -1.
+                #delay += 1
 
             # because recently activated:
             for activated in self.activateds[:-1]:
@@ -291,6 +290,8 @@ class Model:
                 #new_intensities.setdefault(activated,0)
                 #new_intensities[activated] += 0.5*(1 - self.intensities[activated])
 
+        # PERCEPTION:
+        #============
         tot_reward = 0
         if percepts:
             for percept in percepts:
@@ -300,21 +301,21 @@ class Model:
                 percept_num = self.cell_number[percept_id]
 
                 self.intensities[percept_id] = percept_val
-                
+
                 if self.action:
                     tot_reward += self.rewards[percept_num,percept_val>0]*np.abs(self.old_intensities[-1])
 
                 elligibles.setdefault(percept_id,0)
                 elligibles[percept_id] += np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],percept_val>0]))
 
-                if self.perceiveds and self.action:
-                    if self.perceiveds[-1]>0:
-                        father = self.activateds[-1]
-                        son = percept_id
-                        intensity_father = self.old_intensities[-1]
-                        intensity_son = percept_val
-                        action = self.action
-                        self.reinforce(father,son,action,intensity_father,intensity_son)
+                if self.action:
+                    #if not self.thinking[-1]:
+                    father = self.activateds[-1]
+                    son = percept_id
+                    intensity_father = self.old_intensities[-1]
+                    intensity_son = percept_val
+                    action = self.action
+                    self.reinforce(father,son,action,intensity_father,intensity_son)
 
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
@@ -325,41 +326,7 @@ class Model:
         #        self.intensities[cell] = new_intensities[cell]
         #        self.modifieds.add(cell)
 
-        #if self.activateds:
-            #print self.activateds[-1] +" "+str(self.old_intensities[-1])
-            #print self.action
-            #print next_activated +" "+str(self.intensities[next_activated])
-            #print "--------"
-
-
-
-        # hebbian reinforcement:
-        #test = False
-        #if percepts:
-        #    test = (next_activated in np.array(percepts))
-        #if test:
-        #    self.modifieds = set()
-        #    delay = 0
-        #    for i in range(len(self.activateds)):
-        #        activated = self.activateds[i]
-        #        perceived = self.perceiveds[i]
-        #        weakness = GAMMA**(len(self.activateds)-delay)
-        #        correlation = self.intensities[next_activated] * self.old_intensities[i] * (weakness*perceived)
-        #        if next_activated != activated:
-        #            self.reinforce(activated,next_activated,correlation,self.action)
-        #        delay += 1
-
-        #    self.add_perceived(1.)
-            #self.reward()
-
-        #if not test:
-        #    self.add_perceived(0.)
-
-         #   if next_activated in self.action_number: # I imagine a strategy
-         #       if self.activateds:
-         #           self.strategy.append([self.activateds[-1],next_activated]) # (state, action)
-
-        # self.reward(self.activateds[-1],next_activated,action)
+        # TODO: loop on the previous percept in past to make reinforcement with delay
 
         # action learning:
         if self.action:
@@ -369,7 +336,6 @@ class Model:
         self.add_activated(next_activated)
         self.add_intensity(self.intensities[next_activated])
 
-       
         # make decision:
         return self.decision()
 
@@ -391,8 +357,10 @@ class Model:
     def decision(self):
         state = self.cell_number[self.activateds[-1]]
         I = self.old_intensities[-1]
-        values = self.Q[state,:,I>0]*np.abs(I)
-        choice , expect = softmax(1*values)
+        values = self.Q[state,:,I>0]*np.abs(I)+np.random.rand(len(self.Q[state,:,I>0]))/10
+        choice , expect = softmax(values)
+        #choice = np.argmax(values)
+        #expect = np.max(values)
         self.expected = expect
         self.action = self.action_number.inv[choice]
         return self.action
@@ -434,16 +402,16 @@ class Model:
 
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
 
-            #print "last "+str(self.activateds[-1])+" "+str(last_intensity)
-            #print "act "+ str(self.action)
-            #print "new "+str(new_activated)+" "+str(new_intensity)
-            #print "rew "+str(TD)
-            #print "======================"
+            print "last "+str(self.activateds[-1])+" "+str(last_intensity)
+            print "act "+ str(self.action)
+            print "new "+str(new_activated)+" "+str(new_intensity)
+            print "rew "+str(TD)
+            print "======================"
 
-            if THETA1<20:
-                THETA1+=0.1
+            #if THETA1<20:
+            #    THETA1+=0.1
 
-            if THETA2<20:
-                THETA2+=1.1
+            #if THETA2<20:
+            #    THETA2+=1.1
 
 

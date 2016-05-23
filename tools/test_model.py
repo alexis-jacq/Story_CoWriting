@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 def creat_robot():
     robot = model.Model()
     #robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
-    robot.add_cells(["fire","water","honey","n1","n2","n3"])
+    robot.add_cells(["fire","water","honey"])#,"n1","n2","n3"])
     robot.add_actions(["a1","a2","a3","a4"])
-    robot.set_rewards([["fire",1.,-1.],["honey",1.,1.]])
+    robot.set_rewards([["fire",1.,-1.],["honey",1.,0.7]])
     return robot
 
 """ learning actions:
@@ -36,7 +36,7 @@ def print_hebbian():
     print "counts :"
     print robot.counts
     print "weights :"
-    print robot.weights
+    print robot.cor
     print "----------------"
     print robot.activateds
 
@@ -54,8 +54,8 @@ def print_rl():
 def world_response(action,setofevent):
     global a1,a2,a3
 
-    percepts = [(noise(),1-2*random.random())]
-    #percepts = []
+    #percepts = [(noise(),1-2*random.random())]
+    percepts = []
     new_set = set()
 
     energy = 0
@@ -99,8 +99,8 @@ optimal = []
 ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
-n = 30
-
+n = 1
+test = False
 for j in range(n):
     robot = creat_robot()
     #print_rl()
@@ -111,6 +111,10 @@ for j in range(n):
         if random.random()>0.7:
             s.add("fire")
             optimal.append(-1)
+            test = True
+        elif test:
+            optimal.append(0)
+            test = False
         else:
             optimal.append(1)
         cum_rew.append(e)
