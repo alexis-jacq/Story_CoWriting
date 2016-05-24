@@ -20,8 +20,8 @@ ETA = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 30 # chose action (exponent for softmax pulling
-THETA2 = 20 # chose perception
+THETA1 = 5#30 # chose action (exponent for softmax pulling
+THETA2 = 5#20 # chose perception
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
@@ -232,7 +232,7 @@ class Model:
             next_num = np.argmax(proba_of_sons)
             proba = np.max(proba_of_sons)
             next_id = self.cell_number.inv[next_num]
-            next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,intensity]
+            next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,intensity>0]
 
             if next_id not in percepts:
                 elligibles.setdefault(next_id,0)
@@ -351,10 +351,10 @@ class Model:
             self.n[last_state][action] += 1.
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
 
-            """
+            
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)
             print "new "+str(new_activated)+" "+str(new_intensity)
             print "rew "+str(TD)
             print "======================"
-            """
+            
