@@ -20,39 +20,25 @@ ETA = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 5#30 # chose action (exponent for softmax pulling
-THETA2 = 5#20 # chose perception
+THETA1 = 10#1*30 # chose action (exponent for softmax pulling
+THETA2 = 30#1*20 # chose perception
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
 #----------------------------------
-def stochastic_compare_couples(c1, c2):
-    global STIFFNESS
-    a,b = c1
-    c,d = c2
-    s = np.abs(b) + np.abs(d)
-    r = random.uniform(0,s)
-    return 1 if r>np.abs(b) else -1
-
-def stochastic_compare(x, y):
-    s = np.abs(x) + np.abs(y)
-    r = random.uniform(0,s)
-    return 1 if r>np.abs(x) else -1
-
 def random_pull_dict(distribution): # dist. is a dictionnary key->value
      if distribution:
-         sorted_dist = sorted(distribution.items(), key=operator.itemgetter(1), cmp=stochastic_compare)
-         return sorted_dist[0][0]
+        proba = np.array(distribution.values())*1.
+        proba = proba/np.sum(proba)
+        return np.random.choice(distribution.keys(),1,p=proba)[0]
      else:
          return None
 
 def softmax(distribution): # dist. is a list (np.array) of values
     if list(distribution):
-        expo = np.exp(distribution*THETA1)
-        exponorm = expo/np.sum(expo)
-        couples = zip(range(len(exponorm)),exponorm)
-        sorted_couples = sorted(couples,cmp=stochastic_compare_couples)
-        return sorted_couples[0][0], sorted_couples[0][1]
+        proba = np.exp(THETA1*distribution)
+        proba = proba/np.sum(proba)
+        return np.random.choice(len(distribution),1,p=proba)[0]
     else:
         return None
 
@@ -234,7 +220,7 @@ class Model:
             next_id = self.cell_number.inv[next_num]
             next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,intensity>0]
 
-            if next_id not in percepts:
+            if (not percepts) or next_id not in percepts:
                 elligibles.setdefault(next_id,0)
                 elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,next_intensity>0])*proba)
 
@@ -253,6 +239,8 @@ class Model:
         tot_reward = 0
         if percepts:
             for percept in percepts:
+                if not (percept in self.cell_number):
+                    self.add_cells([percept[0]])
 
                 percept_id = percept[0]
                 percept_val = percept[1]
@@ -320,10 +308,10 @@ class Model:
         I = self.old_intensities[-1]
         # TODO exploration based on convergence/difficulty to reach a state
         values = self.Q[state,:,I>0]*np.abs(I)+np.random.rand(len(self.Q[state,:,I>0]))/10
-        choice , expect = softmax(values)
+        choice = softmax(values)
         #choice = np.argmax(values)
         #expect = np.max(values)
-        self.expected = expect
+        self.expected = np.max(values)
         self.action = self.action_number.inv[choice]
         return self.action
 
@@ -351,10 +339,10 @@ class Model:
             self.n[last_state][action] += 1.
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
 
-            
+            """
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)
             print "new "+str(new_activated)+" "+str(new_intensity)
             print "rew "+str(TD)
             print "======================"
-            
+            """
