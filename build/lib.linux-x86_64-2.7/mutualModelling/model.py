@@ -15,13 +15,14 @@ import copy
 # hebbian learning:
 #==================
 FIRE_TIME = 10 # time a cell is activated
-ETA = 0.9 # for EMA of the correlation between intensity of signals
+ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 # if delayed hebbian: GAMMA = 0.1 # time discount for learning
 
 # reinforcement learning:
 #========================
-THETA1 = 10#1*30 # chose action (exponent for softmax pulling
-THETA2 = 30#1*20 # chose perception
+THETA1 = 30#1*30 # chose action (exponent for softmax pulling
+THETA2 = 20#1*20 # chose perception
+ETA2 = 0.7
 DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
@@ -300,7 +301,7 @@ class Model:
         self.counts[num_act,num_cell1,num_cell2] = (s*v+1.)/(s+1.)
         #self.counts[self.counts[num_act,num_cell1]<MIN] = 0.
 
-        self.cor[num_act,num_cell1,num_cell2,I1>0] = 0.9*self.cor[num_act][num_cell1][num_cell2][I1>0] + 0.1*I2
+        self.cor[num_act,num_cell1,num_cell2,I1>0] = ETA1*self.cor[num_act][num_cell1][num_cell2][I1>0] + (1-ETA1)*I2
 
 
     def decision(self):
@@ -334,11 +335,24 @@ class Model:
             # TODO : (using EMA instead of online average could be better for world with changing rules)
             TD = ( reward + DISCOUNT*reach - self.expected )
             n = self.n[last_state][action]+1.
-
+            
+            """
+            # classic Qlearning
             self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
             self.n[last_state][action] += 1.
             self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
-
+            """
+            # EMA Qlearning
+            self.Q[last_state,action,last_intensity>0] = ETA2*self.Q[last_state,action,last_intensity>0] + (1-ETA2)*TD
+            self.n[last_state][action] += 1.
+            self.matter[new_state,new_intensity>0] = ETA2*self.matter[new_state,new_intensity>0] + (1-ETA2)*TD
+            """
+            # EMA actor-critic
+            self.V[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
+            self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
+            self.n[last_state][action] += 1.
+            self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
+            """
             """
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)

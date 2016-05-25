@@ -42,7 +42,7 @@ RP = 0.05
 x = 0
 pollen = False
 T = -1.
-F = 7.
+F = 3.
 cum_reward = []
 curve_x = []
 
@@ -91,9 +91,9 @@ def world_update(action):
             percepts.append(("honey",1))
             pollen=False
             reward += RH
-        if x!=0 and pollen:
-            percepts.append(("pollen",-1))
-            percepts.append(("lose",1))
+        #if x!=0 and pollen:
+            #percepts.append(("pollen",-1))
+            #percepts.append(("lose",1))
             #pollen=False
 
     percepts.append((str(x),1))
