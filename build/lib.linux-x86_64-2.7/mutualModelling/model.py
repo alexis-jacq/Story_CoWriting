@@ -335,7 +335,7 @@ class Model:
             # TODO : (using EMA instead of online average could be better for world with changing rules)
             TD = ( reward + DISCOUNT*reach - self.expected )
             n = self.n[last_state][action]+1.
-            
+
             """
             # classic Qlearning
             self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
@@ -360,3 +360,32 @@ class Model:
             print "rew "+str(TD)
             print "======================"
             """
+
+        else:
+            pass
+
+
+# static functions:
+#------------------
+
+def diff(model1, model2):
+    dist = 0
+    cell_diff = {}
+    for cell_id in model1.intensities & model2.intensities:
+        cell_num1 = model1.cell_number[cell_id]
+        cell_num2 = model2.cell_number[cell_id]
+        # Lmax for matter:
+        matter = max(abs(model1.matter[cell_num1]),abs(model2.matter[cell_num2]))
+        # this distance function is arbitrary, could be L2, L3 etc...
+        dist += matter*abs(model1.intensities[cell_id]-model2.intensities[cell_id])
+        # maybe this softmax pull could have its own theta:
+        cell_diff.setdefault(cell_id,np.exp(THETA2*dist))
+
+    # max of sofmax ?
+    #choice = random_pull_dict(cell_diff)
+    choice = max(cell_diff.iteritems(), key=operator.itemgetter(1))[0]
+
+    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
+    return dist,choice
+
+
