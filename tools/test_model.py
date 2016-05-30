@@ -106,6 +106,8 @@ for j in range(n):
     #print_rl()
     for i in range(m):
         p,s,e = world_response(action,s)
+        if i>m/2.:
+            p = None
         action = robot.update(percepts=p)
 
         if random.random()>0.7:

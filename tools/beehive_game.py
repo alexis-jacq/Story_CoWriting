@@ -53,7 +53,7 @@ def world_update(action):
 
     percepts = []
     reward = 0
-    if action=="right" and x>-XMAX:
+    if action=="left" and x>-XMAX:
 
         if pollen and abs(x-1)<abs(x):
 
@@ -66,7 +66,7 @@ def world_update(action):
             #reward += RF*(1-abs(x-1-F)/XMAX)*((1-abs(x-1-F)/XMAX)>0)
         x-=1.
 
-    if action=="left" and x<XMAX:
+    if action=="right" and x<XMAX:
 
         if pollen and abs(x+1)<abs(x):
 
@@ -102,8 +102,8 @@ def world_update(action):
         percepts.append(("burn",1))
         reward += RT"""
 
-    print x
-    print pollen
+    #print x
+    #print pollen
     curve_x.append(x)
 
     return percepts,reward
@@ -114,10 +114,13 @@ for j in range(1):
     bee = create_bee(RT,RF,RPB,RP,RH)
     for i in range(TMAX):
         p,r = world_update(action)
+        if i>2000. and i<2500:
+            p = None
         if p:
             action = bee.update(percepts=p)
         else:
             action = bee.update()
+        print action
         cum_reward.append(r)
 
 print bee.n
