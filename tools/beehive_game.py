@@ -5,6 +5,7 @@ import numpy as np
 import random
 from mutualModelling import model
 import matplotlib.pyplot as plt
+import copy
 
 def create_bee(RT,RF,RPB,RP,RH):
     bee = model.Model()
@@ -112,16 +113,21 @@ def world_update(action):
 action = "right"
 for j in range(1):
     bee = create_bee(RT,RF,RPB,RP,RH)
+    bee2 = create_bee(RT,RF,RPB,RP,RH)
     for i in range(TMAX):
         p,r = world_update(action)
-        if i>2000. and i<2500:
-            p = None
+        #if i>2000. and i<2500:
+        #    p = None
         if p:
             action = bee.update(percepts=p)
         else:
             action = bee.update()
         print action
         cum_reward.append(r)
+        if i==1000:
+            bee2 = copy.copy(bee)
+        if i==2000:
+            bee = bee2
 
 print bee.n
 print bee.matter

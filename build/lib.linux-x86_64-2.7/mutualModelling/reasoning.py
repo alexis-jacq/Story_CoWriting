@@ -35,4 +35,6 @@ class Agent:
                 self.Id.setdefault(agent2,{})
                 self.Id[agent2].setdefault(agent1,agent1+','+agent2)
 
+    def update(self):
+
 

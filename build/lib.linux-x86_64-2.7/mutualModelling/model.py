@@ -193,7 +193,7 @@ class Model:
                 value=1.
             if value<-1:
                 value=-1.
-            self.rewards[self.cell_number[cell_id],value>0] = reward
+            self.rewards[self.cell_number[cell_id],int(value>0)] = reward
 
 
     def update(self, percepts=None):
@@ -214,16 +214,29 @@ class Model:
             intensity = self.old_intensities[-1]
             activated = self.activateds[-1]
 
-            noise = np.random.rand(len(self.counts[0,0,:]))/100.
-            proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
-            next_num = np.argmax(proba_of_sons)
-            proba = np.max(proba_of_sons)
-            next_id = self.cell_number.inv[next_num]
-            next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,intensity>0]
+            noise = np.random.rand(len(self.counts[0,0,:]))/1000.
+            next_num=0
+            proba=0
+            next_id=""
+            next_intensity=0
+            if max(self.counts[self.action_number[self.action],self.cell_number[activated],:])>0:
+                proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
+                next_num = np.argmax(proba_of_sons)
+                proba = np.max(proba_of_sons)
+                next_id = self.cell_number.inv[next_num]
+                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
+            else:
+                proba_of_sons = self.counts[self.action_number[self.action],:,:]+noise
+                next_num = np.argmax(proba_of_sons)%np.shape(proba_of_sons)[0]
+                proba = np.max(proba_of_sons)
+                next_id = self.cell_number.inv[next_num]
+                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
+                #next_id = activated
+                #next_intensity = intensity
 
             if (not percepts) or next_id not in percepts:
                 elligibles.setdefault(next_id,0)
-                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,next_intensity>0])*proba)
+                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,int(next_intensity>0)])*proba)
 
                 new_intensities.setdefault(next_id,0)
                 new_intensities[next_id] = next_intensity
@@ -250,10 +263,10 @@ class Model:
                 self.intensities[percept_id] = percept_val
 
                 if self.action:
-                    tot_reward += self.rewards[percept_num,percept_val>0]*np.abs(self.old_intensities[-1])
+                    tot_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
 
                 elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],percept_val>0]))
+                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],int(percept_val>0)]))
 
                 if self.action:
                     #if not self.thinking[-1]:
@@ -268,12 +281,18 @@ class Model:
         #=========
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
-
+        #next_activated = max(elligibles.iteritems(), key=operator.itemgetter(1))[0]
+        
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
                 self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
+
+        print str(next_activated)+ " "+ str(self.intensities[next_activated])
+        #if self.action:
+        #    print self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]],self.cell_number[next_activated]]
+        #    print max(self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]]])
 
         # TODO: loop on the previous percept in past to make reinforcement with delay
 
@@ -301,14 +320,14 @@ class Model:
         self.counts[num_act,num_cell1,num_cell2] = (s*v+1.)/(s+1.)
         #self.counts[self.counts[num_act,num_cell1]<MIN] = 0.
 
-        self.cor[num_act,num_cell1,num_cell2,I1>0] = ETA1*self.cor[num_act][num_cell1][num_cell2][I1>0] + (1-ETA1)*I2
+        self.cor[num_act,num_cell1,num_cell2,int(I1>0)] = ETA1*self.cor[num_act][num_cell1][num_cell2][int(I1>0)] + (1-ETA1)*I2
 
 
     def decision(self):
         state = self.cell_number[self.activateds[-1]]
         I = self.old_intensities[-1]
         # TODO exploration based on convergence/difficulty to reach a state
-        values = self.Q[state,:,I>0]*np.abs(I)+np.random.rand(len(self.Q[state,:,I>0]))/10
+        values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/10
         choice = softmax(values)
         #choice = np.argmax(values)
         #expect = np.max(values)
@@ -328,7 +347,7 @@ class Model:
             # new state:
             new_state = self.cell_number[new_activated]
             new_intensity = self.intensities[new_activated]
-            new_values = self.Q[new_state,:,new_intensity>0]*np.abs(new_intensity)
+            new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             reach = np.max(new_values)
 
             # TD learning:
@@ -336,16 +355,18 @@ class Model:
             TD = ( reward + DISCOUNT*reach - self.expected )
             n = self.n[last_state][action]+1.
 
-            """
+            
             # classic Qlearning
-            self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
+            self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
             self.n[last_state][action] += 1.
-            self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
+            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + TD)/(n+1.)
+            
             """
             # EMA Qlearning
-            self.Q[last_state,action,last_intensity>0] = ETA2*self.Q[last_state,action,last_intensity>0] + (1-ETA2)*TD
+            self.Q[last_state,action,int(last_intensity>0)] = ETA2*self.Q[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
             self.n[last_state][action] += 1.
-            self.matter[new_state,new_intensity>0] = ETA2*self.matter[new_state,new_intensity>0] + (1-ETA2)*TD
+            self.matter[new_state,int(new_intensity>0)] = ETA2*self.matter[new_state,int(new_intensity>0)] + (1-ETA2)*TD
+            """
             """
             # EMA actor-critic
             self.V[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
@@ -361,8 +382,8 @@ class Model:
             print "======================"
             """
 
-        else:
-            pass
+        #else:
+        #    pass
 
 
 # static functions:
