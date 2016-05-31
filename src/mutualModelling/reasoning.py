@@ -24,7 +24,6 @@ class Agent:
                      # a.Id[b][c] = c,b
                      # a.M[c,b] := the model build by a of (the model of b by c)
 
-        # TODO : need to learn the dynamic between agent's models [like counts/cor]
 
         if len(set(agents))>2 and not "other" in agents: # 'other' represents another agent in general"
             agents.append("other")
@@ -37,30 +36,54 @@ class Agent:
                 self.M[agent+','+self.name] = model.Model()
                 self.M[agent+','+self.name].add_cells([percepts])
                 self.M[agent+','+self.name].add_actions([actions])
-                self.Id.setdefault(self.name,[])
-                self.Id[self.name].append(agent+','+self.name)
+                self.Id[agent+','+self.name] = agent
 
 
     def update(self,models_percepts):
         action = ""
         models_percepts.setdefault(self.name,[])
 
-        for model in models_percepts:
+        concerned_models = set(models_percepts)
+
+        while concerned_models:
+
+            model = concerned_models.pop()
 
             if model!=self.name and model!="other" and model!="other,"+self.name:
                 self.M[model].update(models_percepts[model])
-                #models_percepts[self.name].append(...
+                for percept in models_percepts[model]:
+                    models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
+                # no need to add self.name to concerned_models
 
-                if model in self.Id[self.name]:
+                if model in self.Id:
                     name = "other,"+self.name
                     self.M[name].update(models_percepts[model])
-                #if model in self.Id["other"]:
-                #    self.M["other,other"].update(models_percepts[model])
-                if model in self.Id:
-                    self.M["other"].update(models_percepts[model])
+                    for percept in models_percepts[model]:
+                        models_percepts[self.name].append((name+"_"+percept[0],percept[1]))
+                        models_percepts.setdefault(self.Id[model],[])
+                        models_percepts[self.Id[model]].append((self.name+"_"+percept[0],percept[1]))
+                        models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
+                    concerned_models.add(self.Id[model])
+                    concerned_models.add("other")
 
-            elif model!=self.name:
-                self.M["other"].update(models_percepts[model])
+                else:
+                    self.M["other"].update(models_percepts[model])
+                    for percept in models_percepts[model]:
+                        models_percepts[self.name].append(("other_"+percept[0],percpt[1]))
+                    # no need to add self.name to concerned_models
+
+
+            elif model=="other":
+                self.M[model].update(models_percepts[model])
+                for percept in models_percepts[model]:
+                    models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
+
+            elif model=="other,"+self.name:
+                self.M[name].update(models_percepts[model])
+                for percept in models_percepts[model]:
+                    models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
+                    models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
+                concerned_models.add("other")
 
         action=model.update(models_percepts[self.name])
 
