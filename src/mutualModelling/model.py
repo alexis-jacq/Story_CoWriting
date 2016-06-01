@@ -196,7 +196,7 @@ class Model:
             self.rewards[self.cell_number[cell_id],int(value>0)] = reward
 
 
-    def update(self, percepts=None):
+    def update(self, possible_actions=None, percepts=None):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
@@ -306,7 +306,10 @@ class Model:
 
         # DECISION:
         #==========
-        return self.decision()
+        if possible_actions:
+            return self.decision(possible_actions)
+        else:
+            return self.decision()
 
 
     def reinforce(self, cell1, cell2, action, I1, I2):
@@ -323,11 +326,16 @@ class Model:
         self.cor[num_act,num_cell1,num_cell2,int(I1>0)] = ETA1*self.cor[num_act][num_cell1][num_cell2][int(I1>0)] + (1-ETA1)*I2
 
 
-    def decision(self):
+    def decision(self, possible_actions=None):
         state = self.cell_number[self.activateds[-1]]
         I = self.old_intensities[-1]
         # TODO exploration based on convergence/difficulty to reach a state
         values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/10
+        if possible_actions:
+            indices = []
+            for action in possible_actions:
+                indices.append[self.action_number[action]]
+            values = values[np.array(indices)]
         choice = softmax(values)
         #choice = np.argmax(values)
         #expect = np.max(values)
