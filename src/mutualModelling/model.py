@@ -202,9 +202,18 @@ class Model:
         elligibles = {}
         new_intensities = {}
 
+        """
+        if not percepts and not self.activateds:
+            self.add_cells([""])
+            self.add_actions([""])
+            self.add_activated("")
+            self.add_intensity(0)
+            self.action = ""
+        """
+
         # REASONING:
         #===========
-        if self.activateds: # (no reasoning/thought for the moment)
+        if self.activateds and self.action: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
@@ -234,7 +243,7 @@ class Model:
                 #next_id = activated
                 #next_intensity = intensity
 
-            if (not percepts) or next_id not in percepts:
+            if (not percepts) or (next_id not in percepts):
                 elligibles.setdefault(next_id,0)
                 elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,int(next_intensity>0)])*proba)
 
@@ -289,7 +298,7 @@ class Model:
                 self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
 
-        print str(next_activated)+ " "+ str(self.intensities[next_activated])
+        #print str(next_activated)+ " "+ str(self.intensities[next_activated])
         #if self.action:
         #    print self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]],self.cell_number[next_activated]]
         #    print max(self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]]])
@@ -301,8 +310,9 @@ class Model:
             self.learn(next_activated,tot_reward)
 
         # new activated cell
-        self.add_activated(next_activated)
-        self.add_intensity(self.intensities[next_activated])
+        if next_activated:
+            self.add_activated(next_activated)
+            self.add_intensity(self.intensities[next_activated])
 
         # DECISION:
         #==========
@@ -327,14 +337,17 @@ class Model:
 
 
     def decision(self, possible_actions=None):
-        state = self.cell_number[self.activateds[-1]]
-        I = self.old_intensities[-1]
+        state = 0
+        I = 0
+        if self.activateds:
+            state = self.cell_number[self.activateds[-1]]
+            I = self.old_intensities[-1]
         # TODO exploration based on convergence/difficulty to reach a state
         values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/10
         if possible_actions:
             indices = []
             for action in possible_actions:
-                indices.append[self.action_number[action]]
+                indices.append(self.action_number[action])
             values = values[np.array(indices)]
         choice = softmax(values)
         #choice = np.argmax(values)

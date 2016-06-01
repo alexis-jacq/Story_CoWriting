@@ -41,56 +41,72 @@ class Agent:
                 self.Id[agent+','+self.name] = agent
 
 
-    def update(self,models_percepts):
-        action = ""
-        models_percepts.setdefault(self.name,[])
+    def update_models(self,possible_actions=None,models_percepts=None):
+        if models_percepts:
+            action = ""
+            models_percepts.setdefault(self.name,[])
 
-        concerned_models = set(models_percepts)
+            concerned_models = set(models_percepts)
 
-        while concerned_models:
+            u = []
+            v = []
 
-            model = concerned_models.pop()
+            n = 3
+            #while concerned_models and n>0:
+            for i in range(3):
+                n-=1
+                #print "i "+str(i)
+                #print models_percepts
 
-            if model!=self.name and model!="other" and model!="other,"+self.name:
-                self.M[model].update(models_percepts[model])
-                for percept in models_percepts[model]:
-                    models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
-                # no need to add self.name to concerned_models
+                model = concerned_models.pop()
+                #print model
+                #print models_percepts
 
-                if model in self.Id:
-                    #name = "other,"+self.name
-                    #self.M[name].update(models_percepts[model])
-                    for percept in models_percepts[model]:
-                        #models_percepts[self.name].append((name+"_"+percept[0],percept[1]))
-                        models_percepts.setdefault(self.Id[model],[])
-                        models_percepts[self.Id[model]].append((self.name+"_"+percept[0],percept[1]))
-                        #models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
-                    concerned_models.add(self.Id[model])
-                    #concerned_models.add("other")
+                if model!=self.name and model!="other" and model!="other,"+self.name:
+                    self.M[model].update(possible_actions,percepts=models_percepts[model])
 
-               #else:
-               #    self.M["other"].update(models_percepts[model])
-               #    for percept in models_percepts[model]:
-               #        models_percepts[self.name].append(("other_"+percept[0],percpt[1]))
-               #    # no need to add self.name to concerned_models
+                    for percept in frozenset(models_percepts[str(model)]):
+                        #print percept
+                        #models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
+                        u.append((model+"_"+percept[0],percept[1]))
+
+                    if model in self.Id:
+                        #print models_percepts
+                        for percept in frozenset(models_percepts[str(model)]):
+                            #print percept
+
+                            models_percepts.setdefault(self.Id[model],[])
+                            models_percepts[self.Id[model]].append((self.name+"_"+percept[0],percept[1]))
+
+                        concerned_models.add(self.Id[model])
+
+        return "cooperate"
+"""
+                #else:
+                #    self.M["other"].update(models_percepts[model])
+                #    for percept in models_percepts[model]:
+                #        models_percepts[self.name].append(("other_"+percept[0],percpt[1]))
+                #    # no need to add self.name to concerned_models
 
 
-            #elif model=="other":
-            #    self.M[model].update(models_percepts[model])
-            #    for percept in models_percepts[model]:
-            #        models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
+                #elif model=="other":
+                #    self.M[model].update(models_percepts[model])
+                #    for percept in models_percepts[model]:
+                #        models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
 
-            #elif model=="other,"+self.name:
-            #    self.M[name].update(models_percepts[model])
-            #    for percept in models_percepts[model]:
-            #        models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
-            #        models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
-            #    concerned_models.add("other")
+                #elif model=="other,"+self.name:
+                #    self.M[name].update(models_percepts[model])
+                #    for percept in models_percepts[model]:
+                #        models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
+                #        models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
+                #    concerned_models.add("other")
 
-        return model.update(models_percepts[self.name])
+            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=models_percepts[self.name])
+        else:
+            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=None)
 
-        # TODO use invese reinforcement learning for other agents'update
+        # TODO use invese reinforcement learning for other agents'update for cing what was the previous other agent's action
         # TODO compute other's perception error
         # TODO make prediction (update with no percepts) and compute prediction error
-
+"""
 
