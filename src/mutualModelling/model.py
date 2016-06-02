@@ -20,10 +20,10 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 30#30 # chose action (exponent for softmax pulling
-THETA2 = 30#20 # chose perception
+THETA1 = 20#30 # chose action (exponent for softmax pulling
+THETA2 = 20#20 # chose perception
 ETA2 = 0.7
-DISCOUNT = 0.9 # discount for the impact of futur on the temporal diff algo
+DISCOUNT = 0.999 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
 #----------------------------------
@@ -344,12 +344,15 @@ class Model:
             I = self.old_intensities[-1]
         # TODO exploration based on convergence/difficulty to reach a state
         values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/10
+        new_values = -np.Infinity*np.ones(len(values))
         if possible_actions:
             indices = []
             for action in possible_actions:
                 indices.append(self.action_number[action])
-            values = values[np.array(indices)]
-        choice = softmax(values)
+            new_values[np.array(indices)]=values[np.array(indices)]
+        else:
+            new_values = values
+        choice = softmax(new_values)
         #choice = np.argmax(values)
         #expect = np.max(values)
         self.expected = np.max(values)

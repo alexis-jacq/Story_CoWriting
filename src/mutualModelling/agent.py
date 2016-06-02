@@ -43,6 +43,7 @@ class Agent:
 
 
     def update_models(self,possible_actions=None,models_percepts=None):
+        #print possible_actions
         if models_percepts:
             action = ""
             models_percepts.setdefault(self.name,[])

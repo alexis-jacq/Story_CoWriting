@@ -7,38 +7,23 @@ from mutualModelling import model,agent
 import matplotlib.pyplot as plt
 import copy
 
-def create_prisoner(name,all_names,RP,RW,RS):
-    percepts = ["plonk","water","nothing","shock"]
-    actions = ["cooperate","defect","ok","ko"]
-    rewards = [["plonk",1.,RP],["water",1.,RW],["shock",1.,RS]]
+def create_prisoner(name,all_names):
+    percepts = ["reward"]
+    actions = ["a","b","c","d","1","2","3","4"]
+    rewards = [["reward",1.,1.]]
     prisoner = agent.Agent(name,all_names,percepts,actions,rewards)
     return prisoner
 
 """
-classic prisoners dilemma plus three options:
----------------------------------------------
-before playing:
-# say ok: your partner receive "ok" signal but does not know what it means for you
-# say ko: your partner receive "ko" signal but does not know what it means for you
-# say nothing
----------------------------------------------
-as soon as a player choses to play (cooperate/defect),
-the other has to play and can't communicate anymore
 """
 
 # parameters
-RP = 1.
-RW = 0.7
-RS = -1.
-
-GM_values = np.array([[(0,0),(RS,RP)],[(RP,RS),(RW,RW)]])
-GM_percepts = np.array([[("nothing","nothing"),("shock","plonk")],[("plonk","shock"),("water","water")]])
 
 name1 = "robert"
 name2 = "pierrot"
 all_names = [name1,name2]
 
-play = ["cooperate","defect"]
+play = ["1","2","3","4"]
 
 N = 1
 n = 500
@@ -53,18 +38,19 @@ def world_update_communicate(action1,action2):
     # suppose no errors of perception:
     model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
     model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
-    return model_percepts1,model_percepts2
-    #return None,None
+    #return model_percepts1,model_percepts2
+    return None,None
 
-def world_update_play(action1,action2):
+def world_update_play(action1,action2,previous):
     p1 = []
     p2 = []
-    b1 = int("cooperate" in action1)
-    b2 = int("cooperate" in action2)
-    r1 = GM_values[b1,b2,0]
-    p1.append((GM_percepts[b1,b2,0],1))
-    r2 = GM_values[b1,b2,1]
-    p2.append((GM_percepts[b1,b2,1],1))
+    rew = 0.
+    if action1==action2 and not action1 in previous:
+        rew = 1.
+    r1 = rew
+    p1.append(("reward",rew))
+    r2 = rew
+    p2.append(("reward",rew))
     # suppose no errors of perception:
     model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
     model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
@@ -73,23 +59,28 @@ def world_update_play(action1,action2):
 for i in range(N):
     if i%10==0:
         print i
-    robert = create_prisoner(name1,all_names,RP,RW,RS)
-    pierrot = create_prisoner(name2,all_names,RP,RW,RS)
+    robert = create_prisoner(name1,all_names)
+    pierrot = create_prisoner(name2,all_names)
     cumrew1 = []
     cumrew2 = []
     model_percepts1 = None
     model_percepts2 = None
     action1 = ""
     action2 = ""
+    previous = []
     for j in range(n):
 
 
         if action2 in play:
             action1 = robert.update_models(play,(model_percepts1))
             print action1
-            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2)
+            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2,previous)
             cumrew1.append(r1)
             cumrew2.append(r2)
+            if action1==action2 and not action1 in previous:
+                if len(previous)==len(play)-1:
+                    del previous[0]
+                previous.append(action1)
             action1 = ""
             action2 = ""
         else:
@@ -109,7 +100,11 @@ for i in range(N):
         if action1 in play:
             action2 = pierrot.update_models(play,copy.deepcopy(model_percepts2))
             print "-----------"+action2
-            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2)
+            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2,previous)
+            if action1==action2 and not action1 in previous:
+                if len(previous)==len(play)-1:
+                    del previous[0]
+                previous.append(action1)
             cumrew1.append(r1)
             cumrew2.append(r2)
             action1 = ""
