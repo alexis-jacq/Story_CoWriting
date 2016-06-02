@@ -5,6 +5,7 @@ import numpy as np
 import random
 from mutualModelling import model
 import matplotlib.pyplot as plt
+import copy
 
 class Agent:
     """agent able of first and 2nd mutual modelling reasoning"""
@@ -34,11 +35,11 @@ class Agent:
             self.M[agent].add_actions(actions)
             self.M[agent].set_rewards(rewards)
             if agent!=self.name:
-                self.M[agent+','+self.name] = model.Model()
-                self.M[agent+','+self.name].add_cells(percepts)
-                self.M[agent+','+self.name].add_actions(actions)
-                self.M[agent+','+self.name].set_rewards(rewards)
-                self.Id[agent+','+self.name] = agent
+                self.M[agent+';'+self.name] = model.Model()
+                self.M[agent+';'+self.name].add_cells(percepts)
+                self.M[agent+';'+self.name].add_actions(actions)
+                self.M[agent+';'+self.name].set_rewards(rewards)
+                self.Id[agent+';'+self.name] = agent
 
 
     def update_models(self,possible_actions=None,models_percepts=None):
@@ -47,40 +48,33 @@ class Agent:
             models_percepts.setdefault(self.name,[])
 
             concerned_models = set(models_percepts)
+            u = copy.deepcopy(models_percepts[self.name])
 
-            u = []
-            v = []
-
-            n = 3
-            #while concerned_models and n>0:
-            for i in range(3):
-                n-=1
-                #print "i "+str(i)
-                #print models_percepts
+            #print "----------------------"
+            #print self.name
+            while concerned_models:
 
                 model = concerned_models.pop()
                 #print model
                 #print models_percepts
+                #print concerned_models
 
-                if model!=self.name and model!="other" and model!="other,"+self.name:
+                if model!=self.name and model!="other" and model!="other;"+self.name:
+                    p = copy.deepcopy(models_percepts[model])
                     self.M[model].update(possible_actions,percepts=models_percepts[model])
-
-                    for percept in frozenset(models_percepts[str(model)]):
-                        #print percept
-                        #models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
+                    models_percepts.pop(model)
+                    for percept in p:
                         u.append((model+"_"+percept[0],percept[1]))
-
                     if model in self.Id:
-                        #print models_percepts
-                        for percept in frozenset(models_percepts[str(model)]):
-                            #print percept
-
+                        for percept in p:
                             models_percepts.setdefault(self.Id[model],[])
                             models_percepts[self.Id[model]].append((self.name+"_"+percept[0],percept[1]))
 
                         concerned_models.add(self.Id[model])
 
-        return "cooperate"
+            return self.M[self.name].update(possible_actions,u)
+        else:
+            return self.M[self.name].update(possible_actions,None)
 """
                 #else:
                 #    self.M["other"].update(models_percepts[model])

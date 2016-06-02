@@ -20,10 +20,10 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 30#1*30 # chose action (exponent for softmax pulling
-THETA2 = 20#1*20 # chose perception
+THETA1 = 30#30 # chose action (exponent for softmax pulling
+THETA2 = 30#20 # chose perception
 ETA2 = 0.7
-DISCOUNT = 0.7 # discount for the impact of futur on the temporal diff algo
+DISCOUNT = 0.9 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
 #----------------------------------
@@ -271,13 +271,13 @@ class Model:
 
                 self.intensities[percept_id] = percept_val
 
-                if self.action:
+                if self.action and self.old_intensities:
                     tot_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
 
                 elligibles.setdefault(percept_id,0)
                 elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],int(percept_val>0)]))
 
-                if self.action:
+                if self.action and self.activateds:
                     #if not self.thinking[-1]:
                     father = self.activateds[-1]
                     son = percept_id
