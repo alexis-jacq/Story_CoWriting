@@ -20,10 +20,10 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 20#30 # chose action (exponent for softmax pulling
+THETA1 = 30#30 # chose action (exponent for softmax pulling
 THETA2 = 20#20 # chose perception
-ETA2 = 0.7
-DISCOUNT = 0.999 # discount for the impact of futur on the temporal diff algo
+ETA2 = 0.99
+DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
 #----------------------------------
