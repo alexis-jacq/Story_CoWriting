@@ -20,8 +20,8 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 30#30 # chose action (exponent for softmax pulling
-THETA2 = 20#20 # chose perception
+THETA1 = 40#30 # chose action (exponent for softmax pulling
+THETA2 = 30#20 # chose perception
 ETA2 = 0.99
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -379,18 +379,18 @@ class Model:
             TD = ( reward + DISCOUNT*reach - self.expected )
             n = self.n[last_state][action]+1.
 
-            
+            """
             # classic Qlearning
             self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
             self.n[last_state][action] += 1.
             self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + TD)/(n+1.)
-            
             """
+            
             # EMA Qlearning
             self.Q[last_state,action,int(last_intensity>0)] = ETA2*self.Q[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
             self.n[last_state][action] += 1.
             self.matter[new_state,int(new_intensity>0)] = ETA2*self.matter[new_state,int(new_intensity>0)] + (1-ETA2)*TD
-            """
+            
             """
             # EMA actor-critic
             self.V[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
