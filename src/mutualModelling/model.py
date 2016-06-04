@@ -20,9 +20,9 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 40#30 # chose action (exponent for softmax pulling
+THETA1 = 10#30 # chose action (exponent for softmax pulling
 THETA2 = 30#20 # chose perception
-ETA2 = 0.99
+ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
 """ functions for random pulling"""
@@ -78,6 +78,7 @@ class Model:
         self.nb_actions = 0
         # for TD learning with fuzzy states:
         self.Q = np.zeros([0,0,2]) # reward value learned by association ~ like QLearning with TD
+        self.V = np.zeros([0,0,2]) # for actor-critic method
         self.n = np.zeros([0,0])
         self.matter = np.ones([0,2]) # importance of events
 
@@ -149,6 +150,10 @@ class Model:
                     new_Q[:self.nb_cells,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
 
+                    new_V = np.zeros([number, self.nb_actions,2])
+                    new_V[:self.nb_cells,:self.nb_actions,:] = self.V
+                    self.V = new_V
+
                     new_n = np.zeros([number, self.nb_actions])
                     new_n[:self.nb_cells,:self.nb_actions] = self.n
                     self.n = new_n
@@ -175,6 +180,10 @@ class Model:
                     new_Q = np.zeros([self.nb_cells, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
+
+                    new_V = np.zeros([self.nb_cells, number,2])
+                    new_V[:,:self.nb_actions,:] = self.V
+                    self.V = new_V
 
                     new_n = np.zeros([self.nb_cells, number])
                     new_n[:,:self.nb_actions] = self.n
@@ -355,7 +364,9 @@ class Model:
         choice = softmax(new_values)
         #choice = np.argmax(values)
         #expect = np.max(values)
-        self.expected = np.max(values)
+        #self.expected = np.max(values)
+        # ema:
+        self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
         self.action = self.action_number.inv[choice]
         return self.action
 
@@ -371,7 +382,9 @@ class Model:
             # new state:
             new_state = self.cell_number[new_activated]
             new_intensity = self.intensities[new_activated]
-            new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
+            #new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
+            # ema :
+            new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             reach = np.max(new_values)
 
             # TD learning:
@@ -391,13 +404,10 @@ class Model:
             self.n[last_state][action] += 1.
             self.matter[new_state,int(new_intensity>0)] = ETA2*self.matter[new_state,int(new_intensity>0)] + (1-ETA2)*TD
             """
-            """
+            
             # EMA actor-critic
-            self.V[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
-            self.Q[last_state,action,last_intensity>0] = (n*self.Q[last_state,action,last_intensity>0] + TD)/(n+1.)
-            self.n[last_state][action] += 1.
-            self.matter[new_state,new_intensity>0] = (n*(self.matter[new_state,new_intensity>0]) + TD)/(n+1.)
-            """
+            self.V[last_state,action,last_intensity>0] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
+            
             """
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)

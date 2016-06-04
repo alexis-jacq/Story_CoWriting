@@ -33,7 +33,7 @@ name1 = "teacher"
 name2 = "learner"
 all_names = [name1,name2]
 
-N = 20
+N = 1
 n = 3000
 CUMREW = np.zeros(n)
 
@@ -77,8 +77,8 @@ for i in range(N):
 
         action1 = teacher.update_models(None,(model_percepts1))
         action2 = learner.update_models(None,(model_percepts2))
-        #print action1
-        #print "------------------"+action2
+        print action1
+        print "------------------"+action2
         model_percepts1,model_percepts2,r = world_update(action1,action2,previous)
         cumrew.append(r)
 
