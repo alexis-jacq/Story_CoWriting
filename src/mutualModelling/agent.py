@@ -76,32 +76,8 @@ class Agent:
             return self.M[self.name].update(possible_actions,u)
         else:
             return self.M[self.name].update(possible_actions,None)
-"""
-                #else:
-                #    self.M["other"].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append(("other_"+percept[0],percpt[1]))
-                #    # no need to add self.name to concerned_models
-
-
-                #elif model=="other":
-                #    self.M[model].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
-
-                #elif model=="other,"+self.name:
-                #    self.M[name].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
-                #        models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
-                #    concerned_models.add("other")
-
-            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=models_percepts[self.name])
-        else:
-            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=None)
 
         # TODO use invese reinforcement learning for other agents'update for cing what was the previous other agent's action
         # TODO compute other's perception error
         # TODO make prediction (update with no percepts) and compute prediction error
-"""
 

@@ -416,8 +416,158 @@ class Model:
             print "======================"
             """
 
-        #else:
-        #    pass
+
+    def update_inverse(self, possible_actions=None, percepts=None, last_action=None):
+
+        # FIND THE NEXT ACTIVATED:
+        elligibles = {}
+        new_intensities = {}
+
+
+        if last_action:
+            self.action = last_action
+
+        if len(self.activateds)>1:
+            last_state = self.activateds[-2]
+            last_intensity = self.intensities[-2]
+            present_state = self.activateds[-1]
+            present_intensity = self.intensities[-1]
+            self.inverse_learning(last_state,present_state,last_intensity,present_intensity)
+
+        # REASONING:
+        #===========
+        if self.activateds and self.action: # (no reasoning/thought for the moment)
+
+            # following cor: (no preference for different delays for the moment)
+            #delay = 0
+            #for activated in self.activateds:
+            # TODO: loop on all previous activated cells taking account delayed causality
+
+            intensity = self.old_intensities[-1]
+            activated = self.activateds[-1]
+
+            noise = np.random.rand(len(self.counts[0,0,:]))/1000.
+            next_num=0
+            proba=0
+            next_id=""
+            next_intensity=0
+            if max(self.counts[self.action_number[self.action],self.cell_number[activated],:])>0:
+                proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
+                next_num = np.argmax(proba_of_sons)
+                proba = np.max(proba_of_sons)
+                next_id = self.cell_number.inv[next_num]
+                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
+            else:
+                proba_of_sons = self.counts[self.action_number[self.action],:,:]+noise
+                next_num = np.argmax(proba_of_sons)%np.shape(proba_of_sons)[0]
+                proba = np.max(proba_of_sons)
+                next_id = self.cell_number.inv[next_num]
+                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
+                #next_id = activated
+                #next_intensity = intensity
+
+            if (not percepts) or (next_id not in percepts):
+                elligibles.setdefault(next_id,0)
+                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,int(next_intensity>0)])*proba)
+
+                new_intensities.setdefault(next_id,0)
+                new_intensities[next_id] = next_intensity
+                if new_intensities[next_id]>1.:
+                    new_intensities[next_id]=1.
+                if new_intensities[next_id]<-1.:
+                    new_intensities[next_id] = -1.
+                #delay += 1
+
+        # PERCEPTION:
+        #============
+        # could add an action "force_reasoning" where the robot doesnot do the perception loop
+        # like someone closing eyes in order to reason
+        tot_reward = 0
+        if percepts:
+            for percept in percepts:
+                if not (percept in self.cell_number):
+                    self.add_cells([percept[0]])
+
+                percept_id = percept[0]
+                percept_val = percept[1]
+                percept_num = self.cell_number[percept_id]
+
+                self.intensities[percept_id] = percept_val
+
+                if self.action and self.old_intensities:
+                    tot_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
+
+                elligibles.setdefault(percept_id,0)
+                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],int(percept_val>0)]))
+
+                if self.action and self.activateds:
+                    #if not self.thinking[-1]:
+                    father = self.activateds[-1]
+                    son = percept_id
+                    intensity_father = self.old_intensities[-1]
+                    intensity_son = percept_val
+                    action = self.action
+                    self.reinforce(father,son,action,intensity_father,intensity_son)
+
+        # UPDATES:
+        #=========
+        # stochastic election of incoming active cell:
+        next_activated = random_pull_dict(elligibles)
+        #next_activated = max(elligibles.iteritems(), key=operator.itemgetter(1))[0]
+        
+        # new intensities:
+        for cell in new_intensities:
+            if cell not in self.modifieds:
+                self.intensities[cell] = new_intensities[cell]
+                self.modifieds.add(cell)
+
+        #print str(next_activated)+ " "+ str(self.intensities[next_activated])
+        #if self.action:
+        #    print self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]],self.cell_number[next_activated]]
+        #    print max(self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]]])
+
+        # action learning:
+        #if self.action:
+            #self.learn(next_activated,tot_reward)
+
+        # new activated cell
+        if next_activated:
+            self.add_activated(next_activated)
+            self.add_intensity(self.intensities[next_activated])
+
+        # DECISION:
+        #==========
+        if possible_actions:
+            return self.decision(possible_actions)
+        else:
+            return self.decision()
+
+    def inverse_learning(self,last_state,new_state,last_intensity,new_intensity):
+        if self.activateds and self.action:
+
+            # action:
+            action = self.action_number[self.action]
+
+            # new state:
+            new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
+            # ema :
+            #new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
+            reach = np.max(new_values)
+
+            n = self.n[last_state][action]+1.
+
+            # estimation of Q
+            S = np.sum(self.Q[last_state,:,int(last_intensity>0)])
+            self.Q[last_state,action,int(last_intensity>0)] = (S*self.Q[last_state,action,int(last_intensity>0)] + 1)/(S+1.)
+
+            # estimation of R
+            Rguess = (self.Q[last_state,action,int(last_intensity>0)] - DISCOUNT*reach)
+            self.rewards[last_state,int(last_intensity)] = (n*(self.reward[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
+            self.n[last_state][action] += 1.
+            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
+
+            # EMA actor-critic
+            #self.V[last_state,action,last_intensity>0] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
 
 
 # static functions:
