@@ -33,19 +33,19 @@ class Agent:
             self.M[agent] = model.Model()
             self.M[agent].add_cells(percepts)
             self.M[agent].add_actions(actions)
-            self.M[agent].set_rewards(rewards)
+            if agent==self.name:
+                self.M[agent].set_rewards(rewards)
             if agent!=self.name:
                 self.M[agent+';'+self.name] = model.Model()
                 self.M[agent+';'+self.name].add_cells(percepts)
                 self.M[agent+';'+self.name].add_actions(actions)
-                self.M[agent+';'+self.name].set_rewards(rewards)
+                #self.M[agent+';'+self.name].set_rewards(rewards)
                 self.Id[agent+';'+self.name] = agent
 
 
-    def update_models(self,possible_actions=None,models_percepts=None):
+    def update_models(self,possible_actions=None,models_percepts=None,model_actions=None):
         #print possible_actions
         if models_percepts:
-            action = ""
             models_percepts.setdefault(self.name,[])
 
             concerned_models = set(models_percepts)
@@ -55,14 +55,19 @@ class Agent:
             #print self.name
             while concerned_models:
 
+                action = None
                 model = concerned_models.pop()
+                if model_actions:
+                    if model in model_actions:
+                        action = model_actions[model]
+                        #print model+" "+action
                 #print model
                 #print models_percepts
                 #print concerned_models
 
-                if model!=self.name and model!="other" and model!="other;"+self.name:
+                if model!=self.name:
                     p = copy.deepcopy(models_percepts[model])
-                    self.M[model].update(possible_actions,percepts=models_percepts[model])
+                    self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
                     models_percepts.pop(model)
                     for percept in p:
                         u.append((model+"_"+percept[0],percept[1]))
@@ -76,32 +81,16 @@ class Agent:
             return self.M[self.name].update(possible_actions,u)
         else:
             return self.M[self.name].update(possible_actions,None)
-"""
-                #else:
-                #    self.M["other"].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append(("other_"+percept[0],percpt[1]))
-                #    # no need to add self.name to concerned_models
-
-
-                #elif model=="other":
-                #    self.M[model].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append((model+"_"+percept[0],percpt[1]))
-
-                #elif model=="other,"+self.name:
-                #    self.M[name].update(models_percepts[model])
-                #    for percept in models_percepts[model]:
-                #        models_percepts[self.name].append((model+"_"+percept[0],percept[1]))
-                #        models_percepts["other"].append((self.name+"_"+percept[0],percept[1]))
-                #    concerned_models.add("other")
-
-            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=models_percepts[self.name])
-        else:
-            return "cooperate" #self.M[self.name].update(possible_actions=possible_actions,percepts=None)
 
         # TODO use invese reinforcement learning for other agents'update for cing what was the previous other agent's action
         # TODO compute other's perception error
         # TODO make prediction (update with no percepts) and compute prediction error
-"""
+
+    def show_learned_rewards(self,agent):
+        print self.M[agent].cell_number.inv
+        print self.M[agent].action_number.inv
+        print self.M[agent].rewards
+
+    def show_social_error(self,agent):
+        print model.diff_reward(self.M[self.name],self.M[agent+";"+self.name])
 

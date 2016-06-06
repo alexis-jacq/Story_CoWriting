@@ -33,16 +33,17 @@ name2 = "learner"
 all_names = [name1,name2]
 
 N = 1
-n = 3000
+n = 1000
 CUMREW = np.zeros(n)
 
 def world_update(action1,action2,previous):
+    real_action = action2
     if action2 =="imitate":
-        action2 = action1
+        real_action = action1
     p1 = [(action2,1.)]
     p2 = [(action1,1.)]
     r = 0
-    if "a"==action2:
+    if "a"==real_action:
         p1.append(("success",1.))
         #p2.append(("success",1.))
         r = 1
@@ -56,12 +57,14 @@ def world_update(action1,action2,previous):
 
     #model_percepts1 = {name1:p1}#,name2:p2,name2+";"+name1:p1}
     #model_percepts2 = {name2:p2}#,name1:p1,name1+";"+name2:p2}
-    model_percepts1 = {name1:p1,name2:p2}#,name2+";"+name1:p1}
-    model_percepts2 = {name2:p2,name1:p1}#,name1+";"+name2:p2}
-    #model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
-    #model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
+    #model_percepts1 = {name1:p1,name2:p2}#,name2+";"+name1:p1}
+    #model_percepts2 = {name2:p2,name1:p1}#,name1+";"+name2:p2}
+    model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
+    model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
+    model_actions1 = {name2:action2}
+    model_actions2 = {name1:action1}
 
-    return model_percepts1,model_percepts2,r
+    return model_percepts1,model_percepts2,model_actions1,model_actions2,r
 
 for i in range(N):
     if i%10==0:
@@ -71,19 +74,31 @@ for i in range(N):
     cumrew = []
     model_percepts1 = None
     model_percepts2 = None
+    model_actions1 = None
+    model_actions2 = None
     action1 = ""
     action2 = ""
     previous = []
     for j in range(n):
 
-        action1 = teacher.update_models(None,(model_percepts1))
-        action2 = learner.update_models(None,(model_percepts2))
+        action1 = teacher.update_models(None,model_percepts1,model_actions1)
+        action2 = learner.update_models(None,model_percepts2,model_actions2)
         print action1
         print "------------------"+action2
-        model_percepts1,model_percepts2,r = world_update(action1,action2,previous)
+        model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
         cumrew.append(r)
 
     CUMREW+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
+
+print ''
+print ' learner think about teacher '
+learner.show_learned_rewards('teacher;learner')
+print ''
+print ' teacher think about learner '
+teacher.show_learned_rewards('learner;teacher')
+
+print '----'
+teacher.show_social_error('learner')
 
 plt.plot(CUMREW)
 plt.show()

@@ -79,7 +79,7 @@ class Model:
         # for TD learning with fuzzy states:
         self.Q = np.zeros([0,0,2]) # reward value learned by association ~ like QLearning with TD
         self.V = np.zeros([0,0,2]) # for actor-critic method
-        self.n = np.zeros([0,0])
+        self.n = np.zeros([0,0,2])
         self.matter = np.ones([0,2]) # importance of events
 
         #see "PERCEPTION" loop in "update" method:
@@ -154,8 +154,8 @@ class Model:
                     new_V[:self.nb_cells,:self.nb_actions,:] = self.V
                     self.V = new_V
 
-                    new_n = np.zeros([number, self.nb_actions])
-                    new_n[:self.nb_cells,:self.nb_actions] = self.n
+                    new_n = np.zeros([number, self.nb_actions,2])
+                    new_n[:self.nb_cells,:self.nb_actions,:] = self.n
                     self.n = new_n
 
                     self.nb_cells = number
@@ -185,8 +185,8 @@ class Model:
                     new_V[:,:self.nb_actions,:] = self.V
                     self.V = new_V
 
-                    new_n = np.zeros([self.nb_cells, number])
-                    new_n[:,:self.nb_actions] = self.n
+                    new_n = np.zeros([self.nb_cells, number,2])
+                    new_n[:,:self.nb_actions,:] = self.n
                     self.n = new_n
 
                     self.nb_actions = number
@@ -390,12 +390,12 @@ class Model:
             # TD learning:
             # TODO : (using EMA instead of online average could be better for world with changing rules)
             TD = ( reward + DISCOUNT*reach - self.expected )
-            n = self.n[last_state][action]+1.
+            n = self.n[last_state,action,int(last_intensity>0)]+1.
 
             
             # classic Qlearning
             self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
-            self.n[last_state][action] += 1.
+            self.n[last_state,action,int(last_intensity>0)] += 1.
             self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + TD)/(n+1.)
             
             """
@@ -423,16 +423,10 @@ class Model:
         elligibles = {}
         new_intensities = {}
 
-
         if last_action:
+            if not last_action in self.action_number:
+                self.add_actions([last_action])
             self.action = last_action
-
-        if len(self.activateds)>1:
-            last_state = self.activateds[-2]
-            last_intensity = self.intensities[-2]
-            present_state = self.activateds[-1]
-            present_intensity = self.intensities[-1]
-            self.inverse_learning(last_state,present_state,last_intensity,present_intensity)
 
         # REASONING:
         #===========
@@ -514,26 +508,27 @@ class Model:
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
         #next_activated = max(elligibles.iteritems(), key=operator.itemgetter(1))[0]
-        
+
+        if self.action:
+            self.learn(next_activated,tot_reward)
+
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
                 self.intensities[cell] = new_intensities[cell]
                 self.modifieds.add(cell)
 
-        #print str(next_activated)+ " "+ str(self.intensities[next_activated])
-        #if self.action:
-        #    print self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]],self.cell_number[next_activated]]
-        #    print max(self.counts[self.action_number[self.action],self.cell_number[self.activateds[-1]]])
-
-        # action learning:
-        #if self.action:
-            #self.learn(next_activated,tot_reward)
-
         # new activated cell
         if next_activated:
             self.add_activated(next_activated)
             self.add_intensity(self.intensities[next_activated])
+
+        if len(self.activateds)>1:
+            last_activated = self.activateds[-2]
+            last_intensity = self.old_intensities[-2]
+            present_activated = self.activateds[-1]
+            present_intensity = self.old_intensities[-1]
+            self.inverse_learning(last_activated,present_activated,last_intensity,present_intensity)
 
         # DECISION:
         #==========
@@ -542,32 +537,48 @@ class Model:
         else:
             return self.decision()
 
-    def inverse_learning(self,last_state,new_state,last_intensity,new_intensity):
+    def inverse_learning(self,last_activated,new_activated,last_intensity,new_intensity):
         if self.activateds and self.action:
 
             # action:
             action = self.action_number[self.action]
+            last_state = self.cell_number[last_activated]
 
             # new state:
+            new_state = self.cell_number[new_activated]
             new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             # ema :
             #new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             reach = np.max(new_values)
 
-            n = self.n[last_state][action]+1.
+            n = self.n[last_state,action,int(last_intensity>0)]+1.
+            s = np.sum(self.n[last_state,:,int(last_intensity>0)])
 
             # estimation of Q
-            S = np.sum(self.Q[last_state,:,int(last_intensity>0)])
-            self.Q[last_state,action,int(last_intensity>0)] = (S*self.Q[last_state,action,int(last_intensity>0)] + 1)/(S+1.)
+            #q = self.Q[last_state,action,int(last_intensity>0)]
+            #self.Q[last_state,:,int(last_intensity>0)] *= s/(s+1.)
+            #self.Q[last_state,action,int(last_intensity>0)] = (s*q + 1)/(s+1.)
 
             # estimation of R
-            Rguess = (self.Q[last_state,action,int(last_intensity>0)] - DISCOUNT*reach)
-            self.rewards[last_state,int(last_intensity)] = (n*(self.reward[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
-            self.n[last_state][action] += 1.
-            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
+            #Rguess = (self.Q[last_state,action,int(last_intensity>0)] - DISCOUNT*reach)
+            #self.rewards[last_state,int(last_intensity)] = ETA2*self.rewards[last_state,int(last_intensity>0)] + (1-ETA2)*Rguess
+            #self.rewards[last_state,int(last_intensity)] = (n*(self.rewards[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
+            
+            # other way:
+            noise = np.random.rand(len(self.counts[0,0,:]))/100.
+            expected_state = np.argmax(self.counts[action,last_state,:] + noise) # matter already has an impact on this (hebbian reinf)
+            expected_intensity = self.cor[action,last_state,expected_state,int(last_intensity>0)]
+            #self.rewards[expected_state,int(expected_intensity>0)] = (n*self.rewards[expected_state,int(expected_intensity>0)] + 1.)/(n+1.)
+            #self.rewards[expected_state,int(expected_intensity>0)] = (n*self.rewards[expected_state,int(expected_intensity>0)] + np.max(self.counts[action,last_state,:]))/(n+1.)
+            self.rewards[expected_state,int(expected_intensity>0)] = 0.7*self.rewards[expected_state,int(expected_intensity>0)] + (1-0.7)*np.max(self.counts[action,last_state,:])
+            #self.rewards[expected_state,int(expected_intensity>0)] = ETA2*self.rewards[expected_state,int(expected_intensity>0)] + (1-ETA2)
 
             # EMA actor-critic
             #self.V[last_state,action,last_intensity>0] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
+            
+            # counts:
+            #self.n[last_state,action,int(last_intensity>0)] += 1.
+            #self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + )/(n+1.)
 
 
 # static functions:
@@ -592,5 +603,28 @@ def diff(model1, model2):
 
     # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
     return dist,choice
+
+def diff_reward(model1, model2):
+    dist = 0
+    cell_diff = {}
+    for cell_id in model1.intensities:# & model2.intensities:
+        if cell_id in model2.intensities:
+            cell_num1 = model1.cell_number[cell_id]
+            cell_num2 = model2.cell_number[cell_id]
+            # Lmax for matter:
+            matter = np.max([np.abs(model1.matter[cell_num1,int(model1.intensities[cell_id]>0)]),np.abs(model2.matter[cell_num2,int(model2.intensities[cell_id]>0)])])
+            # this distance function is arbitrary, could be L2, L3 etc...
+            dist += np.sum(np.abs(model1.rewards[cell_num1,:]-model2.rewards[cell_num2,:]))#*matter
+            # maybe this softmax pull could have its own theta:
+            cell_diff.setdefault(cell_id,dist)
+
+    return cell_diff
+
+    # max of sofmax ?
+    #choice = random_pull_dict(cell_diff)
+    #choice = max(cell_diff.iteritems(), key=operator.itemgetter(1))[0]
+
+    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
+    #return dist,choice
 
 
