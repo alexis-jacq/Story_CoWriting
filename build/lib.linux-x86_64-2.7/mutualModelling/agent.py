@@ -55,64 +55,21 @@ class Agent:
 
 
     def update_models(self,possible_actions=None,models_percepts=None,model_actions=None):
-        #print possible_actions
-        #print "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&"
-        #print self.name
+
         if models_percepts:
             models_percepts.setdefault(self.name,[])
 
             concerned_models = set(models_percepts)
             u = copy.deepcopy(models_percepts[self.name])
 
-            #print "----------------------"
-            #print self.name
-
             for model in concerned_models:
                 action = None
                 if model_actions:
                     if model in model_actions:
                         action = model_actions[model]
-                test = False
-                if self.name=="learner" and  model=="teacher":
-                    print "======================================================="
-                    print self.name+" think about "+model
-                    test = True
-                
+
                 if model!=self.name:
-                    self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action,testprint=test)
-
-
-
-            #   while concerned_models:
-
-            #       action = None
-            #       model = concerned_models.pop()
-            #       if model_actions:
-            #           if model in model_actions:
-            #               action = model_actions[model]
-            #               #print model+" "+action
-            #       test = False
-            #       if self.name=="learner" and model=="teacher":
-            #           print "======================================================="
-            #           print self.name+" think about "+model
-            #           test = True
-            #       #print models_percepts
-            #       #print concerned_models
-
-            #       
-            #       if model!=self.name:
-            #           p = copy.deepcopy(models_percepts[model])
-            #           self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action,testprint=test)
-            #           models_percepts.pop(model)
-            #           """
-            #           for percept in p:
-            #               u.append((model+"_"+percept[0],percept[1]))
-            #           if model in self.Id:
-            #               for percept in p:
-            #                   models_percepts.setdefault(self.Id[model],[])
-            #                   models_percepts[self.Id[model]].append((self.name+"_"+percept[0],percept[1]))
-
-            #               concerned_models.add(self.Id[model])"""
+                    self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
 
             understood=0
             explore = True
