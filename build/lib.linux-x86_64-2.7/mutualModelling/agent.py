@@ -34,6 +34,7 @@ class Agent:
                      # a.M[c,b] := the model build by a of (the model of b by c)
 
         self.prev_diff = 0
+        self.social_curve = []
 
         if len(set(agents))>2 and not "other" in agents: # 'other' represents another agent in general"
             agents.append("other")
@@ -45,6 +46,8 @@ class Agent:
             self.M[agent].add_actions(actions)
             if agent==self.name:
                 self.M[agent].set_rewards(rewards)
+                # intrinsic reward for compassion
+                # self.M[agent].set_rewards([["others_rew",1.,1.],["others_rew",-1.,-1.]])
             if agent!=self.name:
                 name = self.name+"["+agent+';'+self.name+"]"
                 self.M[agent+';'+self.name] = model.Model(name)
@@ -55,7 +58,9 @@ class Agent:
 
 
     def update_models(self,possible_actions=None,models_percepts=None,model_actions=None):
-
+        
+        OR = 0
+        n=0.1
         if models_percepts:
             models_percepts.setdefault(self.name,[])
 
@@ -69,7 +74,12 @@ class Agent:
                         action = model_actions[model]
 
                 if model!=self.name:
-                    self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
+                    z = self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
+                    if model in self.Id.values():
+                    #if self.name=="learner":
+                    #if True:
+                        OR+=z
+                        n+=1.
 
             understood=0
             explore = True
@@ -77,12 +87,18 @@ class Agent:
             for agent in self.Id:
                 _,dist = diff_reward(self.M[self.name],self.M[agent])
                 diff += dist
-            if diff>self.prev_diff:
+            if diff>=self.prev_diff:
                 explore = False
                 #pass
             self.prev_diff = diff
+            self.social_curve.append(diff)
+            #print OR/n
+            decision = self.M[self.name].update(possible_actions,u,explore,intrinsic=OR/n)
+            #if OR>np.random.rand():
+            #    decision =  self.gift()
 
-            return self.M[self.name].update(possible_actions,u,explore)
+
+            return decision
         else:
             return self.M[self.name].update(possible_actions,None,True)
 
@@ -101,6 +117,9 @@ class Agent:
         social_diffs,total_diffs = diff_reward(self.M[self.name],self.M[agent+";"+self.name])
         print social_diffs
 
+    def plot_social_curve(self):
+        return self.social_curve
+
     """
     def be_kind(self): # do the action the other prefer you do
         for agent in self.
@@ -112,3 +131,8 @@ class Agent:
 
     def analyse(self,agent,action):
     """
+    """
+    def gift(self):
+        for action in self.M[self.name].action_number:
+            for model in 
+            for obs in self"""

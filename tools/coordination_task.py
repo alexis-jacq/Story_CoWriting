@@ -33,7 +33,7 @@ name2 = "learner"
 name3 = "test"
 all_names = [name1,name2,name3]
 
-N = 1
+N = 50
 n = 1000
 CUMREW = np.zeros(n)
 
@@ -106,5 +106,10 @@ teacher.show_learned_rewards('teacher')
 
 teacher.show_social_error('learner')
 
+curve1 = teacher.social_curve
+curve2 = learner.social_curve
+
+#plt.plot(curve1)
+#plt.plot(curve2)
 plt.plot(CUMREW)
 plt.show()

@@ -21,7 +21,7 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 # reinforcement learning:
 #========================
 THETA1 = 10#30 # chose action (exponent for softmax pulling
-THETA2 = 40#20 # chose perception
+THETA2 = 10#20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -226,7 +226,7 @@ class Model:
             self.rewards[self.cell_number[cell_id],int(value>0)] = reward
 
 
-    def update(self, possible_actions=None, percepts=None, explore=True):
+    def update(self, possible_actions=None, percepts=None, explore=True, intrinsic=0):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
@@ -280,7 +280,7 @@ class Model:
         #============
         # could add an action "force_reasoning" where the robot doesnot do the perception loop
         # like someone closing eyes in order to reason
-        tot_reward = 0
+        tot_reward = intrinsic
         if percepts:
             for percept in percepts:
                 if not (percept in self.cell_number):
@@ -558,9 +558,9 @@ class Model:
         # DECISION:
         #==========
         if possible_actions:
-            return self.decision(possible_actions)
+            return tot_reward#self.decision(possible_actions)
         else:
-            return self.decision()
+            return tot_reward#self.decision()
 
     def inverse_learning(self,last_activated,last_intensity):
         if self.activateds and self.action:
