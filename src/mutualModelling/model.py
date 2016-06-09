@@ -21,7 +21,7 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 # reinforcement learning:
 #========================
 THETA1 = 10#30 # chose action (exponent for softmax pulling
-THETA2 = 30#20 # chose perception
+THETA2 = 40#20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -48,11 +48,12 @@ def softmax(distribution): # dist. is a list (np.array) of values
 #-------------------
 class Model:
     """ an object 'Model' representing hebbian-inspired network that encode dynamics between cells representing concepts learned by an agent."""
-    def __init__(self, network=None, activateds=None, modifieds=None):
+    def __init__(self,name, network=None, activateds=None, modifieds=None):
 
         global FIRE_TIME
 
-        # DEFAULT:
+        # name:
+        self.name = name
 
         # cells encoding events:
         #-----------------------
@@ -81,6 +82,10 @@ class Model:
         self.V = np.zeros([0,0,2]) # for actor-critic method
         self.n = np.zeros([0,0,2])
         self.matter = np.ones([0,2]) # importance of events
+        self.R = np.zeros([0,2]) # estimation of reward with association
+        self.EA = -np.ones([0,2])
+        self.ES = np.zeros([0,2])
+        self.EI = np.zeros([0,2])
 
         #see "PERCEPTION" loop in "update" method:
         #self.add_actions(["force_reason"])
@@ -141,6 +146,22 @@ class Model:
                     new_matter = np.ones([number,2])
                     new_matter[:self.nb_cells,:] = self.matter
                     self.matter = new_matter
+
+                    new_R = np.zeros([number,2])
+                    new_R[:self.nb_cells,:] = self.R
+                    self.R = new_R
+
+                    new_EA = -np.ones([number,2])
+                    new_EA[:self.nb_cells,:] = self.EA
+                    self.EA = new_EA
+
+                    new_ES = np.zeros([number,2])
+                    new_ES[:self.nb_cells,:] = self.ES
+                    self.ES = new_ES
+
+                    new_EI = np.zeros([number,2])
+                    new_EI[:self.nb_cells,:] = self.EI
+                    self.EI = new_EI
 
                     new_rewards = np.zeros([number,2])
                     new_rewards[:self.nb_cells,:] = self.rewards
@@ -205,7 +226,7 @@ class Model:
             self.rewards[self.cell_number[cell_id],int(value>0)] = reward
 
 
-    def update(self, possible_actions=None, percepts=None):
+    def update(self, possible_actions=None, percepts=None, explore=True):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
@@ -222,7 +243,7 @@ class Model:
 
         # REASONING:
         #===========
-        if self.activateds and self.action: # (no reasoning/thought for the moment)
+        if False:#self.activateds and self.action: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
@@ -326,9 +347,9 @@ class Model:
         # DECISION:
         #==========
         if possible_actions:
-            return self.decision(possible_actions)
+            return self.decision(possible_actions,explore)
         else:
-            return self.decision()
+            return self.decision(None,explore)
 
 
     def reinforce(self, cell1, cell2, action, I1, I2):
@@ -340,20 +361,22 @@ class Model:
         v = self.counts[num_act,num_cell1,num_cell2]
         self.counts[num_act,num_cell1,:] *= s/(s+1.)
         self.counts[num_act,num_cell1,num_cell2] = (s*v+1.)/(s+1.)
-        #self.counts[self.counts[num_act,num_cell1]<MIN] = 0.
 
         self.cor[num_act,num_cell1,num_cell2,int(I1>0)] = ETA1*self.cor[num_act][num_cell1][num_cell2][int(I1>0)] + (1-ETA1)*I2
 
 
-    def decision(self, possible_actions=None):
+    def decision(self, possible_actions=None, explore=True):
         state = 0
         I = 0
         if self.activateds:
             state = self.cell_number[self.activateds[-1]]
             I = self.old_intensities[-1]
+
         # TODO exploration based on convergence/difficulty to reach a state
-        values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/10
+
+        values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/1000.
         new_values = -np.Infinity*np.ones(len(values))
+
         if possible_actions:
             indices = []
             for action in possible_actions:
@@ -361,13 +384,40 @@ class Model:
             new_values[np.array(indices)]=values[np.array(indices)]
         else:
             new_values = values
-        choice = softmax(new_values)
+
+        if self.name=="teacher[teacher]":
+            print "........................................."
+            print "decision !"
+            if self.activateds:
+                print "true obs : "+self.activateds[-1]
+
+        if explore or self.EA[state,int(I>0)]==-1:
+            choice = softmax(new_values)
+        else:
+            # understandable behavior:
+            expected_state = int(self.ES[state,int(I>0)])
+            expected_intensity = int(self.EI[state,int(I>0)]>0)
+            if self.name=="teacher[teacher]":
+                print self.activateds[-1]+"---"+self.action_number.inv[self.EA[state,int(I>0)]]+"---"+self.cell_number.inv[expected_state]
+                print self.R[expected_state,expected_intensity]
+
+            if self.R[expected_state,expected_intensity]>np.random.rand():
+                choice = self.EA[state,int(I>0)]
+            else:
+                new_values[int(self.EA[state,int(I>0)])]=-np.Infinity
+                #choice = np.argmax(new_values)
+                choice = softmax(new_values)
+
         #choice = np.argmax(values)
         #expect = np.max(values)
         #self.expected = np.max(values)
         # ema:
-        self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
+        #self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
+        self.expected = self.V[state,choice,int(I>0)]*np.abs(I)
         self.action = self.action_number.inv[choice]
+        if self.name=="teacher[teacher]":
+            print "choice = "+self.action
+            print"........................................."
         return self.action
 
 
@@ -397,6 +447,7 @@ class Model:
             self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
             self.n[last_state,action,int(last_intensity>0)] += 1.
             self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + TD)/(n+1.)
+            self.R[new_state,int(new_intensity>0)] = (n*(self.R[new_state,int(new_intensity>0)]) + reward)/(n+1.)
             
             """
             # EMA Qlearning
@@ -406,8 +457,11 @@ class Model:
             """
             
             # EMA actor-critic
-            self.V[last_state,action,last_intensity>0] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
+            self.V[last_state,action,int(last_intensity>0)] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
             
+            self.EA[last_state,int(last_intensity>0)] = action
+            self.ES[last_state,int(last_intensity>0)] = new_state
+            self.EI[last_state,int(last_intensity>0)] = int(new_intensity>0)
             """
             print "last "+str(self.activateds[-1])+" "+str(last_intensity)
             print "act "+ str(self.action)
@@ -417,20 +471,25 @@ class Model:
             """
 
 
-    def update_inverse(self, possible_actions=None, percepts=None, last_action=None):
+    def update_inverse(self, possible_actions=None, percepts=None, last_action=None, testprint=False):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
         new_intensities = {}
 
+        if self.activateds and testprint:
+            print "last obs = "+self.activateds[-1]
+
         if last_action:
             if not last_action in self.action_number:
                 self.add_actions([last_action])
             self.action = last_action
+            if testprint:
+                print "force action : "+self.action
 
         # REASONING:
         #===========
-        if self.activateds and self.action: # (no reasoning/thought for the moment)
+        if False:#self.activateds and self.action: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
@@ -507,7 +566,15 @@ class Model:
         #=========
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
+        if testprint:
+            print "new obs = "+next_activated
         #next_activated = max(elligibles.iteritems(), key=operator.itemgetter(1))[0]
+
+
+        if len(self.activateds)>0:
+            last_activated = self.activateds[-1]
+            last_intensity = self.old_intensities[-1]
+            self.inverse_learning(last_activated,last_intensity,testprint)
 
         if self.action:
             self.learn(next_activated,tot_reward)
@@ -523,12 +590,6 @@ class Model:
             self.add_activated(next_activated)
             self.add_intensity(self.intensities[next_activated])
 
-        if len(self.activateds)>1:
-            last_activated = self.activateds[-2]
-            last_intensity = self.old_intensities[-2]
-            present_activated = self.activateds[-1]
-            present_intensity = self.old_intensities[-1]
-            self.inverse_learning(last_activated,present_activated,last_intensity,present_intensity)
 
         # DECISION:
         #==========
@@ -537,48 +598,31 @@ class Model:
         else:
             return self.decision()
 
-    def inverse_learning(self,last_activated,new_activated,last_intensity,new_intensity):
+    def inverse_learning(self,last_activated,last_intensity,testprint):
         if self.activateds and self.action:
 
             # action:
             action = self.action_number[self.action]
             last_state = self.cell_number[last_activated]
 
-            # new state:
-            new_state = self.cell_number[new_activated]
-            new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             # ema :
-            #new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
-            reach = np.max(new_values)
 
-            n = self.n[last_state,action,int(last_intensity>0)]+1.
+            n = self.n[last_state,action,int(last_intensity>0)]#+1.
             s = np.sum(self.n[last_state,:,int(last_intensity>0)])
 
-            # estimation of Q
-            #q = self.Q[last_state,action,int(last_intensity>0)]
-            #self.Q[last_state,:,int(last_intensity>0)] *= s/(s+1.)
-            #self.Q[last_state,action,int(last_intensity>0)] = (s*q + 1)/(s+1.)
+            expected_state = int(self.ES[last_state,int(last_intensity>0)])
+            expected_intensity = self.EI[last_state,int(last_intensity>0)]
+            if action == self.EA[last_state,int(last_intensity>0)]:
+                self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] + 1)/(s+1.)
+            elif self.EA[last_state,int(last_intensity>0)]>=0:
+                self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] - 1)/(s+1.)
 
-            # estimation of R
-            #Rguess = (self.Q[last_state,action,int(last_intensity>0)] - DISCOUNT*reach)
-            #self.rewards[last_state,int(last_intensity)] = ETA2*self.rewards[last_state,int(last_intensity>0)] + (1-ETA2)*Rguess
-            #self.rewards[last_state,int(last_intensity)] = (n*(self.rewards[new_state,int(new_intensity>0)]) + Rguess)/(n+1.)
-            
-            # other way:
-            noise = np.random.rand(len(self.counts[0,0,:]))/100.
-            expected_state = np.argmax(self.counts[action,last_state,:] + noise) # matter already has an impact on this (hebbian reinf)
-            expected_intensity = self.cor[action,last_state,expected_state,int(last_intensity>0)]
-            #self.rewards[expected_state,int(expected_intensity>0)] = (n*self.rewards[expected_state,int(expected_intensity>0)] + 1.)/(n+1.)
-            #self.rewards[expected_state,int(expected_intensity>0)] = (n*self.rewards[expected_state,int(expected_intensity>0)] + np.max(self.counts[action,last_state,:]))/(n+1.)
-            self.rewards[expected_state,int(expected_intensity>0)] = 0.7*self.rewards[expected_state,int(expected_intensity>0)] + (1-0.7)*np.max(self.counts[action,last_state,:])
-            #self.rewards[expected_state,int(expected_intensity>0)] = ETA2*self.rewards[expected_state,int(expected_intensity>0)] + (1-ETA2)
+            if self.EA[last_state,int(last_intensity>0)]>=0 and testprint:
+                print last_activated+"---"+self.action
+                print last_activated+"---"+self.action_number.inv[self.EA[last_state,int(last_intensity>0)]]+"---"+self.cell_number.inv[expected_state]
+                print "R("+self.cell_number.inv[expected_state]+") = "+str(self.rewards[expected_state,int(expected_intensity>0)])
+                print "==========================================================="
 
-            # EMA actor-critic
-            #self.V[last_state,action,last_intensity>0] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
-            
-            # counts:
-            #self.n[last_state,action,int(last_intensity>0)] += 1.
-            #self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + )/(n+1.)
 
 
 # static functions:
@@ -605,20 +649,27 @@ def diff(model1, model2):
     return dist,choice
 
 def diff_reward(model1, model2):
-    dist = 0
+    tot_dist = 0
     cell_diff = {}
     for cell_id in model1.intensities:# & model2.intensities:
         if cell_id in model2.intensities:
             cell_num1 = model1.cell_number[cell_id]
             cell_num2 = model2.cell_number[cell_id]
+            #print cell_id
+            #print model1.rewards[cell_num1,:]
+            #print model2.rewards[cell_num2,:]
+            #print model1.R[cell_num1,:]
+            #print np.sum(np.abs(model1.rewards[cell_num1,:]-model2.rewards[cell_num2,:]))
+
             # Lmax for matter:
-            matter = np.max([np.abs(model1.matter[cell_num1,int(model1.intensities[cell_id]>0)]),np.abs(model2.matter[cell_num2,int(model2.intensities[cell_id]>0)])])
+            #matter = np.max([np.abs(model1.matter[cell_num1,int(model1.intensities[cell_id]>0)]),np.abs(model2.matter[cell_num2,int(model2.intensities[cell_id]>0)])])
             # this distance function is arbitrary, could be L2, L3 etc...
-            dist += np.sum(np.abs(model1.rewards[cell_num1,:]-model2.rewards[cell_num2,:]))#*matter
+            dist = np.sum(np.abs(model1.R[cell_num1,:]-model2.rewards[cell_num2,:]))#* np.abs(model1.R[cell_num1,:]))#*matter
             # maybe this softmax pull could have its own theta:
             cell_diff.setdefault(cell_id,dist)
+            tot_dist += dist
 
-    return cell_diff
+    return cell_diff,tot_dist
 
     # max of sofmax ?
     #choice = random_pull_dict(cell_diff)
