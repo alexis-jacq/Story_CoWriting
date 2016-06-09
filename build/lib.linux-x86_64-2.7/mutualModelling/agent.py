@@ -57,7 +57,7 @@ class Agent:
                 self.Id[agent+';'+self.name] = agent
 
 
-    def update_models(self,possible_actions=None,models_percepts=None,model_actions=None):
+    def update_models(self,possible_actions=None,models_percepts=None,model_actions=None,case="MM1"):
         
         OR = 0
         n=0.1
@@ -87,9 +87,15 @@ class Agent:
             for agent in self.Id:
                 _,dist = diff_reward(self.M[self.name],self.M[agent])
                 diff += dist
-            if diff>=self.prev_diff:
-                explore = False
-                #pass
+
+            if case=="MM2":
+                if diff>=self.prev_diff:
+                    explore = False
+            if case=="MM1_understand":
+                explore=False
+            if case=="MM1":
+                explore=True
+
             self.prev_diff = diff
             self.social_curve.append(diff)
             #print OR/n

@@ -82,8 +82,8 @@ for i in range(N):
     previous = []
     for j in range(n):
 
-        action1 = teacher.update_models(None,model_percepts1,model_actions1,"MM1")
-        action2 = learner.update_models(None,model_percepts2,model_actions2,"MM1")
+        action1 = teacher.update_models(None,model_percepts1,model_actions1,"MM2")
+        action2 = learner.update_models(None,model_percepts2,model_actions2,"MM2")
         model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
         cumrew.append(r)
 
