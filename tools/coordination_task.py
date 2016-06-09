@@ -33,9 +33,10 @@ name2 = "learner"
 name3 = "test"
 all_names = [name1,name2,name3]
 
-N = 100
-n = 1000
+N = 200
+n = 2000
 CUMREW = np.zeros(n)
+CUMREW2 = np.zeros(n)
 
 def world_update(action1,action2,previous):
     real_action = action2
@@ -67,7 +68,10 @@ def world_update(action1,action2,previous):
 
     return model_percepts1,model_percepts2,model_actions1,model_actions2,r
 
+case = "MM1"
 for i in range(N):
+    if i>100:
+        case="MM2"
     if i%10==0:
         print i
     teacher = create_teacher(name1,all_names)
@@ -82,12 +86,15 @@ for i in range(N):
     previous = []
     for j in range(n):
 
-        action1 = teacher.update_models(None,model_percepts1,model_actions1,"MM1")
-        action2 = learner.update_models(None,model_percepts2,model_actions2,"MM1")
+        action1 = teacher.update_models(None,model_percepts1,model_actions1,case)
+        action2 = learner.update_models(None,model_percepts2,model_actions2,case)
         model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
         cumrew.append(r)
 
-    CUMREW+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
+    if i>100:
+        CUMREW+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
+    else:
+        CUMREW2+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
 
 print 'teacher think about learner:'
 teacher.show_learned_rewards('learner')
@@ -112,4 +119,5 @@ curve2 = learner.social_curve
 #plt.plot(curve1)
 #plt.plot(curve2)
 plt.plot(CUMREW)
+plt.plot(CUMREW2)
 plt.show()
