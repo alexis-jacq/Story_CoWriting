@@ -67,8 +67,7 @@ class Model:
 
         # hebbian learning (world's causality):
         #--------------------------------------
-        self.counts = np.zeros([0,0,0]) # count the close activations for hebbian learning
-        self.cor = np.zeros([0,0,0,2]) # corelation with positive intensity
+        self.counts = np.zeros([0,0,0,2,2]) # count the close activations for hebbian learning
 
         # reinforcement learning (action):
         #---------------------------------
@@ -83,12 +82,12 @@ class Model:
         self.n = np.zeros([0,0,2])
         self.matter = np.ones([0,2]) # importance of events
         self.R = np.zeros([0,2]) # estimation of reward with association
+
+        # IRL and understandable behavior:
+        #---------------------------------
         self.EA = -np.ones([0,2])
         self.ES = np.zeros([0,2])
         self.EI = np.zeros([0,2])
-
-        #see "PERCEPTION" loop in "update" method:
-        #self.add_actions(["force_reason"])
 
 
     """ functions for creating/updating/using models """
@@ -342,12 +341,10 @@ class Model:
         num_cell2 = self.cell_number[cell2]
         num_act = self.action_number[action]
 
-        s = np.sum(self.counts[num_act,num_cell1])
-        v = self.counts[num_act,num_cell1,num_cell2]
-        self.counts[num_act,num_cell1,:] *= s/(s+1.)
-        self.counts[num_act,num_cell1,num_cell2] = (s*v+1.)/(s+1.)
-
-        self.cor[num_act,num_cell1,num_cell2,int(I1>0)] = ETA1*self.cor[num_act][num_cell1][num_cell2][int(I1>0)] + (1-ETA1)*I2
+        s = np.sum(self.counts[num_act,num_cell1,:,int(I1>0),:])
+        v = self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)]
+        self.counts[num_act,num_cell1,:,int(I1>0),:] *= s/(s+1.)
+        self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)] = (s*v+1.)/(s+1.)
 
 
     def decision(self, possible_actions=None, explore=True):
