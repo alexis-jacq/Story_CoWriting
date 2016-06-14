@@ -18,7 +18,7 @@ def create_teacher(name,all_names):
 def create_learner(name,all_names):
     percepts = ["reward","noise"]
     actions = ["a","b","c","imitate"]
-    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.5]]
+    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.1]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
 

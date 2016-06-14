@@ -83,7 +83,7 @@ class Agent:
                 diff += dist
 
             if case=="MM2":
-                if diff>=self.prev_diff:
+                if abs(diff-self.prev_diff)>0.1*np.random.rand():
                     explore = False
             if case=="MM1_understand":
                 explore=False
