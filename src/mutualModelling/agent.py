@@ -7,13 +7,7 @@ from mutualModelling import model
 from mutualModelling.model import diff_reward
 import matplotlib.pyplot as plt
 import copy
-
-def softsign(x,n):
-    y = abs(x)
-    if y>1.:
-        y=1.
-    z = (1-y)**n
-    return z*np.sign(x)
+import operator
 
 class Agent:
     """agent able of first and 2nd mutual modelling reasoning"""
@@ -36,8 +30,8 @@ class Agent:
         self.prev_diff = 0
         self.social_curve = []
 
-        if len(set(agents))>2 and not "other" in agents: # 'other' represents another agent in general"
-            agents.append("other")
+        #if len(set(agents))>2 and not "other" in agents: # 'other' represents another agent in general"
+        #    agents.append("other")
 
         for agent in set(agents):
             name = self.name+"["+agent+"]"
@@ -78,7 +72,7 @@ class Agent:
                     if model in self.Id.values():
                     #if self.name=="learner":
                     #if True:
-                        OR+=z
+                        OR+=0*z
                         n+=1.
 
             understood=0
@@ -98,11 +92,26 @@ class Agent:
 
             self.prev_diff = diff
             self.social_curve.append(diff)
-            #print OR/n
-            decision = self.M[self.name].update(possible_actions,u,explore,intrinsic=OR/n)
-            #if OR>np.random.rand():
-            #    decision =  self.gift()
 
+            self_r = self.self_reward(u)
+            #print self_r
+            
+            if self_r>0:
+                gift = []
+                for agent in self.Id.values():
+                    gift.append(self.reward(agent))
+                decision = self.M[self.name].update(gift,u,explore,intrinsic=OR/n)
+
+            """
+            if self_r<0:
+                gift = []
+                for agent in self.Id.values():
+                    gift.append(self.punish(agent))
+                decision = self.M[self.name].update(gift,u,explore,intrinsic=OR/n)
+            """
+
+            if self_r<=0:
+                decision = self.M[self.name].update(possible_actions,u,explore,intrinsic=OR/n)
 
             return decision
         else:
@@ -125,20 +134,30 @@ class Agent:
 
     def plot_social_curve(self):
         return self.social_curve
-
-    """
-    def be_kind(self): # do the action the other prefer you do
-        for agent in self.
+    
+    def reward(self,agent):
+        values = {}
         for action in self.M[self.name].action_number:
-            if action in self.M[agent
+            if action in self.M[agent].cell_number:
+                obs_num = self.M[agent].cell_number[action]
+                values[action] = self.M[agent].rewards[obs_num,1]
+        #print self.name+" rewards "+agent+" with "+max(values.iteritems(), key=operator.itemgetter(1))[0]
+        return max(values.iteritems(), key=operator.itemgetter(1))[0]
 
-
-    def be_bad(self,agent): # do the action the other
-
-    def analyse(self,agent,action):
-    """
-    """
-    def gift(self):
+    def punish(self,agent):
+        values = {}
         for action in self.M[self.name].action_number:
-            for model in 
-            for obs in self"""
+            if action in self.M[agent].cell_number:
+                obs_num = self.M[agent].cell_number[action]
+                values[action] = self.M[agent].rewards[obs_num,1]
+        #print self.name+" rewards "+agent+" with "+max(values.iteritems(), key=operator.itemgetter(1))[0]
+        return min(values.iteritems(), key=operator.itemgetter(1))[0]
+       
+    def self_reward(self,percepts):
+        r = 0
+        for percept in percepts:
+            if percept[0] in self.M[self.name].cell_number:
+                obs_num = self.M[self.name].cell_number[percept[0]]
+                intensity = percept[1]
+                r += self.M[self.name].R[obs_num,intensity]
+        return r

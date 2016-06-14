@@ -20,8 +20,8 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 10#30 # chose action (exponent for softmax pulling
-THETA2 = 10#20 # chose perception
+THETA1 = 15#30 # chose action (exponent for softmax pulling
+THETA2 = 15#20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -67,8 +67,7 @@ class Model:
 
         # hebbian learning (world's causality):
         #--------------------------------------
-        self.counts = np.zeros([0,0,0]) # count the close activations for hebbian learning
-        self.cor = np.zeros([0,0,0,2]) # corelation with positive intensity
+        self.counts = np.zeros([0,0,0,2,2]) # count the close activations for hebbian learning
 
         # reinforcement learning (action):
         #---------------------------------
@@ -83,12 +82,12 @@ class Model:
         self.n = np.zeros([0,0,2])
         self.matter = np.ones([0,2]) # importance of events
         self.R = np.zeros([0,2]) # estimation of reward with association
+
+        # IRL and understandable behavior:
+        #---------------------------------
         self.EA = -np.ones([0,2])
         self.ES = np.zeros([0,2])
         self.EI = np.zeros([0,2])
-
-        #see "PERCEPTION" loop in "update" method:
-        #self.add_actions(["force_reason"])
 
 
     """ functions for creating/updating/using models """
@@ -135,13 +134,9 @@ class Model:
                     self.cell_number[cell_id] = number
                     number += 1
 
-                    new_counts = np.zeros([self.nb_actions,number, number])
-                    new_counts[:,:self.nb_cells,:self.nb_cells] = self.counts
+                    new_counts = np.zeros([self.nb_actions,number, number,2,2])
+                    new_counts[:,:self.nb_cells,:self.nb_cells,:,:] = self.counts
                     self.counts = new_counts
-
-                    new_cor = np.zeros([self.nb_actions, number, number,2])
-                    new_cor[:,:self.nb_cells,:self.nb_cells,:] = self.cor
-                    self.cor = new_cor
 
                     new_matter = np.ones([number,2])
                     new_matter[:self.nb_cells,:] = self.matter
@@ -190,13 +185,9 @@ class Model:
                     self.action_number[cell_id] = number
                     number += 1
 
-                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells])
-                    new_counts[:self.nb_actions,:,:] = self.counts
+                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells,2,2])
+                    new_counts[:self.nb_actions,:,:,:,:] = self.counts
                     self.counts = new_counts
-
-                    new_cor = np.zeros([number, self.nb_cells, self.nb_cells,2])
-                    new_cor[:self.nb_actions,:,:,:] = self.cor
-                    self.cor = new_cor
 
                     new_Q = np.zeros([self.nb_cells, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
@@ -342,12 +333,10 @@ class Model:
         num_cell2 = self.cell_number[cell2]
         num_act = self.action_number[action]
 
-        s = np.sum(self.counts[num_act,num_cell1])
-        v = self.counts[num_act,num_cell1,num_cell2]
-        self.counts[num_act,num_cell1,:] *= s/(s+1.)
-        self.counts[num_act,num_cell1,num_cell2] = (s*v+1.)/(s+1.)
-
-        self.cor[num_act,num_cell1,num_cell2,int(I1>0)] = ETA1*self.cor[num_act][num_cell1][num_cell2][int(I1>0)] + (1-ETA1)*I2
+        s = np.sum(self.counts[num_act,num_cell1,:,int(I1>0),:])
+        v = self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)]
+        self.counts[num_act,num_cell1,:,int(I1>0),:] *= s/(s+1.)
+        self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)] = (s*v+1.)/(s+1.)
 
 
     def decision(self, possible_actions=None, explore=True):

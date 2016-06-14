@@ -20,8 +20,8 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 10#30 # chose action (exponent for softmax pulling
-THETA2 = 10#20 # chose perception
+THETA1 = 15#30 # chose action (exponent for softmax pulling
+THETA2 = 15#20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -134,13 +134,9 @@ class Model:
                     self.cell_number[cell_id] = number
                     number += 1
 
-                    new_counts = np.zeros([self.nb_actions,number, number])
-                    new_counts[:,:self.nb_cells,:self.nb_cells] = self.counts
+                    new_counts = np.zeros([self.nb_actions,number, number,2,2])
+                    new_counts[:,:self.nb_cells,:self.nb_cells,:,:] = self.counts
                     self.counts = new_counts
-
-                    new_cor = np.zeros([self.nb_actions, number, number,2])
-                    new_cor[:,:self.nb_cells,:self.nb_cells,:] = self.cor
-                    self.cor = new_cor
 
                     new_matter = np.ones([number,2])
                     new_matter[:self.nb_cells,:] = self.matter
@@ -189,13 +185,9 @@ class Model:
                     self.action_number[cell_id] = number
                     number += 1
 
-                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells])
-                    new_counts[:self.nb_actions,:,:] = self.counts
+                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells,2,2])
+                    new_counts[:self.nb_actions,:,:,:,:] = self.counts
                     self.counts = new_counts
-
-                    new_cor = np.zeros([number, self.nb_cells, self.nb_cells,2])
-                    new_cor[:self.nb_actions,:,:,:] = self.cor
-                    self.cor = new_cor
 
                     new_Q = np.zeros([self.nb_cells, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
