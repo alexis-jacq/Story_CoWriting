@@ -18,7 +18,7 @@ def create_teacher(name,all_names):
 def create_learner(name,all_names):
     percepts = ["reward","noise"]
     actions = ["a","b","c","imitate"]
-    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,1.1]]
+    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.1]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
 
@@ -33,7 +33,7 @@ name2 = "learner"
 all_names = [name1,name2]
 
 N = 100
-n = 1000
+n = 2000
 CUMREW = np.zeros(n)
 CUMREW2 = np.zeros(n)
 L_curve1 = np.zeros(n-1)
@@ -43,10 +43,11 @@ T_curve2 = np.zeros(n-1)
 
 def world_update(action1,action2,previous):
     real_action = action2
-    if action2 =="imitate":
-        real_action = action1
     p1 = [(action2,1.)]
     p2 = [(action1,1.)]
+    if action2 =="imitate":
+        real_action = action1
+        p1.append((real_action,1.))
     r = 0
     if "b"==real_action:
         #p1.append(("success",1.))
@@ -121,15 +122,15 @@ teacher.show_learned_rewards('teacher')
 teacher.show_social_error('learner')
 
 plt.subplot(3, 1, 1)
-plt.plot(CUMREW)
-plt.plot(CUMREW2)
+plt.plot(CUMREW,'b')
+plt.plot(CUMREW2,'r')
 
 plt.subplot(3, 1, 2)
-plt.plot(L_curve1,'r')
-plt.plot(L_curve2,'m')
+plt.plot(L_curve1,'b')
+plt.plot(L_curve2,'r')
 
 plt.subplot(3, 1, 3)
 plt.plot(T_curve1,'b')
-plt.plot(T_curve2,'g')
+plt.plot(T_curve2,'r')
 
 plt.show()

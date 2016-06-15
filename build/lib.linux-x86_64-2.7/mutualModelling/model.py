@@ -303,6 +303,11 @@ class Model:
         # stochastic election of incoming active cell:
         next_activated = random_pull_dict(elligibles)
 
+        if tot_reward>1:
+            tot_reward=1.
+        if tot_reward<-1:
+            tot_reward=-1.
+
         # new intensities:
         for cell in new_intensities:
             if cell not in self.modifieds:
@@ -563,11 +568,18 @@ class Model:
 
             expected_state = int(self.ES[last_state,int(last_intensity>0)])
             expected_intensity = self.EI[last_state,int(last_intensity>0)]
+
+            if action == self.EA[last_state,int(last_intensity>0)]:
+                self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] + 0.1
+            elif self.EA[last_state,int(last_intensity>0)]>=0:
+                self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
+
+            """
             if action == self.EA[last_state,int(last_intensity>0)]:
                 self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] + 1)/(s+1.)
             elif self.EA[last_state,int(last_intensity>0)]>=0:
                 self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] - 1)/(s+1.)
-
+            """
 
 
 # static functions:
