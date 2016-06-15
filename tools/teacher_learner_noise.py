@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import copy
 
 def create_teacher(name,all_names):
-    percepts = ["success","fail"]
+    percepts = ["a","b","c"]
     actions = ["a","b","c","reward","punish"]
     #rewards = [["success",1.,1.],["fail",1.,-1.]]
     rewards = [["a",1.,-1.],["b",1.,1.],['c',1.,-1.]]
@@ -18,7 +18,7 @@ def create_teacher(name,all_names):
 def create_learner(name,all_names):
     percepts = ["reward","noise"]
     actions = ["a","b","c","imitate"]
-    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.1]]
+    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,1.1]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
 
