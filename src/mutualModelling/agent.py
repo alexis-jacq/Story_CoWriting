@@ -97,7 +97,7 @@ class Agent:
 
             #decision = self.M[self.name].update(possible_actions,self_percepts,explore,intrinsic=IR/n)
 
-            
+
             if self_r>0 and explore:
                 gift = []
                 for agent in self.Id.values():
@@ -112,7 +112,7 @@ class Agent:
 
             if self_r<=0 or not explore:
                 decision = self.M[self.name].update(possible_actions,self_percepts,explore,intrinsic=IR/n)
-            
+
 
             return decision
         else:

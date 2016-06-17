@@ -7,70 +7,58 @@ from mutualModelling import model,agent
 import matplotlib.pyplot as plt
 import copy
 
-def create_teacher(name,all_names):
-    percepts = ["success","fail"]
-    #actions = ["a","b","c","reward","punish"]
-    actions = ["a","b","c","reward","punish"]
-    rewards = [["success",1.,1.],["fail",1.,-1.]]
+def child(name,all_names):
+    percepts = ["convergence","tablet","robot_head","noise"]
+    actions = ["demo","punish","reward","look_robot_head","look_noise","look_tablet"]
+    rewards = [["convergence",1.,1.],["convergence",-1.,-1.],["noise",1.,0.5]]
+    # "intrinsic" reward for writing_convergence will dicrease with time, the robot has to find a way to incrise the extrinsically (via temporall diff)
     teacher = agent.Agent(name,all_names,percepts,actions,rewards)
     return teacher
 
-def create_learner(name,all_names):
-    percepts = ["reward","noise"]
-    actions = ["a","b","c","imitate"]
-    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.1]]
+def robot(name,all_names):
+    percepts = ["robot_progress","child_progress","writing_convergence","tablet","child_head","justified_reward","justified_punish"]
+    actions = ["converge","diverge","exaggerate","look_tablet","look_child_head","look_noise","look_tablet","imitate","point_tablet","new_move"]
+    rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
 
-
 """
+basic simulation of CoWriter interaction
+========================================
+convergence = the writing of the robot approaches the writing of the child
+exaggerate = exaggerate the mistakes of the child
+justified_reward/punish = the child gives a reward/punish to the robot while the robot is converging/diverging
+new_move = do something new and unexpected
+with_me = if the child look at what he is expected to look at (with_me_ness)
 """
 
 # parameters
 
-name1 = "teacher"
-name2 = "learner"
-name3 = "test"
-all_names = [name1,name2,name3]
+child_name = "child"
+robot_name = "robot"
+all_names = [child,robot]
 
-N = 200
-n = 2000
-CUMREW = np.zeros(n)
+robot_activity_actions = ["converge","diverge","exaggerate"]
+robot_interaction_actions = ["look_tablet","look_child_head","look_noise","look_tablet","imitate","point_tablet","new_move"]
+
+child_activity_actions = ["demo"]
+child_interaction_actions = ["punish","reward","look_robot_head","look_noise","look_tablet"]
+
+robot_turn = True # False meaning the child's turn
+
+N = 1
+n = 20
+CUMREW1 = np.zeros(n)
 CUMREW2 = np.zeros(n)
 
 def world_update(action1,action2,previous):
-    real_action = action2
-    if action2 =="imitate":
-        real_action = action1
-    p1 = [(action2,1.)]
-    p2 = [(action1,1.)]
-    r = 0
-    if "c"==real_action:
-        p1.append(("success",1.))
-        #p2.append(("success",1.))
-        r = 1
-    else:
-        p1.append(("fail",1.))
-        #p2.append(("fail",1.))
-        #if action2=="c":
-        #    p2.append(("noise",1))
+    # robot's turn:
 
-    # suppose no errors of perception:
-
-    #model_percepts1 = {name1:p1}#,name2:p2,name2+";"+name1:p1}
-    #model_percepts2 = {name2:p2}#,name1:p1,name1+";"+name2:p2}
-    #model_percepts1 = {name1:p1,name2:p2}#,name2+";"+name1:p1}
-    #model_percepts2 = {name2:p2,name1:p1}#,name1+";"+name2:p2}
-    model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
-    model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
-    model_actions1 = {name2:action2,name2+";"+name1:action1}
-    model_actions2 = {name1:action1,name1+";"+name2:action2}
-
-    return model_percepts1,model_percepts2,model_actions1,model_actions2,r
+    # child's turn:
 
 case = "MM1"
 for i in range(N):
-    if i>100:
+    if i>N/2.:
         case="MM2"
     if i%10==0:
         print i
