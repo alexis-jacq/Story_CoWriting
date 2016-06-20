@@ -225,7 +225,7 @@ class Model:
 
         # REASONING:
         #===========
-        if False:#self.activateds and self.action: # (no reasoning/thought for the moment)
+        if not percepts:#self.activateds and self.action: # (no reasoning/thought for the moment)
 
             # following cor: (no preference for different delays for the moment)
             #delay = 0
@@ -634,5 +634,3 @@ def diff_reward(model1, model2):
 
     # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
     #return dist,choice
-
-
