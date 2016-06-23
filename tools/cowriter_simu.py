@@ -45,8 +45,12 @@ child_activity_actions = ["demo"]
 child_interaction_actions = ["punish","reward","look_robot_head","look_noise","look_tablet"]
 
 ROBOT_TURN = True # False meaning the child's turn
-TABLET = False
+
+CHILD_TABLET = False
 CHILD_IMPROVE = False
+CHILD_ROBOT_HEAD = False
+CHILD_WILL_ROBOT = False
+CHILD_WILL_TABLET = False
 
 N = 1
 n = 20
@@ -81,13 +85,15 @@ def activity_update(robot,child,action_child,action_robot,previous):
     global CHILD_TABLET
     global CHILD_ROBOT_HEAD
     global CHILD_NOISE
+    global CHILD_WILL_ROBOT
+    global CHILD_WILL_TABLET
 
     robot_obs,child_obs,robot_actions,child_actions = init_percepts()
 
     # robot's turn:
     if action_robot in robot_activity_actions:
         # if the robot think the child is still looking at the tablet:
-        if robot.M[child_name].intensitie["look_tablet"]>0:
+        if robot.M[child_name].intensities["look_tablet"]>0:
             robot_actions[child_name+":"+robot_name] = action_robot
             if action_robot == "converge":
                 robot_obs[child_name].append(("convergence",1.))
@@ -96,6 +102,7 @@ def activity_update(robot,child,action_child,action_robot,previous):
             if action_robot == "exaggerate":
                 robot_obs[child_name].append(("convergence",-0.5.))
 
+        # actually the child...
         if (CHILD_TABLET and np.random.rand()>0.3) or (CHILD_ROBOT_HEAD and np.random.rand()<0.2):
             child_actions[robot_name] = action_robot
             if action_robot == "converge":
@@ -107,26 +114,89 @@ def activity_update(robot,child,action_child,action_robot,previous):
                 if np.random.rand()>0.3:
                     CHILD_IMPROVE = True
 
-        # big assumption:
+        # big assumption: robot always see child action
         robot_actions[child_name] = action_child
         robot_obs[child_name].append((action_child,1.)
+
+        # if child feedback
         if action_child=="reward":
             if robot.M[child_name].intensities["convergence"]>0:
+                robot_obs[robot_name].append(("justified_reward",1.))
+        if action_child=="punish":
+            if robot.M[child_name].intensities["convergence"]<0:
+                robot_obs[robot_name].append(("justified_punish",1.))
 
+        # other assumption : the child is aware of where the robot is looking
+
+        # if robot is lookink the tablet:
         if robot.M[robot_name].intensities["look_tablet"]>0:
             if action_child in ["punish","reward"]:
+                # child think the robot sees his action:
                 child_actions[robot_name+":"+child_name] = action_child
+                # robot think the child think it is rewarded:
+                robot_obs[child_name+":"+robot_name].append((action_child,1.))
 
-        if ROBOT_CHILD_HEAD:
+        # if robot is looking the child:
+        if robot.M[robot_name].intensities["look_child_head"]>0:
             if action_child in ["look_robot_head","look_tablet","look_noise"]:
+                # child think the robot sees his action:
                 child_actions[robot_name+":"+child_name] = action_child
-
-
-
-        if action_child == "look_robot_head":
-
+                # it is a posture-action => other postures are false:
+                for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_child]):
+                    robot_obs[child_name].append((other_action,-1.)
+            CHILD_ROBOT_HEAD = (action_child=="look_robot_head")
+            CHILD_TABLET =  (action_child=="look_tablet")
 
     # child's turn:
+    if action_child in child_activity_actions:
+
+        # big assumption: robot always see child action
+        robot_actions[child_name] = action_child
+        robot_obs[child_name].append((action_child,1.)
+
+        if CHILD_IMPROVE:
+            robot_obs[robot_name].append(("child_progress",1.))
+
+        # if the robot think the child think the robot sees the word:
+        if robot.M[robot_name].intensities["look_tablet"]>0:
+            robot_obs[child_name+":"+robot_name].append((action_child,1.))
+            child_actions[robot_name+":"+child_name] = action_child
+
+        # ["look_tablet","look_child_head","look_noise","point_tablet","new_move"]
+
+        # robot action
+        if action_robot=="point_tablet":
+            if robot.M[child_name].intensities["look_robot_head"]:
+                robot_actions[child_name+":"+robot_name] = action_robot
+            if CHILD_ROBOT_HEAD or np.random.rand()>0.3:
+                child_actions[robot_name] = action_robot
+                CHILD_WILL_TABLET = True
+
+
+        if action_robot in ["look_tablet","look_child_head","look_noise"]:
+            if robot.M[child_name].intensities["look_robot_head"]>0:
+                #
+                robot_actions[child_name+":"+robot_name] = action_robot
+                # it is a posture-action => other postures are false:
+                for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_robot]):
+                    child_obs[robot_name].append((other_action,-1.)
+            if CHILD_ROBOT_HEAD:
+                #
+                child_actions[robot_name] = action_robot
+                child_obs[robot_name].append((action_robot,1.))
+                # it is a posture-action => other postures are false:
+                for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_child]):
+                    child_obs[robot_name].append((other_action,-1.)
+
+        if action_robot=="new_move":
+            robot_actions[child_name+":"+robot_name] = action_robot
+            if np.random.rand()>0.3:
+                CHILD_WILL_ROBOT = True
+
+
+    return robot_obs,child_obs,robot_actions,child_actions
+
+
 
 case = "MM1"
 for i in range(N):
