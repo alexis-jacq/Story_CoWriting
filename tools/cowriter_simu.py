@@ -17,7 +17,7 @@ def child(name,all_names):
 
 def robot(name,all_names):
     percepts = ["child_progress","tablet","child_head","justified_reward","justified_punish","look_tablet","look_child_head","look_noise"]
-    actions = ["converge","diverge","exaggerate","look_tablet","look_child_head","look_noise","look_tablet","imitate","point_tablet","new_move"]
+    actions = ["converge","diverge","exaggerate","look_tablet","look_child_head","look_noise","look_tablet","point_tablet","new_move"]
     rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.],["child_progress",1.,1.]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
@@ -36,10 +36,10 @@ with_me = if the child look at what he is expected to look at (with_me_ness)
 
 child_name = "child"
 robot_name = "robot"
-all_names = [child,robot]
+all_names = [child_name,robot_name]
 
 robot_activity_actions = ["converge","diverge","exaggerate"]
-robot_interaction_actions = ["look_tablet","look_child_head","look_noise","look_tablet","imitate","point_tablet","new_move"]
+robot_interaction_actions = ["look_tablet","look_child_head","look_noise","look_tablet","point_tablet","new_move"]
 
 child_activity_actions = ["demo"]
 child_interaction_actions = ["punish","reward","look_robot_head","look_noise","look_tablet"]
@@ -53,7 +53,7 @@ CHILD_WILL_ROBOT = False
 CHILD_WILL_TABLET = False
 
 N = 1
-n = 20
+n = 200
 CUMREW1 = np.zeros(n)
 CUMREW2 = np.zeros(n)
 
@@ -80,7 +80,7 @@ def init_percepts():
 
 
 
-def activity_update(robot,child,action_child,action_robot,previous):
+def activity_update(robot,child,action_child,action_robot):
     global CHILD_IMPROVE
     global CHILD_TABLET
     global CHILD_ROBOT_HEAD
@@ -100,7 +100,7 @@ def activity_update(robot,child,action_child,action_robot,previous):
             if action_robot == "diverge":
                 robot_obs[child_name].append(("convergence",-1.))
             if action_robot == "exaggerate":
-                robot_obs[child_name].append(("convergence",-0.5.))
+                robot_obs[child_name].append(("convergence",-0.5))
 
         # actually the child...
         if (CHILD_TABLET and np.random.rand()>0.3) or (CHILD_ROBOT_HEAD and np.random.rand()<0.2):
@@ -110,13 +110,13 @@ def activity_update(robot,child,action_child,action_robot,previous):
             if action_robot == "diverge":
                 child_obs[child_name].append(("convergence",-1.))
             if action_robot == "exaggerate":
-                child_obs[child_name].append(("convergence",-0.5.))
+                child_obs[child_name].append(("convergence",-0.5))
                 if np.random.rand()>0.3:
                     CHILD_IMPROVE = True
 
         # big assumption: robot always see child action
         robot_actions[child_name] = action_child
-        robot_obs[child_name].append((action_child,1.)
+        robot_obs[child_name].append((action_child,1.))
 
         # if child feedback
         if action_child=="reward":
@@ -143,7 +143,7 @@ def activity_update(robot,child,action_child,action_robot,previous):
                 child_actions[robot_name+":"+child_name] = action_child
                 # it is a posture-action => other postures are false:
                 for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_child]):
-                    robot_obs[child_name].append((other_action,-1.)
+                    robot_obs[child_name].append((other_action,-1.))
             CHILD_ROBOT_HEAD = (action_child=="look_robot_head")
             CHILD_TABLET =  (action_child=="look_tablet")
 
@@ -152,7 +152,7 @@ def activity_update(robot,child,action_child,action_robot,previous):
 
         # big assumption: robot always see child action
         robot_actions[child_name] = action_child
-        robot_obs[child_name].append((action_child,1.)
+        robot_obs[child_name].append((action_child,1.))
 
         if CHILD_IMPROVE:
             robot_obs[robot_name].append(("child_progress",1.))
@@ -179,14 +179,14 @@ def activity_update(robot,child,action_child,action_robot,previous):
                 robot_actions[child_name+":"+robot_name] = action_robot
                 # it is a posture-action => other postures are false:
                 for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_robot]):
-                    child_obs[robot_name].append((other_action,-1.)
+                    child_obs[robot_name].append((other_action,-1.))
             if CHILD_ROBOT_HEAD:
                 #
                 child_actions[robot_name] = action_robot
                 child_obs[robot_name].append((action_robot,1.))
                 # it is a posture-action => other postures are false:
                 for other_action in set(["look_robot_head","look_tablet","look_noise"])-set([action_child]):
-                    child_obs[robot_name].append((other_action,-1.)
+                    child_obs[robot_name].append((other_action,-1.))
 
         if action_robot=="new_move":
             robot_actions[child_name+":"+robot_name] = action_robot
@@ -197,57 +197,54 @@ def activity_update(robot,child,action_child,action_robot,previous):
     return robot_obs,child_obs,robot_actions,child_actions
 
 
-
-case = "MM1"
 for i in range(N):
-    if i>N/2.:
-        case="MM2"
-    if i%10==0:
-        print i
-    teacher = create_teacher(name1,all_names)
-    learner = create_learner(name2,all_names)
-    cumrew = []
-    model_percepts1 = None
-    model_percepts2 = None
-    model_actions1 = None
-    model_actions2 = None
+    #if i>N/2.:
+    #    case="MM2"
+    #if i%10==0:
+    #    print i
+
+    case = "MM2"
+
+    robot = robot(robot_name,all_names)
+    child = child(child_name,all_names)
+    robot_obs = None
+    child_obs = None
+    robot_actions = None
+    child_actions = None
     action1 = ""
     action2 = ""
     previous = []
     for j in range(n):
 
-        action1 = teacher.update_models(None,model_percepts1,model_actions1,case)
-        action2 = learner.update_models(None,model_percepts2,model_actions2,case)
-        model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
-        cumrew.append(r)
+        if ROBOT_TURN:
+            action_robot = robot.update_models(robot_activity_actions,robot_obs,robot_actions,case)
+            if CHILD_WILL_ROBOT:
+                action_child = child.update_models(["look_robot_head"],child_obs,child_actions,case)
+                CHILD_WILL_ROBOT = False
+            elif CHILD_WILL_TABLET:
+                action_child = robot.update_models(["look_tablet"],child_obs,child_actions,case)
+                CHILD_WILL_TABLET = False
+            else:
+                action_child = child.update_models(child_interaction_actions,child_obs,child_actions,case)
+            ROBOT_TURN = False
+        else:
+            # for the moment, the child is forced to play:
+            action_robot = robot.update_models(robot_interaction_actions,robot_obs,robot_actions,case)
+            action_child = child.update_models(child_activity_actions,child_obs,child_actions,case)
+            ROBOT_TURN = True
 
-    if i>100:
-        CUMREW+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
-    else:
-        CUMREW2+=(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
+        print action_robot
+        print "-----------------------------------"+action_child
 
-print 'teacher think about learner:'
-teacher.show_learned_rewards('learner')
-print ' learner think about teacher:learner '
-learner.show_learned_rewards('teacher;learner')
-print 'actual learner'
-learner.show_learned_rewards('learner')
-print "================================="
+        robot_obs,child_obs,robot_actions,child_actions = activity_update(robot,child,action_robot,action_child)
 
-print ' learner think about teacher:'
-learner.show_learned_rewards('teacher')
-print ' teacher think about learner:teacher '
-teacher.show_learned_rewards('learner;teacher')
-print 'actual teacher:'
-teacher.show_learned_rewards('teacher')
 
-teacher.show_social_error('learner')
 
-curve1 = teacher.social_curve
-curve2 = learner.social_curve
+curve1 = robot.social_curve
+curve2 = child.social_curve
 
-#plt.plot(curve1)
-#plt.plot(curve2)
-plt.plot(CUMREW)
-plt.plot(CUMREW2)
+plt.plot(curve1)
+plt.plot(curve2)
+#plt.plot(CUMREW)
+#plt.plot(CUMREW2)
 plt.show()

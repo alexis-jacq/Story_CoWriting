@@ -32,7 +32,7 @@ name1 = "teacher"
 name2 = "learner"
 all_names = [name1,name2]
 
-N = 100
+N = 20
 n = 2000
 CUMREW = np.zeros(n)
 CUMREW2 = np.zeros(n)
@@ -61,20 +61,20 @@ def world_update(action1,action2,previous):
 
     # suppose no errors of perception:
 
-    #model_percepts1 = {name1:p1}#,name2:p2,name2+";"+name1:p1}
-    #model_percepts2 = {name2:p2}#,name1:p1,name1+";"+name2:p2}
-    #model_percepts1 = {name1:p1,name2:p2}#,name2+";"+name1:p1}
-    #model_percepts2 = {name2:p2,name1:p1}#,name1+";"+name2:p2}
-    model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
-    model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
-    model_actions1 = {name2:action2,name2+";"+name1:action1}
-    model_actions2 = {name1:action1,name1+";"+name2:action2}
+    #model_percepts1 = {name1:p1}#,name2:p2,name2+":"+name1:p1}
+    #model_percepts2 = {name2:p2}#,name1:p1,name1+":"+name2:p2}
+    #model_percepts1 = {name1:p1,name2:p2}#,name2+":"+name1:p1}
+    #model_percepts2 = {name2:p2,name1:p1}#,name1+":"+name2:p2}
+    model_percepts1 = {name1:p1,name2:p2,name2+":"+name1:p1}
+    model_percepts2 = {name2:p2,name1:p1,name1+":"+name2:p2}
+    model_actions1 = {name2:action2,name2+":"+name1:action1}
+    model_actions2 = {name1:action1,name1+":"+name2:action2}
 
     return model_percepts1,model_percepts2,model_actions1,model_actions2,r
 
 case = "MM1"
 for i in range(N):
-    if i>50:
+    if i>N/2.:
         case="MM2"
     if i%10==0:
         print i
@@ -95,7 +95,7 @@ for i in range(N):
         model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
         cumrew.append(r)
 
-    if i>50:
+    if i>N/2.:
         CUMREW+=2*(np.arange(n) - np.cumsum(np.array(cumrew)))/float(N)
         L_curve1 += np.array(learner.social_curve)/float(N)
         T_curve1 += np.array(teacher.social_curve)/float(N)
@@ -107,7 +107,7 @@ for i in range(N):
 print 'teacher think about learner:'
 teacher.show_learned_rewards('learner')
 print ' learner think about teacher:learner '
-learner.show_learned_rewards('teacher;learner')
+learner.show_learned_rewards('teacher:learner')
 print 'actual learner'
 learner.show_learned_rewards('learner')
 print "================================="
@@ -115,7 +115,7 @@ print "================================="
 print ' learner think about teacher:'
 learner.show_learned_rewards('teacher')
 print ' teacher think about learner:teacher '
-teacher.show_learned_rewards('learner;teacher')
+teacher.show_learned_rewards('learner:teacher')
 print 'actual teacher:'
 teacher.show_learned_rewards('teacher')
 

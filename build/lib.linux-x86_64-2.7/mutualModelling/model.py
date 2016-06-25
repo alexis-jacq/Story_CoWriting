@@ -14,7 +14,7 @@ import copy
 """ GLOBAL PARAMETERS """
 # hebbian learning:
 #==================
-FIRE_TIME = 10 # time a cell is activated
+FIRE_TIME = 10 # time a event is activated
 ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 # if delayed hebbian: GAMMA = 0.1 # time discount for learning
 
@@ -47,7 +47,7 @@ def softmax(distribution): # dist. is a list (np.array) of values
 """ object Model """
 #-------------------
 class Model:
-    """ an object 'Model' representing hebbian-inspired network that encode dynamics between cells representing concepts learned by an agent."""
+    """ an object 'Model' representing hebbian-inspired network that encode dynamics between events representing concepts learned by an agent."""
     def __init__(self,name, network=None, activateds=None, modifieds=None):
 
         global FIRE_TIME
@@ -55,15 +55,15 @@ class Model:
         # name:
         self.name = name
 
-        # cells encoding events:
+        # events encoding events:
         #-----------------------
-        self.intensities = {} # list of cell's intensity between -1 and 1 (intensity or truth)
-        self.nb_cells = 0
-        self.activateds = [] # list of activated cells, the first is the most recently activated (contains by default the cell encoding the empty concept)
+        self.intensities = {} # list of event's intensity between -1 and 1 (intensity or truth)
+        self.nb_events = 0
+        self.activateds = [] # list of activated events, the first is the most recently activated (contains by default the event encoding the empty concept)
         self.old_intensities = []
-        self.modifieds = set() # for each input from exterior (percept) cell intensities are modified once
+        self.modifieds = set() # for each input from exterior (percept) event intensities are modified once
                                # it makes the differrence between the flow of reasoning and real perception
-        self.cell_number = bidict() # each cell is numeroted {cell_id <--> cell_number}
+        self.event_number = bidict() # each event is numeroted {event_id <--> event_number}
 
         # hebbian learning (world's causality):
         #--------------------------------------
@@ -74,14 +74,14 @@ class Model:
         self.action = None
         self.expected = 0
         self.rewards = np.zeros([0,2]) # reward associated with goals (0 if no objective)
-        self.action_number = bidict() # set of cells encoding actions
+        self.action_number = bidict() # set of events encoding actions
         self.nb_actions = 0
         # for TD learning with fuzzy states:
-        self.Q = np.zeros([0,0,2]) # reward value learned by association ~ like QLearning with TD
+        self.Q = np.zeros([0,0,2]) # indirect reward value learned by association ~ like QLearning with TD
         self.V = np.zeros([0,0,2]) # for actor-critic method
         self.n = np.zeros([0,0,2])
-        self.matter = np.ones([0,2]) # importance of events
-        self.R = np.zeros([0,2]) # estimation of reward with association
+        self.matter = np.ones([0,2]) # importance of events (based on V)
+        self.R = np.zeros([0,2]) # estimation of direct reward
 
         # IRL and understandable behavior:
         #---------------------------------
@@ -92,16 +92,16 @@ class Model:
 
     """ functions for creating/updating/using models """
     #--------------------------------------------------------------
-    def add_activated(self, cell):
+    def add_activated(self, event):
         if self.activateds:
             if len(self.activateds)==FIRE_TIME:
                 for i in range(len(self.activateds)-1):
                     self.activateds[i] = self.activateds[i+1]
-                self.activateds[-1] = cell
+                self.activateds[-1] = event
             else:
-                self.activateds.append(cell)
+                self.activateds.append(event)
         else:
-            self.activateds.append(cell)
+            self.activateds.append(event)
 
     def add_intensity(self, intensity):
         if self.old_intensities:
@@ -125,79 +125,79 @@ class Model:
         else:
             self.perceiveds.append(val)
 
-    def add_cells(self, cells_id):
-        if isinstance(cells_id, list) or isinstance(cells_id, tuple):
-            number = self.nb_cells
-            for cell_id in cells_id:
-                self.intensities.setdefault(cell_id,0)
-                if cell_id not in self.cell_number:
-                    self.cell_number[cell_id] = number
+    def add_events(self, events_id):
+        if isinstance(events_id, list) or isinstance(events_id, tuple):
+            number = self.nb_events
+            for event_id in events_id:
+                self.intensities.setdefault(event_id,0)
+                if event_id not in self.event_number:
+                    self.event_number[event_id] = number
                     number += 1
 
                     new_counts = np.zeros([self.nb_actions,number, number,2,2])
-                    new_counts[:,:self.nb_cells,:self.nb_cells,:,:] = self.counts
+                    new_counts[:,:self.nb_events,:self.nb_events,:,:] = self.counts
                     self.counts = new_counts
 
                     new_matter = np.ones([number,2])
-                    new_matter[:self.nb_cells,:] = self.matter
+                    new_matter[:self.nb_events,:] = self.matter
                     self.matter = new_matter
 
                     new_R = np.zeros([number,2])
-                    new_R[:self.nb_cells,:] = self.R
+                    new_R[:self.nb_events,:] = self.R
                     self.R = new_R
 
                     new_EA = -np.ones([number,2])
-                    new_EA[:self.nb_cells,:] = self.EA
+                    new_EA[:self.nb_events,:] = self.EA
                     self.EA = new_EA
 
                     new_ES = np.zeros([number,2])
-                    new_ES[:self.nb_cells,:] = self.ES
+                    new_ES[:self.nb_events,:] = self.ES
                     self.ES = new_ES
 
                     new_EI = np.zeros([number,2])
-                    new_EI[:self.nb_cells,:] = self.EI
+                    new_EI[:self.nb_events,:] = self.EI
                     self.EI = new_EI
 
                     new_rewards = np.zeros([number,2])
-                    new_rewards[:self.nb_cells,:] = self.rewards
+                    new_rewards[:self.nb_events,:] = self.rewards
                     self.rewards = new_rewards
 
                     new_Q = np.zeros([number, self.nb_actions,2])
-                    new_Q[:self.nb_cells,:self.nb_actions,:] = self.Q
+                    new_Q[:self.nb_events,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
 
                     new_V = np.zeros([number, self.nb_actions,2])
-                    new_V[:self.nb_cells,:self.nb_actions,:] = self.V
+                    new_V[:self.nb_events,:self.nb_actions,:] = self.V
                     self.V = new_V
 
                     new_n = np.zeros([number, self.nb_actions,2])
-                    new_n[:self.nb_cells,:self.nb_actions,:] = self.n
+                    new_n[:self.nb_events,:self.nb_actions,:] = self.n
                     self.n = new_n
 
-                    self.nb_cells = number
+                    self.nb_events = number
 
-    def add_actions(self, cells_id):
-        if isinstance(cells_id, list) or isinstance(cells_id, tuple):
-            self.add_cells(cells_id)
+    def add_actions(self, events_id):
+        if isinstance(events_id, list) or isinstance(events_id, tuple):
+            self.add_events(events_id)
             number = self.nb_actions
-            for cell_id in cells_id:
-                if cell_id not in self.action_number:
-                    self.action_number[cell_id] = number
+            for event_id in events_id:
+                if event_id not in self.action_number:
+                    self.action_number[event_id] = number
                     number += 1
 
-                    new_counts = np.zeros([number, self.nb_cells, self.nb_cells,2,2])
+                    new_counts = np.zeros([number, self.nb_events, self.nb_events,2,2])
                     new_counts[:self.nb_actions,:,:,:,:] = self.counts
                     self.counts = new_counts
 
-                    new_Q = np.zeros([self.nb_cells, number,2])
+                    new_Q = np.zeros([self.nb_events, number,2])
                     new_Q[:,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
 
-                    new_V = np.zeros([self.nb_cells, number,2])
+                    new_V = np.zeros([self.nb_events, number,2])
                     new_V[:,:self.nb_actions,:] = self.V
                     self.V = new_V
 
-                    new_n = np.zeros([self.nb_cells, number,2])
+                    new_n = np.zeros([self.nb_events, number,2])
                     new_n[:,:self.nb_actions,:] = self.n
                     self.n = new_n
 
@@ -205,16 +205,71 @@ class Model:
 
     def set_rewards(self, goals):
         for goal in goals:
-            cell_id = goal[0]
+            event_id = goal[0]
             value = goal[1]
             reward = goal[2]
-            if cell_id not in self.cell_number:
-                self.add_cells([cell_id])
+            if event_id not in self.event_number:
+                self.add_events([event_id])
             if value>1:
                 value=1.
             if value<-1:
                 value=-1.
-            self.rewards[self.cell_number[cell_id],int(value>0)] = reward
+            self.rewards[self.event_number[event_id],int(value>0)] = reward
+
+    def think_new_event(self, elligibles, new_intensities):
+
+        last_intensity = self.old_intensities[-1]
+        last_event = self.activateds[-1]
+        num_last_event = self.event_number[last_event]
+        num_action = self.action_number[self.action]
+
+        # max over positive/negative new_intensities:
+        noise = np.random.rand(len(self.counts[0,0,:,0,0]))/1000.
+        max_pos = np.max(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
+        max_neg = np.max(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
+
+        if max_pos>=max_neg:
+            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
+            proba = np.max(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
+        else:
+            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
+            proba = np.max(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
+
+        new_event = self.event_number.inv[new_event_num]
+        elligibles.setdefault(new_event,0)
+        elligibles[new_event] = np.exp(THETA2*self.matter[new_event_num,int(new_intensity>0)]*abs(new_intensity))
+        new_intensities.setdefault(new_event,0)
+        new_intensities[new_event] = new_intensity
+
+        return elligibles, new_intensities
+
+
+    def perceive_new_event(self,percepts,total_reward,elligibles):
+
+        for percept in percepts:
+            if not (percept in self.event_number):
+                self.add_events([percept[0]])
+
+            percept_id = percept[0]
+            percept_val = percept[1]
+            percept_num = self.event_number[percept_id]
+
+            self.intensities[percept_id] = percept_val
+
+            elligibles.setdefault(percept_id,0)
+            elligibles[percept_id] = np.exp(THETA2*self.matter[self.event_number[percept_id],int(percept_val>0)])
+
+            if self.action and self.old_intensities:
+                total_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
+
+                father = self.activateds[-1]
+                son = percept_id
+                intensity_father = self.old_intensities[-1]
+                intensity_son = percept_val
+                action = self.action
+                self.hebbian_learning(father,son,action,intensity_father,intensity_son)
+
+        return total_reward, elligibles
 
 
     def update(self, possible_actions=None, percepts=None, explore=True, intrinsic=0):
@@ -225,47 +280,9 @@ class Model:
 
         # REASONING:
         #===========
-        if not percepts:#self.activateds and self.action: # (no reasoning/thought for the moment)
+        if self.old_intensities and not percepts:
+            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
-            # following cor: (no preference for different delays for the moment)
-            #delay = 0
-            #for activated in self.activateds:
-            # TODO: loop on all previous activated cells taking account delayed causality
-
-            intensity = self.old_intensities[-1]
-            activated = self.activateds[-1]
-
-            noise = np.random.rand(len(self.counts[0,0,:]))/1000.
-            next_num=0
-            proba=0
-            next_id=""
-            next_intensity=0
-            if max(self.counts[self.action_number[self.action],self.cell_number[activated],:])>0:
-                proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
-                next_num = np.argmax(proba_of_sons)
-                proba = np.max(proba_of_sons)
-                next_id = self.cell_number.inv[next_num]
-                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
-            else:
-                proba_of_sons = self.counts[self.action_number[self.action],:,:]+noise
-                next_num = np.argmax(proba_of_sons)%np.shape(proba_of_sons)[0]
-                proba = np.max(proba_of_sons)
-                next_id = self.cell_number.inv[next_num]
-                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
-                #next_id = activated
-                #next_intensity = intensity
-
-            if (not percepts) or (next_id not in percepts):
-                elligibles.setdefault(next_id,0)
-                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,int(next_intensity>0)])*proba)
-
-                new_intensities.setdefault(next_id,0)
-                new_intensities[next_id] = next_intensity
-                if new_intensities[next_id]>1.:
-                    new_intensities[next_id]=1.
-                if new_intensities[next_id]<-1.:
-                    new_intensities[next_id] = -1.
-                #delay += 1
 
         # PERCEPTION:
         #============
@@ -273,34 +290,12 @@ class Model:
         # like someone closing eyes in order to reason
         tot_reward = intrinsic
         if percepts:
-            for percept in percepts:
-                if not (percept in self.cell_number):
-                    self.add_cells([percept[0]])
+            tot_reward, elligibles = self.perceive_new_event(percepts, tot_reward, elligibles)
 
-                percept_id = percept[0]
-                percept_val = percept[1]
-                percept_num = self.cell_number[percept_id]
-
-                self.intensities[percept_id] = percept_val
-
-                if self.action and self.old_intensities:
-                    tot_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
-
-                elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],int(percept_val>0)]))
-
-                if self.action and self.activateds:
-                    #if not self.thinking[-1]:
-                    father = self.activateds[-1]
-                    son = percept_id
-                    intensity_father = self.old_intensities[-1]
-                    intensity_son = percept_val
-                    action = self.action
-                    self.reinforce(father,son,action,intensity_father,intensity_son)
 
         # UPDATES:
         #=========
-        # stochastic election of incoming active cell:
+        # stochastic election of incoming active event:
         next_activated = random_pull_dict(elligibles)
 
         if tot_reward>1:
@@ -309,18 +304,18 @@ class Model:
             tot_reward=-1.
 
         # new intensities:
-        for cell in new_intensities:
-            if cell not in self.modifieds:
-                self.intensities[cell] = new_intensities[cell]
-                self.modifieds.add(cell)
+        for event in new_intensities:
+            if event not in self.modifieds:
+                self.intensities[event] = new_intensities[event]
+                self.modifieds.add(event)
 
         # TODO: loop on the previous percept in past to make reinforcement with delay
 
         # action learning:
         if self.action:
-            self.learn(next_activated,tot_reward)
+            self.reinforcement_learning(next_activated,tot_reward)
 
-        # new activated cell
+        # new activated event
         if next_activated:
             self.add_activated(next_activated)
             self.add_intensity(self.intensities[next_activated])
@@ -328,27 +323,27 @@ class Model:
         # DECISION:
         #==========
         if possible_actions:
-            return self.decision(possible_actions,explore)
+            return self.decision_making(possible_actions,explore)
         else:
-            return self.decision(None,explore)
+            return self.decision_making(None,explore)
 
 
-    def reinforce(self, cell1, cell2, action, I1, I2):
-        num_cell1 = self.cell_number[cell1]
-        num_cell2 = self.cell_number[cell2]
+    def hebbian_learning(self, event1, event2, action, I1, I2):
+        num_event1 = self.event_number[event1]
+        num_event2 = self.event_number[event2]
         num_act = self.action_number[action]
 
-        s = np.sum(self.counts[num_act,num_cell1,:,int(I1>0),:])
-        v = self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)]
-        self.counts[num_act,num_cell1,:,int(I1>0),:] *= s/(s+1.)
-        self.counts[num_act,num_cell1,num_cell2,int(I1>0),int(I2>0)] = (s*v+1.)/(s+1.)
+        s = np.sum(self.counts[num_act,num_event1,:,int(I1>0),:])
+        v = self.counts[num_act,num_event1,num_event2,int(I1>0),int(I2>0)]
+        self.counts[num_act,num_event1,:,int(I1>0),:] *= s/(s+1.)
+        self.counts[num_act,num_event1,num_event2,int(I1>0),int(I2>0)] = (s*v+1.)/(s+1.)
 
 
-    def decision(self, possible_actions=None, explore=True):
+    def decision_making(self, possible_actions=None, explore=True):
         state = 0
         I = 0
         if self.activateds:
-            state = self.cell_number[self.activateds[-1]]
+            state = self.event_number[self.activateds[-1]]
             I = self.old_intensities[-1]
 
         # TODO exploration based on convergence/difficulty to reach a state
@@ -387,16 +382,16 @@ class Model:
         return self.action
 
 
-    def learn(self,new_activated,reward):
+    def reinforcement_learning(self,new_activated,reward):
         if self.activateds and self.action:
 
             # last state:
             action = self.action_number[self.action]
-            last_state = self.cell_number[self.activateds[-1]]
+            last_state = self.event_number[self.activateds[-1]]
             last_intensity = self.old_intensities[-1]
 
             # new state:
-            new_state = self.cell_number[new_activated]
+            new_state = self.event_number[new_activated]
             new_intensity = self.intensities[new_activated]
             """
             # classic Q:
@@ -413,15 +408,8 @@ class Model:
             # classic Qlearning
             self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
             self.n[last_state,action,int(last_intensity>0)] += 1.
-            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + TD)/(n+1.)
+            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + abs(TD))/(n+1.)
             self.R[new_state,int(new_intensity>0)] = (n*(self.R[new_state,int(new_intensity>0)]) + reward)/(n+1.)
-
-            """
-            # EMA Qlearning
-            self.Q[last_state,action,int(last_intensity>0)] = ETA2*self.Q[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
-            self.n[last_state][action] += 1.
-            self.matter[new_state,int(new_intensity>0)] = ETA2*self.matter[new_state,int(new_intensity>0)] + (1-ETA2)*TD
-            """
 
             # EMA actor-critic
             self.V[last_state,action,int(last_intensity>0)] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
@@ -452,47 +440,9 @@ class Model:
 
         # REASONING:
         #===========
-        if False:#self.activateds and self.action: # (no reasoning/thought for the moment)
+        if self.old_intensities and not percepts:
+            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
-            # following cor: (no preference for different delays for the moment)
-            #delay = 0
-            #for activated in self.activateds:
-            # TODO: loop on all previous activated cells taking account delayed causality
-
-            intensity = self.old_intensities[-1]
-            activated = self.activateds[-1]
-
-            noise = np.random.rand(len(self.counts[0,0,:]))/1000.
-            next_num=0
-            proba=0
-            next_id=""
-            next_intensity=0
-            if max(self.counts[self.action_number[self.action],self.cell_number[activated],:])>0:
-                proba_of_sons = self.counts[self.action_number[self.action],self.cell_number[activated],:]+noise
-                next_num = np.argmax(proba_of_sons)
-                proba = np.max(proba_of_sons)
-                next_id = self.cell_number.inv[next_num]
-                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
-            else:
-                proba_of_sons = self.counts[self.action_number[self.action],:,:]+noise
-                next_num = np.argmax(proba_of_sons)%np.shape(proba_of_sons)[0]
-                proba = np.max(proba_of_sons)
-                next_id = self.cell_number.inv[next_num]
-                next_intensity = self.cor[self.action_number[self.action],self.cell_number[activated],next_num,int(intensity>0)]
-                #next_id = activated
-                #next_intensity = intensity
-
-            if (not percepts) or (next_id not in percepts):
-                elligibles.setdefault(next_id,0)
-                elligibles[next_id] = np.exp(THETA2*np.abs(self.matter[next_num,int(next_intensity>0)])*proba)
-
-                new_intensities.setdefault(next_id,0)
-                new_intensities[next_id] = next_intensity
-                if new_intensities[next_id]>1.:
-                    new_intensities[next_id]=1.
-                if new_intensities[next_id]<-1.:
-                    new_intensities[next_id] = -1.
-                #delay += 1
 
         # PERCEPTION:
         #============
@@ -500,34 +450,11 @@ class Model:
         # like someone closing eyes in order to reason
         tot_reward = 0
         if percepts:
-            for percept in percepts:
-                if not (percept in self.cell_number):
-                    self.add_cells([percept[0]])
-
-                percept_id = percept[0]
-                percept_val = percept[1]
-                percept_num = self.cell_number[percept_id]
-
-                self.intensities[percept_id] = percept_val
-
-                if self.action and self.old_intensities:
-                    tot_reward += self.rewards[percept_num,int(percept_val>0)]*np.abs(self.old_intensities[-1])
-
-                elligibles.setdefault(percept_id,0)
-                elligibles[percept_id] = np.exp(THETA2*np.abs(self.matter[self.cell_number[percept_id],int(percept_val>0)]))
-
-                if self.action and self.activateds:
-                    #if not self.thinking[-1]:
-                    father = self.activateds[-1]
-                    son = percept_id
-                    intensity_father = self.old_intensities[-1]
-                    intensity_son = percept_val
-                    action = self.action
-                    self.reinforce(father,son,action,intensity_father,intensity_son)
+            tot_reward, elligibles = self.perceive_new_event(percepts, tot_reward, elligibles)
 
         # UPDATES:
         #=========
-        # stochastic election of incoming active cell:
+        # stochastic election of incoming active event:
         next_activated = random_pull_dict(elligibles)
 
         if len(self.activateds)>0:
@@ -536,15 +463,15 @@ class Model:
             self.inverse_learning(last_activated,last_intensity)
 
         if self.action:
-            self.learn(next_activated,tot_reward)
+            self.reinforcement_learning(next_activated,tot_reward)
 
         # new intensities:
-        for cell in new_intensities:
-            if cell not in self.modifieds:
-                self.intensities[cell] = new_intensities[cell]
-                self.modifieds.add(cell)
+        for event in new_intensities:
+            if event not in self.modifieds:
+                self.intensities[event] = new_intensities[event]
+                self.modifieds.add(event)
 
-        # new activated cell
+        # new activated event
         if next_activated:
             self.add_activated(next_activated)
             self.add_intensity(self.intensities[next_activated])
@@ -561,7 +488,7 @@ class Model:
 
             # action:
             action = self.action_number[self.action]
-            last_state = self.cell_number[last_activated]
+            last_state = self.event_number[last_activated]
 
             n = self.n[last_state,action,int(last_intensity>0)]
             s = np.sum(self.n[last_state,:,int(last_intensity>0)])
@@ -587,50 +514,50 @@ class Model:
 
 def diff(model1, model2):
     dist = 0
-    cell_diff = {}
-    for cell_id in model1.intensities & model2.intensities:
-        cell_num1 = model1.cell_number[cell_id]
-        cell_num2 = model2.cell_number[cell_id]
+    event_diff = {}
+    for event_id in model1.intensities & model2.intensities:
+        event_num1 = model1.event_number[event_id]
+        event_num2 = model2.event_number[event_id]
         # Lmax for matter:
-        matter = max(abs(model1.matter[cell_num1]),abs(model2.matter[cell_num2]))
+        matter = max(abs(model1.matter[event_num1]),abs(model2.matter[event_num2]))
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist += matter*abs(model1.intensities[cell_id]-model2.intensities[cell_id])
+        dist += matter*abs(model1.intensities[event_id]-model2.intensities[event_id])
         # maybe this softmax pull could have its own theta:
-        cell_diff.setdefault(cell_id,np.exp(THETA2*dist))
+        event_diff.setdefault(event_id,np.exp(THETA2*dist))
 
     # max of sofmax ?
-    #choice = random_pull_dict(cell_diff)
-    choice = max(cell_diff.iteritems(), key=operator.itemgetter(1))[0]
+    #choice = random_pull_dict(event_diff)
+    choice = max(event_diff.iteritems(), key=operator.itemgetter(1))[0]
 
-    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
+    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" event
     return dist,choice
 
 def diff_reward(model1, model2):
     tot_dist = 0
-    cell_diff = {}
-    for cell_id in model1.intensities:# & model2.intensities:
-        if cell_id in model2.intensities:
-            cell_num1 = model1.cell_number[cell_id]
-            cell_num2 = model2.cell_number[cell_id]
-            #print cell_id
-            #print model1.rewards[cell_num1,:]
-            #print model2.rewards[cell_num2,:]
-            #print model1.R[cell_num1,:]
-            #print np.sum(np.abs(model1.rewards[cell_num1,:]-model2.rewards[cell_num2,:]))
+    event_diff = {}
+    for event_id in model1.intensities:# & model2.intensities:
+        if event_id in model2.intensities:
+            event_num1 = model1.event_number[event_id]
+            event_num2 = model2.event_number[event_id]
+            #print event_id
+            #print model1.rewards[event_num1,:]
+            #print model2.rewards[event_num2,:]
+            #print model1.R[event_num1,:]
+            #print np.sum(np.abs(model1.rewards[event_num1,:]-model2.rewards[event_num2,:]))
 
             # Lmax for matter:
-            #matter = np.max([np.abs(model1.matter[cell_num1,int(model1.intensities[cell_id]>0)]),np.abs(model2.matter[cell_num2,int(model2.intensities[cell_id]>0)])])
+            #matter = np.max([np.abs(model1.matter[event_num1,int(model1.intensities[event_id]>0)]),np.abs(model2.matter[event_num2,int(model2.intensities[event_id]>0)])])
             # this distance function is arbitrary, could be L2, L3 etc...
-            dist = np.sum(np.abs(model1.R[cell_num1,:]-model2.rewards[cell_num2,:]))#* np.abs(model1.R[cell_num1,:]))#*matter
+            dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
             # maybe this softmax pull could have its own theta:
-            cell_diff.setdefault(cell_id,dist)
+            event_diff.setdefault(event_id,dist)
             tot_dist += dist
 
-    return cell_diff,tot_dist
+    return event_diff,tot_dist
 
     # max of sofmax ?
-    #choice = random_pull_dict(cell_diff)
-    #choice = max(cell_diff.iteritems(), key=operator.itemgetter(1))[0]
+    #choice = random_pull_dict(event_diff)
+    #choice = max(event_diff.iteritems(), key=operator.itemgetter(1))[0]
 
-    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" cell
+    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" event
     #return dist,choice

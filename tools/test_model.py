@@ -7,7 +7,7 @@ from mutualModelling import model
 import matplotlib.pyplot as plt
 
 def creat_robot():
-    robot = model.Model()
+    robot = model.Model("test")
     #robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
     robot.add_cells(["fire","water","honey","n1","n2","n3"])
     robot.add_actions(["a1","a2","a3","a4"])
@@ -135,4 +135,3 @@ print_rl()
 plt.plot(ave_rew/n)
 plt.plot(ave_reg/n)
 plt.show()
-

@@ -36,7 +36,7 @@ class Agent:
         for agent in set(agents):
             name = self.name+"["+agent+"]"
             self.M[agent] = model.Model(name)
-            self.M[agent].add_cells(percepts)
+            self.M[agent].add_events(percepts)
             self.M[agent].add_actions(actions)
             if agent==self.name:
                 self.M[agent].set_rewards(rewards)
@@ -44,11 +44,11 @@ class Agent:
                 # self.M[agent].set_rewards([["others_rew",1.,1.],["others_rew",-1.,-1.]])
             if agent!=self.name:
                 name = self.name+"["+agent+';'+self.name+"]"
-                self.M[agent+';'+self.name] = model.Model(name)
-                self.M[agent+';'+self.name].add_cells(percepts)
-                self.M[agent+';'+self.name].add_actions(actions)
-                #self.M[agent+';'+self.name].set_rewards(rewards)
-                self.Id[agent+';'+self.name] = agent
+                self.M[agent+':'+self.name] = model.Model(name)
+                self.M[agent+':'+self.name].add_events(percepts)
+                self.M[agent+':'+self.name].add_actions(actions)
+                #self.M[agent+':'+self.name].set_rewards(rewards)
+                self.Id[agent+':'+self.name] = agent
 
 
     def update_models(self,possible_actions=None,models_percepts=None,model_actions=None,case="MM1"):
@@ -125,7 +125,7 @@ class Agent:
     # display functions:
     #-------------------
     def show_learned_rewards(self,agent):
-        print self.M[agent].cell_number.inv
+        print self.M[agent].event_number.inv
         print self.M[agent].action_number.inv
         if agent==self.name:
             print self.M[agent].R
@@ -133,7 +133,7 @@ class Agent:
             print self.M[agent].rewards
 
     def show_social_error(self,agent):
-        social_diffs,total_diffs = diff_reward(self.M[self.name],self.M[agent+";"+self.name])
+        social_diffs,total_diffs = diff_reward(self.M[self.name],self.M[agent+":"+self.name])
         print social_diffs
 
     def plot_social_curve(self):
@@ -144,8 +144,8 @@ class Agent:
     def reward(self,agent):
         values = {}
         for action in self.M[self.name].action_number:
-            if action in self.M[agent].cell_number:
-                obs_num = self.M[agent].cell_number[action]
+            if action in self.M[agent].event_number:
+                obs_num = self.M[agent].event_number[action]
                 values[action] = self.M[agent].rewards[obs_num,1]
         #print self.name+" rewards "+agent+" with "+max(values.iteritems(), key=operator.itemgetter(1))[0]
         return max(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -153,8 +153,8 @@ class Agent:
     def punish(self,agent):
         values = {}
         for action in self.M[self.name].action_number:
-            if action in self.M[agent].cell_number:
-                obs_num = self.M[agent].cell_number[action]
+            if action in self.M[agent].event_number:
+                obs_num = self.M[agent].event_number[action]
                 values[action] = self.M[agent].rewards[obs_num,1]
         #print self.name+" rewards "+agent+" with "+max(values.iteritems(), key=operator.itemgetter(1))[0]
         return min(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -164,8 +164,8 @@ class Agent:
     def self_reward(self,percepts):
         r = 0
         for percept in percepts:
-            if percept[0] in self.M[self.name].cell_number:
-                obs_num = self.M[self.name].cell_number[percept[0]]
+            if percept[0] in self.M[self.name].event_number:
+                obs_num = self.M[self.name].event_number[percept[0]]
                 intensity = percept[1]
                 r += self.M[self.name].R[obs_num,intensity]
         return r

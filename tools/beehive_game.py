@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import copy
 
 def create_bee(RT,RF,RPB,RP,RH):
-    bee = model.Model()
+    bee = model.Model("bee")
     bee.add_cells(["trap","burn","hive","flower","pollen","honey","fullbee","bee"])
     bee.add_actions(["left","right","take","give"])
     bee.set_rewards([["burn",1.,RT],["honey",1.,RH],["flower",1.,RF],["pollen",1.,RP],["fullbee",1.,RPB],["lose",1,-1.]])
@@ -141,4 +141,3 @@ plt.show()
 traj = np.array(curve_x)
 plt.plot(traj[TMAX-500:-1])
 plt.show()
-
