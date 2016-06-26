@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 def creat_robot():
     robot = model.Model("test")
-    #robot.add_cells(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
-    robot.add_cells(["fire","water","honey","n1","n2","n3"])
+    #robot.add_events(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
+    robot.add_events(["fire","water","honey","n1","n2","n3"])
     robot.add_actions(["a1","a2","a3","a4"])
     robot.set_rewards([["fire",1.,-1.],["honey",1.,0.7]])
     return robot

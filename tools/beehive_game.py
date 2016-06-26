@@ -9,7 +9,7 @@ import copy
 
 def create_bee(RT,RF,RPB,RP,RH):
     bee = model.Model("bee")
-    bee.add_cells(["trap","burn","hive","flower","pollen","honey","fullbee","bee"])
+    bee.add_events(["trap","burn","hive","flower","pollen","honey","fullbee","bee"])
     bee.add_actions(["left","right","take","give"])
     bee.set_rewards([["burn",1.,RT],["honey",1.,RH],["flower",1.,RF],["pollen",1.,RP],["fullbee",1.,RPB],["lose",1,-1.]])
     return bee

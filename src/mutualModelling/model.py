@@ -20,8 +20,8 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 15#30 # chose action (exponent for softmax pulling
-THETA2 = 15#20 # chose perception
+THETA1 = 10 # chose action (exponent for softmax pulling
+THETA2 = 20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
 
@@ -137,6 +137,7 @@ class Model:
                     new_counts = np.zeros([self.nb_actions,number, number,2,2])
                     new_counts[:,:self.nb_events,:self.nb_events,:,:] = self.counts
                     self.counts = new_counts
+            #self.Q[last_state,action,int(last_intensity>0)] += 0.1*TD
 
                     new_matter = np.ones([number,2])
                     new_matter[:self.nb_events,:] = self.matter
@@ -225,15 +226,15 @@ class Model:
 
         # max over positive/negative new_intensities:
         noise = np.random.rand(len(self.counts[0,0,:,0,0]))/1000.
-        max_pos = np.max(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
-        max_neg = np.max(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
+        max_pos = np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),1] + noise)
+        max_neg = np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
 
         if max_pos>=max_neg:
-            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
-            proba = np.max(self.counts[num_action,num_last_event,:,last_intensity,1] + noise)
+            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,int(last_intensity>0),1] + noise)
+            new_intensity = np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),1] + noise)
         else:
-            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
-            proba = np.max(self.counts[num_action,num_last_event,:,last_intensity,0] + noise)
+            new_event_num = np.argmax(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
+            new_intensity = -np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
 
         new_event = self.event_number.inv[new_event_num]
         elligibles.setdefault(new_event,0)
@@ -280,8 +281,8 @@ class Model:
 
         # REASONING:
         #===========
-        if self.old_intensities and not percepts:
-            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
+        #if self.old_intensities and not percepts:
+        #    elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
 
         # PERCEPTION:
@@ -296,7 +297,9 @@ class Model:
         # UPDATES:
         #=========
         # stochastic election of incoming active event:
+        #print percepts
         next_activated = random_pull_dict(elligibles)
+        #print next_activated
 
         if tot_reward>1:
             tot_reward=1.
@@ -312,7 +315,7 @@ class Model:
         # TODO: loop on the previous percept in past to make reinforcement with delay
 
         # action learning:
-        if self.action:
+        if self.action and percepts:
             self.reinforcement_learning(next_activated,tot_reward)
 
         # new activated event
@@ -383,7 +386,7 @@ class Model:
 
 
     def reinforcement_learning(self,new_activated,reward):
-        if self.activateds and self.action:
+        if self.activateds and self.action and new_activated:
 
             # last state:
             action = self.action_number[self.action]
@@ -393,20 +396,22 @@ class Model:
             # new state:
             new_state = self.event_number[new_activated]
             new_intensity = self.intensities[new_activated]
-            """
+
             # classic Q:
             new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             """
             # EMA actor-critic:
             new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
+            """
             reach = np.max(new_values)
 
             # TD learning:
-            TD = ( reward + DISCOUNT*reach - self.expected )
+            TD =  reward + DISCOUNT*reach - self.expected
             n = self.n[last_state,action,int(last_intensity>0)]+1.
 
             # classic Qlearning
-            self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
+            if abs(TD)>0:
+                self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
             self.n[last_state,action,int(last_intensity>0)] += 1.
             self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + abs(TD))/(n+1.)
             self.R[new_state,int(new_intensity>0)] = (n*(self.R[new_state,int(new_intensity>0)]) + reward)/(n+1.)
@@ -542,11 +547,6 @@ def diff_reward(model1, model2):
             #print event_id
             #print model1.rewards[event_num1,:]
             #print model2.rewards[event_num2,:]
-            #print model1.R[event_num1,:]
-            #print np.sum(np.abs(model1.rewards[event_num1,:]-model2.rewards[event_num2,:]))
-
-            # Lmax for matter:
-            #matter = np.max([np.abs(model1.matter[event_num1,int(model1.intensities[event_id]>0)]),np.abs(model2.matter[event_num2,int(model2.intensities[event_id]>0)])])
             # this distance function is arbitrary, could be L2, L3 etc...
             dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
             # maybe this softmax pull could have its own theta:
