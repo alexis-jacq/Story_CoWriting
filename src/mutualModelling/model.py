@@ -466,7 +466,6 @@ class Model:
         if self.old_intensities and not percepts:
             elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
-
         # PERCEPTION:
         #============
         # could add an action "force_reasoning" where the robot doesnot do the perception loop
@@ -510,7 +509,6 @@ class Model:
 
     def inverse_learning(self,last_activated,last_intensity):
         if self.activateds and self.action:
-
             # action:
             action = self.action_number[self.action]
             last_state = self.event_number[last_activated]
@@ -527,50 +525,21 @@ class Model:
                 self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
 
 
-# static functions:
-#------------------
-
-def diff(model1, model2):
-    dist = 0
-    event_diff = {}
-    for event_id in model1.intensities & model2.intensities:
-        event_num1 = model1.event_number[event_id]
-        event_num2 = model2.event_number[event_id]
-        # Lmax for matter:
-        matter = max(abs(model1.matter[event_num1]),abs(model2.matter[event_num2]))
-        # this distance function is arbitrary, could be L2, L3 etc...
-        dist += matter*abs(model1.intensities[event_id]-model2.intensities[event_id])
-        # maybe this softmax pull could have its own theta:
-        event_diff.setdefault(event_id,np.exp(THETA2*dist))
-
-    # max of sofmax ?
-    #choice = random_pull_dict(event_diff)
-    choice = max(event_diff.iteritems(), key=operator.itemgetter(1))[0]
-
-    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" event
-    return dist,choice
+# static functions (of multiple models):
+#---------------------------------------
 
 def diff_reward(model1, model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in model1.intensities:# & model2.intensities:
-        if event_id in model2.intensities:
+    for event_id in model1.event_number:# & model2.intensities:
+        if event_id in model2.event_number:
             event_num1 = model1.event_number[event_id]
             event_num2 = model2.event_number[event_id]
-            #print event_id
-            #print model1.rewards[event_num1,:]
-            #print model2.rewards[event_num2,:]
             # this distance function is arbitrary, could be L2, L3 etc...
             dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
-            # maybe this softmax pull could have its own theta:
             event_diff.setdefault(event_id,dist)
             tot_dist += dist
-
     return event_diff,tot_dist
 
-    # max of sofmax ?
-    #choice = random_pull_dict(event_diff)
-    #choice = max(event_diff.iteritems(), key=operator.itemgetter(1))[0]
-
-    # return the distance, if large enough, the agent want to correct the misunderstanding, starting by "choice" event
-    #return dist,choice
+def diff_knowledge(model1,model2):
+    return 0
