@@ -17,8 +17,8 @@ VISUAL_MAP = np.zeros((SIZE,SIZE,3))
 OBS_MAP = np.zeros((SIZE,SIZE,3))
 MAP = np.zeros((SIZE,SIZE))
 BEE_MAP = np.zeros((SIZE,SIZE))
-NB_BEE = 10
-LEN_VEW = 10
+NB_BEE = 1
+LEN_VEW = 5
 BEES = []
 
 objects_num = bidict({"nothing":0,"hive_1":1,"hive_2":2,"bee_1":3,"bee_2":4,"flower_1":5,"flower_2":6})
@@ -96,6 +96,9 @@ class Bee:
             obs[self.name].append(("hurt",1.))
             MAP[self.x,self.y] = 0
 
+        if MAP[self.x,self.y] == 0:
+            obs[self.name].append(("void",1.))
+
         action = self.agent.update_models(None,obs,None,"MM1")
 
         dx = self.dx
@@ -155,20 +158,28 @@ def vew_map():
     OBS_MAP = np.zeros((SIZE,SIZE,3))
 
 
-fig = plt.figure()
-im = plt.imshow(VISUAL_MAP,interpolation='nearest')
+#fig = plt.figure()
+#im = plt.imshow(VISUAL_MAP,interpolation='nearest')
+
+flower_proportion = []
 
 def update(*args):
     global BEES
     global MAP
     global VISUAL_MAP
+    global flower_proportion
 
     update_bees()
     add_flowers()
     vew_map()
 
-    im = plt.imshow(VISUAL_MAP,interpolation='nearest')
-    return im,
+    n1 = np.sum(MAP==objects_num["flower_1"])
+    n2 = np.sum(MAP==objects_num["flower_2"])
+    prop =  np.exp(10)/(np.exp(10) + np.exp(10*n1/float(n2)))
+    flower_proportion.append(prop)
+
+    #im = plt.imshow(VISUAL_MAP,interpolation='nearest')
+    #return im,
 
 
 
@@ -178,7 +189,7 @@ if __name__=='__main__':
 
     for i in range(NB_BEE):
         all_names.append("bee_1_"+str(i))
-        all_names.append("bee_2_"+str(i))
+        #all_names.append("bee_2_"+str(i))
 
     d = {1:(1,0),2:(0,1),3:(-1,0),4:(0,-1)}
 
@@ -188,5 +199,33 @@ if __name__=='__main__':
         if name[4]=='2':
             BEES.append(Bee(name,2,MID,SIZE-1,d[np.random.choice([1,2,3,4])]))
 
-    ani = manimation.FuncAnimation(fig, update, interval=50, blit=True)
+    #for i in range(100):
+        #update()
+        #if i%100==0:
+            #print i
+
+    #ani = manimation.FuncAnimation(fig, update, interval=50, blit=True)
+
+    nb_step = 100
+    step_time = 1000
+    average = np.zeros(step_time)
+    for i in range(nb_step):
+        for j in range(step_time):
+            update()
+        prop = np.array(flower_proportion)
+        prop-=prop[0]
+        plt.plot(prop,'b')
+        average += np.array(prop)/float(nb_step)
+        flower_proportion = []
+        init_MAP()
+        BEES = []
+        for name in all_names:
+            if name[4]=='1':
+                BEES.append(Bee(name,1,MID,0,d[np.random.choice([1,2,3,4])]))
+            if name[4]=='2':
+                BEES.append(Bee(name,2,MID,SIZE-1,d[np.random.choice([1,2,3,4])]))
+        print i
+    plt.plot(average,'r')
+
+
     plt.show()

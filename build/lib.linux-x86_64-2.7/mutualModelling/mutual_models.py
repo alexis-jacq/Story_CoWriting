@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import copy
 import operator
 
-class Agent:
+class MMagent:
     """agent able of first and 2nd mutual modelling reasoning"""
-    def __init__(self,name,agents,percepts,actions,rewards): # if inverse RL => rewards is just for self.name !!!
+    def __init__(self,name,agents,percepts,actions,rewards):
         # name : string, name of the agent
         # agents : list of strings, itself + all other agents
         # percepts : list of strings
@@ -22,67 +22,49 @@ class Agent:
             agents.append(name)
 
         self.M = {} # Mutual Models constructed by the agent
+                    # a.M[b] := the model build by 'a' of agent 'b'
+                    # a.M[c:b] := the model build by 'a' of (agent 'b' seen by agent 'c')
         self.Id = {} # identification between 1st order and 2nd order point
-                     # of view of a same agent : a.Id[b][x] = b viewed by x for a
-                     # a.Id[b][c] = c,b
-                     # a.M[c,b] := the model build by a of (the model of b by c)
-
-        self.prev_diff = 0
-        self.social_curve = []
-
-        #if len(set(agents))>2 and not "other" in agents: # 'other' represents another agent in general"
-        #    agents.append("other")
+                     # of view of a same agent : a.Id[b:x] = b
 
         for agent in set(agents):
+            # 1st order ToM:
             name = self.name+"["+agent+"]"
             self.M[agent] = model.Model(name)
             self.M[agent].add_events(percepts)
             self.M[agent].add_actions(actions)
             if agent==self.name:
                 self.M[agent].set_rewards(rewards)
-                # intrinsic reward for compassion
-                # self.M[agent].set_rewards([["others_rew",1.,1.],["others_rew",-1.,-1.]])
+            # 2nd order ToM:
             if agent!=self.name:
                 name = self.name+"["+agent+';'+self.name+"]"
                 self.M[agent+':'+self.name] = model.Model(name)
                 self.M[agent+':'+self.name].add_events(percepts)
                 self.M[agent+':'+self.name].add_actions(actions)
-                #self.M[agent+':'+self.name].set_rewards(rewards)
+                # self.M[agent+':'+self.name].set_rewards(rewards)
                 self.Id[agent+':'+self.name] = agent
 
+    def update_models(self, restricted_actions=None, agents_obs=None, agents_actions=None):
+        if agents_obs:
+            for agent in agents_obs:
 
-    def update_models(self,possible_actions=None,models_percepts=None,model_actions=None,case="MM1"):
-
-        IR = 0
-        n=0.1
-        if models_percepts:
-            models_percepts.setdefault(self.name,[])
-
-            concerned_models = set(models_percepts)
-            self_percepts = copy.deepcopy(models_percepts[self.name])
-
-            for model in concerned_models:
                 action = None
-                if model_actions:
-                    if model in model_actions:
-                        action = model_actions[model]
+                if agents_actions:
+                    if agent in agents_actions:
+                        action = agents_actions[agent]
 
-                if model!=self.name:
-                    r = self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
-                    if model in self.Id.values():
-                    #if self.name=="learner":
-                    #if True:
-                        IR+=0*r
-                        n+=1.
+                if agent!=self.name:
+                    r = self.M[agent].update_inverse(None, percepts=agents_obs[agent], last_action=action)
 
-            understood=0
-            explore = True
+            explore_exploite = True
+            clarify_behavior = False
+
             diff = 0
             for agent in self.Id:
                 _,dist = diff_reward(self.M[self.name],self.M[agent+':'+self.name])
                 diff += dist
 
-
+            """
             if case=="MM2":
                 if abs(diff-self.prev_diff)>0.1*np.random.rand():
                     explore = False
@@ -115,7 +97,7 @@ class Agent:
                 decision = self.M[self.name].update(possible_actions,self_percepts,explore,intrinsic=IR/n)
             """
             decision = self.M[self.name].update(possible_actions,self_percepts,True,intrinsic=IR/n)
-            """
+
             return decision
         else:
             return self.M[self.name].update(possible_actions,None,True)

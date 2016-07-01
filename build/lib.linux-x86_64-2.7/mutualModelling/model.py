@@ -20,7 +20,7 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 100 # chose action (exponent for softmax pulling
+THETA1 = 10 # chose action (exponent for softmax pulling
 THETA2 = 20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
@@ -226,6 +226,9 @@ class Model:
 
         # max over positive/negative new_intensities:
         noise = np.random.rand(len(self.counts[0,0,:,0,0]))/1000.
+
+        """
+        # rational :
         max_pos = np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),1] + noise)
         max_neg = np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
 
@@ -235,6 +238,18 @@ class Model:
         else:
             new_event_num = np.argmax(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
             new_intensity = -np.max(self.counts[num_action,num_last_event,:,int(last_intensity>0),0] + noise)
+        """
+
+        # hopefull :
+        dream_act_pos = np.max(self.counts[:,:,np.argmax(self.R[:,1]),1,1],0)
+        dream_act_neg = np.max(self.counts[:,:,np.argmax(self.R[:,1]),0,1],0)
+
+        if max(dream_act_pos)>=max(dream_act_neg):
+            new_event_num = np.argmax(dream_act_pos + noise)
+            new_intensity = 1.
+        else:
+            new_event_num = np.argmax(dream_act_neg + noise)
+            new_intensity = -1
 
         new_event = self.event_number.inv[new_event_num]
         elligibles.setdefault(new_event,0)
@@ -281,8 +296,8 @@ class Model:
 
         # REASONING:
         #===========
-        #if self.old_intensities and not percepts:
-        #    elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
+        if self.old_intensities and not percepts:
+            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
 
         # PERCEPTION:
@@ -299,7 +314,10 @@ class Model:
         # stochastic election of incoming active event:
         #print percepts
         next_activated = random_pull_dict(elligibles)
-        #print next_activated
+        """if percepts :
+            print "obs : "+str(next_activated)
+        else:
+            print "think : "+str(next_activated)"""
 
         if tot_reward>1:
             tot_reward=1.
@@ -396,13 +414,13 @@ class Model:
             # new state:
             new_state = self.event_number[new_activated]
             new_intensity = self.intensities[new_activated]
-
+            """
             # classic Q:
             new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             """
-            # EMA actor-critic:
+            # expect EMA of TD:
             new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
-            """
+
             reach = np.max(new_values)
 
             # TD learning:
@@ -410,13 +428,13 @@ class Model:
             n = self.n[last_state,action,int(last_intensity>0)]+1.
 
             # classic Qlearning
-            if abs(TD)>0:
-                self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
+            self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
+
             self.n[last_state,action,int(last_intensity>0)] += 1.
             self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + abs(TD))/(n+1.)
             self.R[new_state,int(new_intensity>0)] = (n*(self.R[new_state,int(new_intensity>0)]) + reward)/(n+1.)
 
-            # EMA actor-critic
+            # EMA of TD
             self.V[last_state,action,int(last_intensity>0)] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
 
             # understandable behavior
@@ -488,6 +506,8 @@ class Model:
         else:
             return tot_reward#self.decision()
 
+
+
     def inverse_learning(self,last_activated,last_intensity):
         if self.activateds and self.action:
 
@@ -505,13 +525,6 @@ class Model:
                 self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] + 0.1
             elif self.EA[last_state,int(last_intensity>0)]>=0:
                 self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
-
-            """
-            if action == self.EA[last_state,int(last_intensity>0)]:
-                self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] + 1)/(s+1.)
-            elif self.EA[last_state,int(last_intensity>0)]>=0:
-                self.rewards[expected_state,int(expected_intensity>0)] = (s*self.rewards[expected_state,int(expected_intensity>0)] - 1)/(s+1.)
-            """
 
 
 # static functions:

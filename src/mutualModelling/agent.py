@@ -82,7 +82,7 @@ class Agent:
                 _,dist = diff_reward(self.M[self.name],self.M[agent])
                 diff += dist
 
-            """
+
             if case=="MM2":
                 if abs(diff-self.prev_diff)>0.1*np.random.rand():
                     explore = False
@@ -115,7 +115,7 @@ class Agent:
                 decision = self.M[self.name].update(possible_actions,self_percepts,explore,intrinsic=IR/n)
             """
             decision = self.M[self.name].update(possible_actions,self_percepts,True,intrinsic=IR/n)
-
+            """
             return decision
         else:
             return self.M[self.name].update(possible_actions,None,True)

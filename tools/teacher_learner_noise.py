@@ -32,7 +32,7 @@ name1 = "teacher"
 name2 = "learner"
 all_names = [name1,name2]
 
-N = 20
+N = 100
 n = 2000
 CUMREW = np.zeros(n)
 CUMREW2 = np.zeros(n)
@@ -41,7 +41,7 @@ L_curve2 = np.zeros(n-1)
 T_curve1 = np.zeros(n-1)
 T_curve2 = np.zeros(n-1)
 
-def world_update(action1,action2,previous):
+def world_update(action1,action2):
     real_action = action2
     p1 = [(action2,1.)]
     p2 = [(action1,1.)]
@@ -57,14 +57,8 @@ def world_update(action1,action2,previous):
         #p1.append(("fail",1.))
         #p2.append(("fail",1.))
         if action2=="c":
-            p2.append(("noise",1))
+            p2.append(("noise",1)) # e.g. football match on TV
 
-    # suppose no errors of perception:
-
-    #model_percepts1 = {name1:p1}#,name2:p2,name2+":"+name1:p1}
-    #model_percepts2 = {name2:p2}#,name1:p1,name1+":"+name2:p2}
-    #model_percepts1 = {name1:p1,name2:p2}#,name2+":"+name1:p1}
-    #model_percepts2 = {name2:p2,name1:p1}#,name1+":"+name2:p2}
     model_percepts1 = {name1:p1,name2:p2,name2+":"+name1:p1}
     model_percepts2 = {name2:p2,name1:p1,name1+":"+name2:p2}
     model_actions1 = {name2:action2,name2+":"+name1:action1}
@@ -90,9 +84,12 @@ for i in range(N):
     previous = []
     for j in range(n):
 
+        if j>n/2.:
+            learner.M["learner"].set_rewards([["reward",1,-1.],["punish",1,1.]])
+
         action1 = teacher.update_models(None,model_percepts1,model_actions1,case)
         action2 = learner.update_models(None,model_percepts2,model_actions2,case)
-        model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2,previous)
+        model_percepts1,model_percepts2,model_actions1,model_actions2,r = world_update(action1,action2)
         cumrew.append(r)
 
     if i>N/2.:
