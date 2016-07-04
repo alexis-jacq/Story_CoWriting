@@ -414,13 +414,13 @@ class Model:
             # new state:
             new_state = self.event_number[new_activated]
             new_intensity = self.intensities[new_activated]
-            """
+
             # classic Q:
             new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
             """
             # expect EMA of TD:
             new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
-
+            """
             reach = np.max(new_values)
 
             # TD learning:
@@ -531,15 +531,24 @@ class Model:
 def diff_reward(model1, model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in model1.event_number:# & model2.intensities:
-        if event_id in model2.event_number:
-            event_num1 = model1.event_number[event_id]
-            event_num2 = model2.event_number[event_id]
-            # this distance function is arbitrary, could be L2, L3 etc...
-            dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
-            event_diff.setdefault(event_id,dist)
-            tot_dist += dist
+    for event_id in set(model1.event_number).union(set(model2.event_number)):
+        event_num1 = model1.event_number[event_id]
+        event_num2 = model2.event_number[event_id]
+        # this distance function is arbitrary, could be L2, L3 etc...
+        dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
+        event_diff.setdefault(event_id,dist)
+        tot_dist += dist
     return event_diff,tot_dist
 
 def diff_knowledge(model1,model2):
-    return 0
+    tot_dist = 0
+    event_diff = {}
+    for event_id in set(model1.event_number).union(set(model2.event_number)):
+        event_num1 = model1.event_number[event_id]
+        I1 = model1.intensities[event_id]
+        I2 = model2.intensities[event_id]
+        # this distance function is arbitrary, could be L2, L3 etc...
+        dist = np.sum(np.abs(I1-I2))*model1.matter[event_num1,I1]
+        event_diff.setdefault(event_id,dist)
+        tot_dist += dist
+    return event_diff,tot_dist

@@ -16,9 +16,9 @@ def create_teacher(name,all_names):
     return teacher
 
 def create_learner(name,all_names):
-    percepts = ["reward","noise"]
+    percepts = ["reward"]
     actions = ["a","b","c","imitate"]
-    rewards = [["reward",1.,1.],["punish",1.,-1],["noise",1.,0.1]]
+    rewards = [["reward",1.,1.],["punish",1.,-1]]
     learner = agent.Agent(name,all_names,percepts,actions,rewards)
     return learner
 
@@ -50,14 +50,7 @@ def world_update(action1,action2):
         p1.append((real_action,1.))
     r = 0
     if "b"==real_action:
-        #p1.append(("success",1.))
-        #p2.append(("success",1.))
         r = 1
-    else:
-        #p1.append(("fail",1.))
-        #p2.append(("fail",1.))
-        if action2=="c":
-            p2.append(("noise",1)) # e.g. football match on TV
 
     model_percepts1 = {name1:p1,name2:p2,name2+":"+name1:p1}
     model_percepts2 = {name2:p2,name1:p1,name1+":"+name2:p2}

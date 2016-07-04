@@ -3,7 +3,7 @@
 
 import numpy as np
 import random
-from mutualModelling import model,agent
+from mutualModelling import model,agent0
 import matplotlib.pyplot as plt
 import copy
 

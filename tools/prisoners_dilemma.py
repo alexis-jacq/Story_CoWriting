@@ -28,7 +28,7 @@ the other has to play and can't communicate anymore
 
 # parameters
 RP = 1.
-RW = 0.7
+RW = 0.
 RS = -1.
 
 GM_values = np.array([[(0,0),(RS,RP)],[(RP,RS),(RW,RW)]])
@@ -45,18 +45,8 @@ n = 500
 CUMREW1 = np.zeros(n)
 CUMREW2 = np.zeros(n)
 
-def world_update_communicate(action1,action2):
-    p1 = []
-    p2 = []
-    p1.append((name2+"-"+action2,1.))
-    p2.append((name1+"-"+action1,1.))
-    # suppose no errors of perception:
-    model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
-    model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
-    return model_percepts1,model_percepts2
-    #return None,None
 
-def world_update_play(action1,action2):
+def world_update(action1,action2):
     p1 = []
     p2 = []
     b1 = int("cooperate" in action1)
@@ -66,9 +56,11 @@ def world_update_play(action1,action2):
     r2 = GM_values[b1,b2,1]
     p2.append((GM_percepts[b1,b2,1],1))
     # suppose no errors of perception:
-    model_percepts1 = {name1:p1,name2:p2,name2+";"+name1:p1}
-    model_percepts2 = {name2:p2,name1:p1,name1+";"+name2:p2}
-    return model_percepts1,model_percepts2,r1,r2
+    model_percepts1 = {name1:p1,name2:p2,name2+":"+name1:p1}
+    model_percepts2 = {name2:p2,name1:p1,name1+":"+name2:p2}
+    model_actions1 = {name2:action2,name2+":"+name1:action1}
+    model_actions2 = {name1:action1,name1+":"+name2:action2}
+    return model_percepts1,model_percepts2,model_actions1,model_actions2,r1,r2
 
 for i in range(N):
     if i%10==0:
@@ -79,63 +71,23 @@ for i in range(N):
     cumrew2 = []
     model_percepts1 = None
     model_percepts2 = None
+    model_actions1 = None
+    model_actions2 = None
     action1 = ""
     action2 = ""
     for j in range(n):
 
-
-        if action2 in play:
-            action1 = robert.update_models(play,(model_percepts1))
-            print action1
-            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2)
-            cumrew1.append(r1)
-            cumrew2.append(r2)
-            action1 = ""
-            action2 = ""
-        else:
-            action1 = robert.update_models(None,copy.deepcopy(model_percepts1))
-            print action1
-            if not (action1 in play) and action2:
-                model_percepts1,model_percepts2 = world_update_communicate(action1,action2)
-                #print "model_percepts2 modified ! !!!!!!"
-                #print "================================="
-                cumrew1.append(0)
-                cumrew2.append(0)
-                action1 = ""
-                action2 = ""
+        action1 = robert.update_models(None,model_percepts1,model_actions1)
+        action2 = pierrot.update_models(None,model_percepts2,model_actions2)
+        model_percepts1,model_percepts2,model_actions1,model_actions2,r1,r2 = world_update(action1,action2)
+        cumrew1.append(r1)
+        cumrew2.append(r2)
 
 
-        # pierrot's turn
-        if action1 in play:
-            action2 = pierrot.update_models(play,copy.deepcopy(model_percepts2))
-            print "-----------"+action2
-            model_percepts1,model_percepts2,r1,r2 = world_update_play(action1,action2)
-            cumrew1.append(r1)
-            cumrew2.append(r2)
-            action1 = ""
-            action2 = ""
-        else:
-            action2 = pierrot.update_models(None,copy.deepcopy(model_percepts2))
-            print "-----------"+action2
-            if action1 and not (action2 in play):
-                model_percepts1,model_percepts2 = world_update_communicate(action1,action2)
-                cumrew1.append(0)
-                cumrew2.append(0)
-                action1 = ""
-                action2 = ""
-
-        if len(cumrew1)<j+1:
-            cumrew1.append(0)
-            cumrew2.append(0)
-            
-
-    CUMREW1+=(np.cumsum(np.array(cumrew1))+np.cumsum(np.array(cumrew2)))*0.5/float(N)
-    if sum(cumrew1)>sum(cumrew2):
-        CUMREW2+=np.cumsum(np.array(cumrew1))/float(N)
-    else:
-        CUMREW2+=np.cumsum(np.array(cumrew2))/float(N)
+    CUMREW1+=np.cumsum(np.array(cumrew1))/float(N)
+    CUMREW2+=np.cumsum(np.array(cumrew2))/float(N)
 
 plt.plot(CUMREW1)
 plt.plot(CUMREW2)
-plt.plot(CUMREW1*2.-CUMREW2)
+plt.plot(CUMREW1-CUMREW2)
 plt.show()

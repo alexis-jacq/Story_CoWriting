@@ -53,9 +53,7 @@ class Agent:
                 self.Id[agent+':'+self.name] = agent
 
     def update_models(self, restricted_actions=None, agents_obs=None, agents_actions=None):
-
         others_reward = 0
-
         if agents_obs or agents_actions:
             concerned_agents = set(agents_obs).union(set(agents_actions))
             for agent in concerned_agents:
@@ -69,23 +67,22 @@ class Agent:
                         action = agents_actions[agent]
 
                 if agent!=self.name:
-                    r = self.M[agent].update_inverse(None, percepts=agents_obs[agent], last_action=action)
-                    if agent in self.Id:
+                    r = self.M[agent].update_inverse(None, percepts=obs, last_action=action)
+                    if agent in self.Id.values():
                         others_reward += r
 
-        others_error_reward = 0
-        for agent in self.Id:
-            _,dist = diff_reward(self.M[self.name],self.M[agent])
-            others_error_reward += dist
-        delta_reward = others_error_reward - self.others_error_reward
-        self.others_error_reward = others_error_reward
+        # estimation of errors by other agents about myself:
+        self.others_error_reward, delta_reward = self.estimate_others_error_reward()
+        self.others_error_knowledge, delta_knowledge = self.estimate_others_error_knowledge()
 
-        if delta_reward>0:
+        #if delta_reward>0.1*np.random.rand():
+        if False:
             # exagerate reinforcement learning behavior
-            decision = self.M[self.name].update(restricted_actions,agents_obs[self.name],False,others_reward)
+            decision = self.M[self.name].update(restricted_actions,agents_obs[self.name],False,0)
         else:
             if agents_obs:
-                decision = self.M[self.name].update(restricted_actions,agents_obs[self.name],True,others_reward)
+                if self.name in agents_obs:
+                    decision = self.M[self.name].update(restricted_actions,agents_obs[self.name],True,others_reward)
             else:
                 decision = self.M[self.name].update(restricted_actions,None,True,others_reward)
 
@@ -93,3 +90,23 @@ class Agent:
 
         # TODO compute other's perception error of knowledge
         # TODO make prediction (update with no percepts) and compute prediction error
+
+
+    def estimate_others_error_reward(self):
+        # error by others about my reward:
+        others_error_reward = 0
+        for agent in self.Id:
+            _,dist = model.diff_reward(self.M[self.name],self.M[agent])
+            others_error_reward += dist
+        delta_reward = abs(others_error_reward - self.others_error_reward)
+        return others_error_reward, delta_reward
+
+
+    def estimate_others_error_knowledge(self):
+        # error by others about my knowledge:
+        others_error_knowledge = 0
+        for agent in self.Id:
+            _,dist = model.diff_knowledge(self.M[self.name],self.M[agent])
+            others_error_knowledge += dist
+        delta_knowledge = abs(others_error_knowledge - self.others_error_knowledge)
+        return others_error_knowledge, delta_knowledge
