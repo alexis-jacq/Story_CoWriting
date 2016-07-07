@@ -30,10 +30,10 @@ def onChangeHumanTarget(msg):
     action.data = human_action
     pub_human_action.publish(action)
 
-def onChangeHumanAction(msg):
+def onHumanAction(msg):
     pub_human_action.publish(msg)
 
-def onChangeRobotAction(msg):
+def onRobotAction(msg):
     pub_robot_action.publish(msg)
     robot_action = str(msg.data)
     if "looks" == robot_action.split("_")[0] and len(robot_action.split("_"))>0:
@@ -44,9 +44,9 @@ def onChangeRobotAction(msg):
         pub_robot_target.publish(target)
 
 # TODO:
-# def onChangeRobotObs(msg):
+# def onRobotObs(msg):
 #
-# def onChangeHumanObs(msg):
+# def onHumanObs(msg):
 
 if __name__=='__main__':
 
@@ -70,10 +70,10 @@ if __name__=='__main__':
         rospy.Subscriber("actual_focus_of_attention", String, onChangeHumanTarget)
 
         # get human action: (~ tool~simu)
-        rospy.Subscriber("human_action", String, onChangeHumanAction)
+        rospy.Subscriber("human_action", String, onHumanAction)
 
         # get robot action: (~ tool_simu)
-        rospy.Subscriber("robot_action", String, onChangeRobotAction)
+        rospy.Subscriber("robot_action", String, onRobotAction)
 
         # TODO: same with obs (not from agents actions but from the world)
 
