@@ -36,13 +36,65 @@ visible_for_robot_from = {"tablet":["punishes","rewards","sends_demo"],"selectio
 
 # when an agent do/observe something the mutual models (by the robot) are updated:
 #---------------------------------------------------------------------------------
+models_percepts = {}
+models_actions = {}
+human_target = "_"
+robot_target = "_"
+
+def onChangeRobotTarget(msg):
+    global robot_target
+    robot_target = str(msg.data)
+
+def onChangeHumanTarget(msg):
+    global human_target
+    human_target = str(msg.data)
+
 def onRobotAction(msg):
+    global models_actions
+    global models_percepts
+    action = str(msg.data)
+    if human_target in visible_for_human_from:
+        if action in visible_for_human_from[human_target]:
+            models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
+            models_percepts.setdefault(HUMAN_NAME,[]).append(ROBOT_NAME+"_"+action)
 
+def onHumanAction(msg):
+    global models_actions
+    global models_percepts
+    action = str(msg.data)
+    models_actions.setdefault(HUMAN_NAME,[]).append(action)
+    if robot_target in visible_for_robot_from:
+        if action in visible_for_robot_from[robot_target]:
+            models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(HUMAN_NAME+"_"+action)
 
-if __name__=='name':
-    rospy.Suscriber('robot_action_topic', String, onRobotAction )
-    rospy.Suscriber('human_action_topic', String, onHumanAction)
-    rospy.Suscriber('robot_target_topic', String, onChangeRobotTarget)
-    rospy.Suscriber('human_target_topic', String, onChangeHumanTarget)
-    rospy.Suscriber('robot_obs_topic', String, onRobotObs)
-    rospy.Suscriber('human_obs_topic', String, onHumanObs)
+# TODO:
+"""
+def onRobotObs(msg):
+
+def onHumanObs(msg):
+"""
+
+if __name__=='__main__':
+
+    rospy.init_node("cowriter_mutual_modelling")
+
+    while(True):
+        rospy.Suscriber('robot_action_topic', String, onRobotAction )
+        rospy.Suscriber('human_action_topic', String, onHumanAction)
+        rospy.Suscriber('robot_target_topic', String, onChangeRobotTarget)
+        rospy.Suscriber('human_target_topic', String, onChangeHumanTarget)
+        rospy.Suscriber('robot_obs_topic', String, onRobotObs)
+        rospy.Suscriber('human_obs_topic', String, onHumanObs)
+
+        new_robot_action = robot.update_models(None,models_percepts,models_actions)
+
+        msg = String()
+        msg.data = new_robot_action
+        pub_robot_action.publish(msg)
+
+        models_percepts = {}
+        models_actions = {}
+
+        rospy.sleep(1.0)
+
+    rospy.spin()

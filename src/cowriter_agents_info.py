@@ -30,6 +30,7 @@ def onChangeHumanTarget(msg):
     action.data = human_action
     pub_human_action.publish(action)
 
+"""
 def onHumanAction(msg):
     pub_human_action.publish(msg)
 
@@ -42,7 +43,7 @@ def onRobotAction(msg):
         target = String()
         target.data = current_human_target
         pub_robot_target.publish(target)
-
+"""
 # TODO:
 # def onRobotObs(msg):
 #
@@ -70,10 +71,10 @@ if __name__=='__main__':
         rospy.Subscriber("actual_focus_of_attention", String, onChangeHumanTarget)
 
         # get human action: (~ tool~simu)
-        rospy.Subscriber("human_action", String, onHumanAction)
+        #rospy.Subscriber("human_action_topic", String, onHumanAction)
 
         # get robot action: (~ tool_simu)
-        rospy.Subscriber("robot_action", String, onRobotAction)
+        #rospy.Subscriber("robot_action_topic", String, onRobotAction)
 
         # TODO: same with obs (not from agents actions but from the world)
 
