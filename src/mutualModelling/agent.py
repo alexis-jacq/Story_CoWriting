@@ -64,7 +64,10 @@ class Agent:
                 action = None
                 if agents_actions:
                     if agent in agents_actions:
-                        action = agents_actions[agent]
+                        actions = agents_actions[agent]
+                        # HACK: we should process all actions !!!
+                        action = actions[0]
+
 
                 if agent!=self.name:
                     r = self.M[agent].update_inverse(None, percepts=obs, last_action=action)

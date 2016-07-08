@@ -457,7 +457,10 @@ class Model:
         new_intensities = {}
 
         if last_action:
-            if not last_action in self.action_number:
+            if self.action_number:
+                if not last_action in set(self.action_number):
+                    self.add_actions([last_action])
+            else:
                 self.add_actions([last_action])
             self.action = last_action
 

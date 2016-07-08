@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/alexis/catkin_ws/src/mutual_modelling/build/devel/setup.sh

@@ -10,17 +10,17 @@ from mutualModelling.agent import Agent
 
 # this node udate models of agents (by the robot) and publishes the choice of action by the robot:
 #-------------------------------------------------------------------------------------------------
-pub_robot_action = rospy.Publisher('robot_action_topic', Float64, queue_size=1)
+pub_robot_action = rospy.Publisher('robot_action_topic', String, queue_size=1)
 
 # create a mutual modeller agent "robot" that also model an agent "human" in cowriter:
 #-------------------------------------------------------------------------------------
 ROBOT_NAME = "Mimi"
 HUMAN_NAME = "Child"
-ALL_NAMES = [ROBOT_NAME, HUMANE_NAME]
+ALL_NAMES = [ROBOT_NAME, HUMAN_NAME]
 robot_percepts = ["child_progress","child_head","reward","punish","justified_reward","justified_punish","justified_new_word","with_me"]
 robot_actions = ["converges","diverges","exaggerates","looks_tablet","looks_child_head","looks_out","looks_experimentator","looks_selection_tablet","points_tablet"]
 robot_rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.],["child_progress",1.,1.],["justified_new_word",1.,1.]]
-robot = agent.Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards)
+robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards)
 
 # the point of attention of the human is used to define what action of the robot is observed by the child:
 #---------------------------------------------------------------------------------------------------------
@@ -79,12 +79,12 @@ if __name__=='__main__':
     rospy.init_node("cowriter_mutual_modelling")
 
     while(True):
-        rospy.Suscriber('robot_action_topic', String, onRobotAction )
-        rospy.Suscriber('human_action_topic', String, onHumanAction)
-        rospy.Suscriber('robot_target_topic', String, onChangeRobotTarget)
-        rospy.Suscriber('human_target_topic', String, onChangeHumanTarget)
-        rospy.Suscriber('robot_obs_topic', String, onRobotObs)
-        rospy.Suscriber('human_obs_topic', String, onHumanObs)
+        rospy.Subscriber('robot_action_topic', String, onRobotAction )
+        rospy.Subscriber('human_action_topic', String, onHumanAction)
+        rospy.Subscriber('robot_target_topic', String, onChangeRobotTarget)
+        rospy.Subscriber('human_target_topic', String, onChangeHumanTarget)
+        #rospy.Subscriber('robot_obs_topic', String, onRobotObs)
+        #rospy.Subscriber('human_obs_topic', String, onHumanObs)
 
         new_robot_action = robot.update_models(None,models_percepts,models_actions)
 

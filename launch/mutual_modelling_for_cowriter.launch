@@ -1,0 +1,11 @@
+<launch>
+
+  <include file="$(find attention_tracker)/launch/attention_tracking.launch">
+  </include>
+
+  <node pkg="mutual_modelling" type="cowriter_agents_info.py" name="cowriter_agent_info">
+  </node>
+  <node pkg="mutual_modelling" type="cowriter_mutual_modelling.py" name="cowriter_mutual_modelling">
+  </node>
+
+</launch>

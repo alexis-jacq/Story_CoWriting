@@ -11,16 +11,16 @@ from mutualModelling.agent import Agent
 # this node collect all information about agents states/obs/actions:
 # and publish in one topic per agent (human, robot)
 #-------------------------------------------------------------------------
-pub_robot_action = rospy.Publisher('robot_action_topic', Float64, queue_size=1)
-pub_human_action = rospy.Publisher('human_action_topic', Float64, queue_size=1)
-pub_robot_target = rospy.Publisher('robot_target_topic', Float64, queue_size=1)
-pub_human_target = rospy.Publisher('human_target_topic', Float64, queue_size=1)
-pub_robot_obs = rospy.Publisher('robot_obs_topic', Float64, queue_size=1)
-pub_human_obs = rospy.Publisher('human_obs_topic', Float64, queue_size=1)
+pub_robot_action = rospy.Publisher('robot_action_topic', String, queue_size=1)
+pub_human_action = rospy.Publisher('human_action_topic', String, queue_size=1)
+pub_robot_target = rospy.Publisher('robot_target_topic', String, queue_size=1)
+pub_human_target = rospy.Publisher('human_target_topic', String, queue_size=1)
+pub_robot_obs = rospy.Publisher('robot_obs_topic', String, queue_size=1)
+pub_human_obs = rospy.Publisher('human_obs_topic', String, queue_size=1)
 
 
 def onChangeHumanTarget(msg):
-    current_human_target = str(msg.data).split("_/")[1]
+    current_human_target = str(msg.data)#.split("_/")[1]
     target = String()
     target.data = current_human_target
     pub_human_target.publish(target)

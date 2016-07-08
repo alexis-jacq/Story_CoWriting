@@ -20,7 +20,7 @@ ETA1 = 0.9 # for EMA of the correlation between intensity of signals
 
 # reinforcement learning:
 #========================
-THETA1 = 20 # chose action (exponent for softmax pulling
+THETA1 = 10 # chose action (exponent for softmax pulling
 THETA2 = 20 # chose perception
 ETA2 = 0.8
 DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
@@ -457,7 +457,10 @@ class Model:
         new_intensities = {}
 
         if last_action:
-            if not last_action in self.action_number:
+            if self.action_number:
+                if not last_action in set(self.action_number):
+                    self.add_actions([last_action])
+            else:
                 self.add_actions([last_action])
             self.action = last_action
 
