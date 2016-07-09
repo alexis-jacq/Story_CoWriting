@@ -79,6 +79,7 @@ class Agent:
         self.others_error_knowledge, delta_knowledge = self.estimate_others_error_knowledge()
 
         #if delta_reward>0.1*np.random.rand():
+        decision = None
         if False:
             # exagerate reinforcement learning behavior
             decision = self.M[self.name].update(restricted_actions,agents_obs[self.name],False,0)

@@ -20,15 +20,16 @@ pub_human_obs = rospy.Publisher('human_obs_topic', String, queue_size=1)
 
 
 def onChangeHumanTarget(msg):
-    current_human_target = str(msg.data)#.split("_/")[1]
-    target = String()
-    target.data = current_human_target
-    pub_human_target.publish(target)
-    # it also defines an action of the human:
-    human_action = "looks_"+current_human_target
-    action = String()
-    action.data = human_action
-    pub_human_action.publish(action)
+    if "_/" in str(msg.data):
+        current_human_target = str(msg.data).split("_/")[1]
+        target = String()
+        target.data = current_human_target
+        pub_human_target.publish(target)
+        # it also defines an action of the human:
+        human_action = "looks_"+current_human_target
+        action = String()
+        action.data = human_action
+        pub_human_action.publish(action)
 
 """
 def onHumanAction(msg):

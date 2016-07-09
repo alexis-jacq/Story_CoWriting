@@ -56,7 +56,7 @@ def onRobotAction(msg):
     if human_target in visible_for_human_from:
         if action in visible_for_human_from[human_target]:
             models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
-            models_percepts.setdefault(HUMAN_NAME,[]).append(ROBOT_NAME+"_"+action)
+            models_percepts.setdefault(HUMAN_NAME,[]).append((ROBOT_NAME+"_"+action,1.))
 
 def onHumanAction(msg):
     global models_actions
@@ -65,7 +65,7 @@ def onHumanAction(msg):
     models_actions.setdefault(HUMAN_NAME,[]).append(action)
     if robot_target in visible_for_robot_from:
         if action in visible_for_robot_from[robot_target]:
-            models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(HUMAN_NAME+"_"+action)
+            models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append((HUMAN_NAME+"_"+action,1.))
 
 # TODO:
 """
@@ -86,14 +86,16 @@ if __name__=='__main__':
         #rospy.Subscriber('robot_obs_topic', String, onRobotObs)
         #rospy.Subscriber('human_obs_topic', String, onHumanObs)
 
+        # should wait for action
         new_robot_action = robot.update_models(None,models_percepts,models_actions)
 
-        msg = String()
-        msg.data = new_robot_action
-        pub_robot_action.publish(msg)
+        if new_robot_action:
+            msg = String()
+            msg.data = new_robot_action
+            pub_robot_action.publish(msg)
 
-        models_percepts = {}
-        models_actions = {}
+            models_percepts = {}
+            models_actions = {}
 
         rospy.sleep(1.0)
 
