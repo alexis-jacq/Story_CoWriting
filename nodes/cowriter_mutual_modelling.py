@@ -86,8 +86,10 @@ if __name__=='__main__':
         #rospy.Subscriber('robot_obs_topic', String, onRobotObs)
         #rospy.Subscriber('human_obs_topic', String, onHumanObs)
 
-        # should wait for action
-        new_robot_action = robot.update_models(None,models_percepts,models_actions)
+        # should wait for action:
+        new_robot_action = None
+        if models_actions:
+            new_robot_action = robot.update_models(None,models_percepts,models_actions)
 
         if new_robot_action:
             msg = String()
