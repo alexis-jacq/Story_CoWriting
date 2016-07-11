@@ -63,6 +63,7 @@ def onHumanAction(msg):
     global models_percepts
     action = str(msg.data)
     models_actions.setdefault(HUMAN_NAME,[]).append(action)
+    models_percepts.setdefault(ROBOT_NAME,[]).append((HUMAN_NAME+'_'+action,1.))
     if robot_target in visible_for_robot_from:
         if action in visible_for_robot_from[robot_target]:
             models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append((HUMAN_NAME+"_"+action,1.))
