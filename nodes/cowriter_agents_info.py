@@ -18,18 +18,23 @@ pub_human_target = rospy.Publisher('human_target_topic', String, queue_size=1)
 pub_robot_obs = rospy.Publisher('robot_obs_topic', String, queue_size=1)
 pub_human_obs = rospy.Publisher('human_obs_topic', String, queue_size=1)
 
+last_human_target = "_"
+
 
 def onChangeHumanTarget(msg):
+    global last_human_target
     if "_/" in str(msg.data):
         current_human_target = str(msg.data).split("_/")[1]
-        target = String()
-        target.data = current_human_target
-        pub_human_target.publish(target)
-        # it also defines an action of the human:
-        human_action = "looks_"+current_human_target
-        action = String()
-        action.data = human_action
-        pub_human_action.publish(action)
+        if current_human_target != last_human_target:
+            target = String()
+            target.data = current_human_target
+            pub_human_target.publish(target)
+            # it also defines an action of the human:
+            human_action = "looks_"+current_human_target
+            action = String()
+            action.data = human_action
+            pub_human_action.publish(action)
+            last_human_target = current_human_target
 
 """
 def onHumanAction(msg):
