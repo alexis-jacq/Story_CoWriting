@@ -534,7 +534,7 @@ class Model:
 def diff_reward(model1, model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in set(model1.event_number).union(set(model2.event_number)):
+    for event_id in set(model1.event_number).intersection(set(model2.event_number)):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
@@ -546,7 +546,7 @@ def diff_reward(model1, model2):
 def diff_knowledge(model1,model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in set(model1.event_number).union(set(model2.event_number)):
+    for event_id in set(model1.event_number).intersection(set(model2.event_number)):
         event_num1 = model1.event_number[event_id]
         I1 = model1.intensities[event_id]
         I2 = model2.intensities[event_id]
