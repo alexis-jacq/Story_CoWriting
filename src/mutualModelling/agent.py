@@ -11,11 +11,13 @@ import operator
 
 class Agent:
     """agent able of first and 2nd mutual modelling reasoning"""
-    def __init__(self,name,agents,percepts,actions,rewards):
+    def __init__(self,name,agents,percepts,actions,rewards,instincts=None):
         # name : string, name of the agent
         # agents : list of strings, itself + all other agents
-        # percepts : list of strings
+        # percepts : list of [strings,float]
         # action : list of string
+        # rewards : list of [string,float,float] (observation,intensity,reward)
+        # instincts : list of [string, float, string] (observation, intensity, action)
 
         self.name = name
         if name not in agents:
@@ -43,6 +45,7 @@ class Agent:
             self.M[agent].add_actions(actions)
             if agent==self.name:
                 self.M[agent].set_rewards(rewards)
+                self.M[agent].set_instincts(instincts)
             # 2nd order ToM:
             if agent!=self.name:
                 name = self.name+"["+agent+';'+self.name+"]"
