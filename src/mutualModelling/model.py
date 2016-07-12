@@ -217,6 +217,25 @@ class Model:
                 value=-1.
             self.rewards[self.event_number[event_id],int(value>0)] = reward
 
+    def set_instincts(self, obs_actions): # ~ a-priori knowledge
+        for obs_action in obs_actions:
+            event_id = obs_action[0]
+            value = obs_action[1]
+            action = obs_action[2]
+            if event_id not in self.event_number:
+                self.add_events([event_id])
+            if action not in self.action_number:
+                self.add_actions([action])
+            if value>1:
+                value=1.
+            if value<-1:
+                value=-1.
+            event_num = self.event_number[event_id]
+            action_num = self.action_number[action]
+            self.Q[event_num,action_num,int(value>0)] = 1.
+            # if EMA of TD:
+            self.V[event_num,action_num,int(value>0)] = 1.
+
     def think_new_event(self, elligibles, new_intensities):
 
         last_intensity = self.old_intensities[-1]
