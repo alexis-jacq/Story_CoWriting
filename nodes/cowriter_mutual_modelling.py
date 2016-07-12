@@ -17,10 +17,11 @@ pub_robot_action = rospy.Publisher('robot_action_topic', String, queue_size=1)
 ROBOT_NAME = "Mimi"
 HUMAN_NAME = "Child"
 ALL_NAMES = [ROBOT_NAME, HUMAN_NAME]
-robot_percepts = ["child_progress","child_head","reward","punish","justified_reward","justified_punish","justified_new_word","with_me"]
+robot_percepts = ["child_progress","reward","punish","justified_reward","justified_punish","justified_new_word","with_me"]
 robot_actions = ["converges","diverges","exaggerates","looks_tablet","looks_child_head","looks_out","looks_experimentator","looks_selection_tablet","points_tablet"]
 robot_rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.],["child_progress",1.,1.],["justified_new_word",1.,1.]]
-robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards)
+robot_instincts = [[HUMAN_NAME+"_looks_robot_head",1.,"looks_child_head"],[HUMAN_NAME+"_looks_robot_head",1.,"looks_tablet"], [HUMAN_NAME+"_looks_tablet",1.,"looks_child_head"],[HUMAN_NAME+"_looks_tablet",1.,"looks_tablet"], [HUMAN_NAME+"_looks_noise",1.,"looks_child_head"],[HUMAN_NAME+"_looks_noise",1.,"looks_noise"], [HUMAN_NAME+"_looks_selection_tablet",1.,"looks_selection_tablet"], [HUMAN_NAME+"_looks_experimentator",1.,"looks_experimentator"]]
+robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards,robot_instincts)
 
 # the point of attention of the human is used to define what action of the robot is observed by the child:
 #---------------------------------------------------------------------------------------------------------
