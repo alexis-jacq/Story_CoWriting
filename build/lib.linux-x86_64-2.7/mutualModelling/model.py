@@ -217,6 +217,25 @@ class Model:
                 value=-1.
             self.rewards[self.event_number[event_id],int(value>0)] = reward
 
+    def set_instincts(self, obs_actions): # ~ a-priori knowledge
+        for obs_action in obs_actions:
+            event_id = obs_action[0]
+            value = obs_action[1]
+            action = obs_action[2]
+            if event_id not in self.event_number:
+                self.add_events([event_id])
+            if action not in self.action_number:
+                self.add_actions([action])
+            if value>1:
+                value=1.
+            if value<-1:
+                value=-1.
+            event_num = self.event_number[event_id]
+            action_num = self.action_number[action]
+            self.Q[event_num,action_num,int(value>0)] = 1.
+            # if EMA of TD:
+            self.V[event_num,action_num,int(value>0)] = 1.
+
     def think_new_event(self, elligibles, new_intensities):
 
         last_intensity = self.old_intensities[-1]
@@ -534,7 +553,7 @@ class Model:
 def diff_reward(model1, model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in set(model1.event_number).union(set(model2.event_number)):
+    for event_id in set(model1.event_number).intersection(set(model2.event_number)):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
@@ -546,7 +565,7 @@ def diff_reward(model1, model2):
 def diff_knowledge(model1,model2):
     tot_dist = 0
     event_diff = {}
-    for event_id in set(model1.event_number).union(set(model2.event_number)):
+    for event_id in set(model1.event_number).intersection(set(model2.event_number)):
         event_num1 = model1.event_number[event_id]
         I1 = model1.intensities[event_id]
         I2 = model2.intensities[event_id]

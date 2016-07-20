@@ -1,11 +1,19 @@
 <launch>
 
+  <!-- also launch attention-tracker -->
   <include file="$(find attention_tracker)/launch/attention_tracking.launch">
+  </include>
+  <!-- also launch nao control -->
+  <include file="$(find nao_bringup)/launch/nao_full_py.launch">
+    <arg name="nao_ip" value="10.0.0.4"/>
+    <!--arg name="roscore_ip" value="10.0.0.6"/-->
   </include>
 
   <node pkg="mutual_modelling" type="cowriter_agents_info.py" name="cowriter_agent_info">
   </node>
   <node pkg="mutual_modelling" type="cowriter_mutual_modelling.py" name="cowriter_mutual_modelling">
+  </node>
+  <node pkg="mutual_modelling" type="nao_actions.py" name="nao_actions">
   </node>
 
 </launch>

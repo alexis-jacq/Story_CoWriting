@@ -21,6 +21,7 @@ catkin_package(
 install(PROGRAMS
   nodes/cowriter_agents_info.py
   nodes/cowriter_mutual_modelling.py
+  nodes/nao_actions.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
