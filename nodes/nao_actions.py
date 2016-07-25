@@ -19,6 +19,9 @@ from naoqi import ALModule
 
 pub_nao_action = rospy.Publisher('joint_angles', JointAnglesWithSpeed, queue_size=1)
 
+current_target = "/face_0"
+action2target = {"looks_tablet":"/tablet", "looks_child_head":"/face_0", "looks_experimentator":"/experimenter", "looks_selection_tablet":"/selection_tablet"}
+
 def head_move_msg(yaw, pitch, speed):
     msg = JointAnglesWithSpeed()
     h = Header()
@@ -29,7 +32,11 @@ def head_move_msg(yaw, pitch, speed):
     msg.speed = speed
     return msg
 
-#def onReceiveAction(msg):
+def onReceiveAction(msg):
+    global current_target
+    action = str(msg.data)
+    if action in action2target:
+        current_target = action2target[action]
 
 if __name__=="__main__":
 
@@ -40,11 +47,11 @@ if __name__=="__main__":
     listener = tf.TransformListener()
     while True:
         test  = listener.getFrameStrings()
-        #rospy.loginfo(test)
+        rospy.Subscriber('robot_action_topic', String, onReceiveAction)
 
-        if "robot_head" in test and "selection_tablet" in test:
+        if "robot_head" in test and "face_0" in test:
             rospy.loginfo("frames found !!!!!!")
-            (pose,rot) = listener.lookupTransform('/robot_head','/selection_tablet' , rospy.Time(0))
+            (pose,rot) = listener.lookupTransform('/robot_head', current_target, rospy.Time(0))
             x = pose[0]
             y = pose[1]
             z = pose[2]
@@ -56,8 +63,8 @@ if __name__=="__main__":
             rospy.loginfo("pitch "+str(pitch))
             rospy.loginfo("yaw "+str(yaw))
 
-            msg = head_move_msg(yaw, pitch, 0.6)
+            msg = head_move_msg(yaw, pitch, 0.1)
             pub_nao_action.publish(msg)
 
-        rospy.sleep(0.5)
+        rospy.sleep(0.2)
     rospy.spin()
