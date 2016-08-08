@@ -15,7 +15,7 @@ generate_messages(
 )
 
 catkin_package(
-  CATKIN_DEPENDS attention_tracker
+  CATKIN_DEPENDS openface_tracker
 )
 
 install(PROGRAMS

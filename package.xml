@@ -10,8 +10,8 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>std_msgs</build_depend>
-  <build_depend>attention_tracker</build_depend>
+  <build_depend>openface_tracker</build_depend>
   <run_depend>std_msgs</run_depend>
-  <run_depend>attention_tracker</run_depend>
+  <run_depend>openface_tracker</run_depend>
 
 </package>
