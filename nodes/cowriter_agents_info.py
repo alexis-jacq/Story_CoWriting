@@ -43,9 +43,10 @@ def onChangeHumanWMN(msg):
     delta_wmn = withmeness - last_wmn
     new_msg = Float64()
     new_msg.data = delta_wmn
-    pub_human_wmn.publish(new_msg)
+    if abs(delta_wmn)>0:
+        pub_human_wmn.publish(new_msg)
     last_wmn = withmeness
-    
+
 
 """
 def onHumanAction(msg):

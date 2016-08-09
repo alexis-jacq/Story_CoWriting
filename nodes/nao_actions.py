@@ -51,7 +51,7 @@ if __name__=="__main__":
 
         if "robot_head" in test and "face_0" in test:
             rospy.loginfo("frames found !!!!!!")
-            (pose,rot) = listener.lookupTransform('/robot_head', current_target, rospy.Time(0))
+            """(pose,rot) = listener.lookupTransform('/robot_head', current_target, rospy.Time(0))
             x = pose[0]
             y = pose[1]
             z = pose[2]
@@ -63,6 +63,16 @@ if __name__=="__main__":
             rospy.loginfo("pitch "+str(pitch))
             rospy.loginfo("yaw "+str(yaw))
 
+            msg = head_move_msg(yaw, pitch, 0.3)
+            pub_nao_action.publish(msg)"""
+
+            (pose,rot) = listener.lookupTransform('/base_footprint','/face_0', rospy.Time(0))
+            euler = tf.transformations.euler_from_quaternion(rot)
+            roll = euler[1]
+            pitch = euler[0] - np.pi/2.
+            yaw = np.sign(euler[2])*(np.abs(euler[2])-np.pi/2.)
+            rospy.loginfo("pitch "+str(pitch))
+            rospy.loginfo("yaw "+str(yaw))
             msg = head_move_msg(yaw, pitch, 0.1)
             pub_nao_action.publish(msg)
 

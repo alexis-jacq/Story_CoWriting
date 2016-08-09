@@ -93,7 +93,7 @@ class Agent:
             else:
                 decision = self.M[self.name].update(restricted_actions,None,True,others_reward)
 
-        return decision
+        return decision,agents_actions
 
         # TODO compute other's perception error of knowledge
         # TODO make prediction (update with no percepts) and compute prediction error

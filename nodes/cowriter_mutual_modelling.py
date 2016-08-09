@@ -52,7 +52,8 @@ def onChangeHumanTarget(msg):
 
 def onChangeHumanWMN(msg):
     delta_wmn = msg.data
-    models_percepts.setdefault(ROBOT_NAME,[]).append(("with_me",1.))
+    models_percepts.setdefault(ROBOT_NAME,[]).append(("with_me",delta_wmn))
+    makeDecision()
 
 def onRobotAction(msg):
     global models_actions
@@ -62,6 +63,9 @@ def onRobotAction(msg):
         if action in visible_for_human_from[human_target]:
             models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
             models_percepts.setdefault(HUMAN_NAME,[]).append((ROBOT_NAME+"_"+action,1.))
+            rospy.loginfo(ROBOT_NAME+"_"+action)
+            rospy.loginfo(".........................................")
+    makeDecision()
 
 def onHumanAction(msg):
     global models_actions
@@ -69,9 +73,30 @@ def onHumanAction(msg):
     action = str(msg.data)
     models_actions.setdefault(HUMAN_NAME,[]).append(action)
     models_percepts.setdefault(ROBOT_NAME,[]).append((HUMAN_NAME+'_'+action,1.))
+    rospy.loginfo(HUMAN_NAME+'_'+action)
+    rospy.loginfo("////////////////////////////////////////")
     if robot_target in visible_for_robot_from:
         if action in visible_for_robot_from[robot_target]:
             models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append((HUMAN_NAME+"_"+action,1.))
+    makeDecision()
+
+def makeDecision():
+    global robot
+    global models_actions
+    global models_percepts
+    new_robot_action = None
+    if models_actions:
+        new_robot_action,test = robot.update_models(None,models_percepts,models_actions)
+        rospy.loginfo(models_percepts)
+        rospy.loginfo(models_actions)
+        rospy.loginfo(test)
+        rospy.loginfo("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+    if new_robot_action:
+        msg = String()
+        msg.data = new_robot_action
+        pub_robot_action.publish(msg)
+        models_percepts = {}
+        models_actions = {}
 
 # TODO:
 """
@@ -93,18 +118,6 @@ if __name__=='__main__':
         #rospy.Subscriber('robot_obs_topic', String, onRobotObs)
         #rospy.Subscriber('human_obs_topic', String, onHumanObs)
 
-        # should wait for action:
-        new_robot_action = None
-        if models_actions:
-            new_robot_action = robot.update_models(None,models_percepts,models_actions)
-
-        if new_robot_action:
-            msg = String()
-            msg.data = new_robot_action
-            pub_robot_action.publish(msg)
-
-            models_percepts = {}
-            models_actions = {}
 
         rospy.sleep(1.0)
 

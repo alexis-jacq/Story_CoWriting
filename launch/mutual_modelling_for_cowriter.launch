@@ -2,9 +2,9 @@
 
   <!-- also launch openface-tracker -->
   <include file="$(find openface_tracker)/launch/openface_tracker.launch">
-      <arg name="camera_device_arg" value="1" />
+      <arg name="camera_device_arg" value="0" />
   </include>
-  
+
   <!--also launch nao control -->
   <include file="$(find nao_bringup)/launch/nao_full_py.launch">
     <arg name="nao_ip" value="10.0.0.4"/>
