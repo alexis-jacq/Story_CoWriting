@@ -15,11 +15,12 @@ pub_robot_action = rospy.Publisher('robot_action_topic', String, queue_size=1)
 pub_human_action = rospy.Publisher('human_action_topic', String, queue_size=1)
 pub_robot_target = rospy.Publisher('robot_target_topic', String, queue_size=1)
 pub_human_target = rospy.Publisher('human_target_topic', String, queue_size=1)
+pub_human_wmn = rospy.Publisher('human_wmn_topic', Float64, queue_size=1)
 pub_robot_obs = rospy.Publisher('robot_obs_topic', String, queue_size=1)
 pub_human_obs = rospy.Publisher('human_obs_topic', String, queue_size=1)
 
 last_human_target = "_"
-
+last_wmn = 0.5
 
 def onChangeHumanTarget(msg):
     global last_human_target
@@ -35,6 +36,16 @@ def onChangeHumanTarget(msg):
             action.data = human_action
             pub_human_action.publish(action)
             last_human_target = current_human_target
+
+def onChangeHumanWMN(msg):
+    global last_wmn
+    withmeness = msg.data
+    delta_wmn = withmeness - last_wmn
+    new_msg = Float64()
+    new_msg.data = delta_wmn
+    pub_human_wmn.publish(new_msg)
+    last_wmn = withmeness
+    
 
 """
 def onHumanAction(msg):
@@ -73,8 +84,9 @@ if __name__=='__main__':
         #
         # get human action:
 
-        # get current human target: (~attention_tracker)
+        # get current human target & withmeness: (~attention_tracker)
         rospy.Subscriber("actual_focus_of_attention", String, onChangeHumanTarget)
+        rospy.Subscriber("withmeness_topic", Float64, onChangeHumanWMN)
 
         # get human action: (~ tool~simu)
         #rospy.Subscriber("human_action_topic", String, onHumanAction)

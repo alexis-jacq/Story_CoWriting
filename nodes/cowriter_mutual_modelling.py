@@ -50,6 +50,10 @@ def onChangeHumanTarget(msg):
     global human_target
     human_target = str(msg.data)
 
+def onChangeHumanWMN(msg):
+    delta_wmn = msg.data
+    models_percepts.setdefault(ROBOT_NAME,[]).append(("with_me",1.))
+
 def onRobotAction(msg):
     global models_actions
     global models_percepts
@@ -85,6 +89,7 @@ if __name__=='__main__':
         rospy.Subscriber('human_action_topic', String, onHumanAction)
         rospy.Subscriber('robot_target_topic', String, onChangeRobotTarget)
         rospy.Subscriber('human_target_topic', String, onChangeHumanTarget)
+        rospy.Subscriber('human_wmn_topic', Float64, onChangeHumanWMN)
         #rospy.Subscriber('robot_obs_topic', String, onRobotObs)
         #rospy.Subscriber('human_obs_topic', String, onHumanObs)
 
