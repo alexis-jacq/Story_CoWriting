@@ -20,7 +20,7 @@ ALL_NAMES = [ROBOT_NAME, HUMAN_NAME]
 robot_percepts = ["child_progress","reward","punish","justified_reward","justified_punish","justified_new_word","with_me"]
 robot_actions = ["converges","diverges","exaggerates","looks_tablet","looks_child_head","looks_out","looks_experimentator","looks_selection_tablet","points_tablet"]
 robot_rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.],["child_progress",1.,1.],["justified_new_word",1.,1.]]
-robot_instincts = [[HUMAN_NAME+"_looks_robot_head",1.,"looks_child_head"],[HUMAN_NAME+"_looks_robot_head",1.,"looks_tablet"], [HUMAN_NAME+"_looks_tablet",1.,"looks_child_head"],[HUMAN_NAME+"_looks_tablet",1.,"looks_tablet"], [HUMAN_NAME+"_looks_noise",1.,"looks_child_head"],[HUMAN_NAME+"_looks_noise",1.,"looks_noise"], [HUMAN_NAME+"_looks_selection_tablet",1.,"looks_selection_tablet"], [HUMAN_NAME+"_looks_experimentator",1.,"looks_experimentator"]]
+robot_instincts = [[HUMAN_NAME+"_looks_robot_head",1.,"looks_child_head"],[HUMAN_NAME+"_looks_robot_head",1.,"looks_tablet"], [HUMAN_NAME+"_looks_tablet",1.,"looks_child_head"],[HUMAN_NAME+"_looks_tablet",1.,"looks_tablet"], [HUMAN_NAME+"_looks_noise",1.,"looks_child_head"],[HUMAN_NAME+"_looks_noise",1.,"mimics"], [HUMAN_NAME+"_looks_selection_tablet",1.,"looks_selection_tablet"], [HUMAN_NAME+"_looks_experimentator",1.,"looks_experimentator"]]
 robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards,robot_instincts)
 
 # the point of attention of the human is used to define what action of the robot is observed by the child:
@@ -41,6 +41,7 @@ models_percepts = {}
 models_actions = {}
 human_target = "_"
 robot_target = "_"
+last_info = ""
 
 def onChangeRobotTarget(msg):
     global robot_target
@@ -51,34 +52,43 @@ def onChangeHumanTarget(msg):
     human_target = str(msg.data)
 
 def onChangeHumanWMN(msg):
+    global last_info
     delta_wmn = msg.data
-    models_percepts.setdefault(ROBOT_NAME,[]).append(("with_me",delta_wmn))
-    makeDecision()
+    if last_info!=str(delta_wmn):
+        models_percepts.setdefault(ROBOT_NAME,[]).append(("with_me",delta_wmn))
+        makeDecision()
+        last_info = str(delta_wmn)
 
 def onRobotAction(msg):
     global models_actions
     global models_percepts
+    global last_info
     action = str(msg.data)
-    if human_target in visible_for_human_from:
-        if action in visible_for_human_from[human_target]:
-            models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
-            models_percepts.setdefault(HUMAN_NAME,[]).append((ROBOT_NAME+"_"+action,1.))
-            rospy.loginfo(ROBOT_NAME+"_"+action)
-            rospy.loginfo(".........................................")
-    makeDecision()
+    if last_info!=action:
+        if human_target in visible_for_human_from:
+            if action in visible_for_human_from[human_target]:
+                models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
+                models_percepts.setdefault(HUMAN_NAME,[]).append((ROBOT_NAME+"_"+action,1.))
+                rospy.loginfo(ROBOT_NAME+"_"+action)
+                rospy.loginfo(".........................................")
+        makeDecision()
+        last_info=action
 
 def onHumanAction(msg):
     global models_actions
     global models_percepts
+    global last_info
     action = str(msg.data)
-    models_actions.setdefault(HUMAN_NAME,[]).append(action)
-    models_percepts.setdefault(ROBOT_NAME,[]).append((HUMAN_NAME+'_'+action,1.))
-    rospy.loginfo(HUMAN_NAME+'_'+action)
-    rospy.loginfo("////////////////////////////////////////")
-    if robot_target in visible_for_robot_from:
-        if action in visible_for_robot_from[robot_target]:
-            models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append((HUMAN_NAME+"_"+action,1.))
-    makeDecision()
+    if last_info!=action:
+        models_actions.setdefault(HUMAN_NAME,[]).append(action)
+        models_percepts.setdefault(ROBOT_NAME,[]).append((HUMAN_NAME+'_'+action,1.))
+        rospy.loginfo(HUMAN_NAME+'_'+action)
+        rospy.loginfo("////////////////////////////////////////")
+        if robot_target in visible_for_robot_from:
+            if action in visible_for_robot_from[robot_target]:
+                models_percepts.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append((HUMAN_NAME+"_"+action,1.))
+        makeDecision()
+        last_info=action
 
 def makeDecision():
     global robot
@@ -90,13 +100,14 @@ def makeDecision():
         rospy.loginfo(models_percepts)
         rospy.loginfo(models_actions)
         rospy.loginfo(test)
-        rospy.loginfo("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+        rospy.loginfo("----------------------------------------")
     if new_robot_action:
         msg = String()
         msg.data = new_robot_action
         pub_robot_action.publish(msg)
-        models_percepts = {}
-        models_actions = {}
+    models_percepts = {}
+    models_actions = {}
+    rospy.sleep(1.0)
 
 # TODO:
 """
