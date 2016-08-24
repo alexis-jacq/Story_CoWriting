@@ -8,7 +8,6 @@ library of functions/algorithms to build, update and compaire models of differen
 import numpy as np
 import random
 import operator
-from bidict import bidict
 import copy
 
 """ GLOBAL PARAMETERS """
@@ -59,7 +58,7 @@ class Model:
         #-----------------------
         self.nb_events = 0
         self.intensities = np.zeros([self.nb_events]) # list of event's intensity between 0 and 1 (intensity or truth)
-        self.event_number = bidict() # each event is numeroted {event_id <--> event_number}
+        self.event_number = {} # each event is numeroted {event_id <--> event_number}
         self.last_event = ""
         self.last_intensity = 0
 
@@ -72,9 +71,9 @@ class Model:
         self.action = None
         self.expected = 0
         self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
-        self.action_number = bidict() # set of events encoding actions
+        self.action_number = {} # set of events encoding actions
         self.nb_actions = 0
-        # for TD learning with fuzzy states:
+        # for TD learning in event space:
         self.Q = np.zeros([0,0]) # (event, action) --> value : indirect reward value learned by association ~ like QLearning with TD
         self.V = np.zeros([0,0]) # (event, action) --> value : for actor-critic method
         self.n = np.zeros([0,0]) # (event, action) --> number : occurence of couple (event-action)
@@ -82,9 +81,8 @@ class Model:
 
         # IRL and understandable behavior:
         #---------------------------------
-        self.EA = -np.ones([0])
-        self.ES = np.zeros([0])
-        self.EI = np.zeros([0])
+        self.expected_action = np.zeros([0])
+        self.expected_event = np.zeros([0])
 
 
     """ functions for creating/updating/using models """
@@ -111,8 +109,8 @@ class Model:
                     self.R = new_R
 
                     new_EA = -np.ones([number])
-                    new_EA[:self.nb_events,:] = self.EA
-                    self.EA = new_EA
+                    new_EA[:self.nb_events,:] = self.expected_action
+                    self.expected_action = new_EA
 
                     new_ES = np.zeros([number])
                     new_ES[:self.nb_events,:] = self.ES
@@ -287,15 +285,15 @@ class Model:
             return self.decision_making(None,explore)
 
 
-    def hebbian_learning(self, event1, event2, action, I1, I2):
+    def hebbian_learning(self, event1, event2, action):
         num_event1 = self.event_number[event1]
         num_event2 = self.event_number[event2]
         num_act = self.action_number[action]
 
-        s = np.sum(self.counts[num_act,num_event1,:,int(I1>0),:])
-        v = self.counts[num_act,num_event1,num_event2,int(I1>0),int(I2>0)]
-        self.counts[num_act,num_event1,:,int(I1>0),:] *= s/(s+1.)
-        self.counts[num_act,num_event1,num_event2,int(I1>0),int(I2>0)] = (s*v+1.)/(s+1.)
+        s = np.sum(self.counts[num_act,num_event1,:,:])
+        v = self.counts[num_act,num_event1,num_event2]
+        self.counts[num_act,num_event1,:] *= s/(s+1.)
+        self.counts[num_act,num_event1,num_event2] = (s*v+1.)/(s+1.)
 
 
     def decision_making(self, possible_actions=None, explore=True):
