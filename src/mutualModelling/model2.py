@@ -226,34 +226,34 @@ class Model:
         return total_reward, elligibles
 
 
-    def update(self, possible_actions=None, percepts=None, explore=True, social_reward=0):
+    def update(self, possible_actions=None, percepts=None, social_reward=0):
 
         # FIND THE NEXT ACTIVATED:
         elligibles = {}
         new_intensities = {}
+        total_reward = social_reward
 
-        # REASONING:
+        # REASONING (not yet):
         #===========
-        if self.old_intensities and not percepts:
-            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
+        #if self.last_event and not percepts:
+        #    elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
 
         # PERCEPTION:
         #============
         # could add an action "force_reasoning" where the robot doesnot do the perception loop
         # like someone closing eyes in order to reason
-        total_reward = social_reward
         if percepts:
             total_reward, elligibles = self.perceive_new_event(percepts, total_reward, elligibles)
 
         # UPDATES:
         #=========
         # stochastic election of incoming active event:
-        #print percepts
-        next_activated = random_pull_dict(elligibles)
+        new_obs = random_pull_dict(elligibles)
         
         """if percepts :
-            print "obs : "+str(next_activated)
+            print "percepts : "+percepts
+            print "obs : "+str(new_obs)
         else:
             print "think : "+str(next_activated)"""
 
@@ -264,13 +264,11 @@ class Model:
 
         # new intensities:
         for event in new_intensities:
-            if event not in self.modifieds:
                 self.intensities[event] = new_intensities[event]
-                self.modifieds.add(event)
 
         # action learning:
         if self.action and percepts:
-            self.reinforcement_learning(next_activated,tot_reward)
+            self.reinforcement_learning(new_obs,tot_reward)
 
         # new activated event
         if next_activated:
