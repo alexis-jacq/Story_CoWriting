@@ -238,7 +238,6 @@ class Model:
         #if self.last_event and not percepts:
         #    elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
 
-
         # PERCEPTION:
         #============
         # could add an action "force_reasoning" where the robot doesnot do the perception loop
@@ -262,79 +261,71 @@ class Model:
         if total_reward<-1:
             total_reward=-1.
 
-        # new intensities:
-        for event in new_intensities:
-                self.intensities[event] = new_intensities[event]
-
-        # action learning:
+        # reinf. learning:
+        #=================
         if self.action and percepts:
-            self.reinforcement_learning(new_obs,tot_reward)
+            self.reinforcement_learning(new_obs,total_reward)
 
-        # new activated event
-        if next_activated:
-            self.add_activated(next_activated)
-            self.add_intensity(self.intensities[next_activated])
-
-        # DECISION:
-        #==========
-        if possible_actions:
-            return self.decision_making(possible_actions,explore)
-        else:
-            return self.decision_making(None,explore)
+        # decision making:
+        #=================
+        return self.decision_making(possible_actions)
 
 
-    def hebbian_learning(self, event1, event2, action):
+    def hebbian_learning(self, event1, event2, action, intensity1, intensity2):
         num_event1 = self.event_number[event1]
         num_event2 = self.event_number[event2]
         num_act = self.action_number[action]
+        correlation = intensity1*intensity2
 
-        s = np.sum(self.counts[num_act,num_event1,:,:])
+        # competitive correlations:
+        s = np.sum(self.counts[num_act,num_event1,:])
         v = self.counts[num_act,num_event1,num_event2]
-        self.counts[num_act,num_event1,:] *= s/(s+1.)
-        self.counts[num_act,num_event1,num_event2] = (s*v+1.)/(s+1.)
+        self.counts[num_act,num_event1,:] *= s/(s+correlation)
+        self.counts[num_act,num_event1,num_event2] = (s*v+correlation)/(s+correlation)
 
 
-    def decision_making(self, possible_actions=None, explore=True):
-        state = 0
-        I = 0
-        if self.activateds:
-            state = self.event_number[self.activateds[-1]]
-            I = self.old_intensities[-1]
+    def decision_making(self, possible_actions=None):
+        if self.last_event:
+            state = self.event_number(self.last_event)
+            intensity = self.last_intensity
 
-        # TODO exploration based on convergence/difficulty to reach a state
+            noise = np.random.rand(len(self.Q[state,:]))/1000.
+            values = self.Q[state,:]*intensity + noise
+            new_values = -np.Infinity*np.ones(len(values))
 
-        values = self.Q[state,:,int(I>0)]*np.abs(I)+np.random.rand(len(self.Q[state,:,int(I>0)]))/1000.
-        new_values = -np.Infinity*np.ones(len(values))
-
-        if possible_actions:
-            indices = []
-            for action in possible_actions:
-                indices.append(self.action_number[action])
-            new_values[np.array(indices)]=values[np.array(indices)]
-        else:
-            new_values = values
-
-        if explore or self.EA[state,int(I>0)]==-1:
-            choice = softmax(new_values)
-        else:
-            # understandable behavior:
-            expected_state = int(self.ES[state,int(I>0)])
-            expected_intensity = int(self.EI[state,int(I>0)]>0)
-
-            if self.R[expected_state,expected_intensity]>np.random.rand():
-                choice = self.EA[state,int(I>0)]
+            if possible_actions:
+                indices = []
+                for action in possible_actions:
+                    indices.append(self.action_number[action])
+                new_values[np.array(indices)]=values[np.array(indices)]
             else:
-                new_values[int(self.EA[state,int(I>0)])]=-np.Infinity
-                #choice = np.argmax(new_values)
-                choice = softmax(new_values)
+                new_values = values
 
-        # EMA:
-        #self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
-        self.expected = self.V[state,int(choice),int(I>0)]*np.abs(I)
-        # Q:
-        # self.expected = self.Q[state,choice,int(I>0)]*np.abs(I)
-        self.action = self.action_number.inv[choice]
-        return self.action
+            if true:
+                # normal behavior:
+                choice = softmax(new_values)
+            else:
+                # understandable behavior:
+                ES = int(self.expected_state[state])
+                EI = int(self.expected_intensity[state])
+
+                if self.R[ES,EI]>np.random.rand():
+                    choice = self.expected_action[state,int(I>0)]
+                else:
+                    new_values[int(self.EA[state,int(I>0)])]=-np.Infinity
+                    #choice = np.argmax(new_values)
+                    choice = softmax(new_values)
+
+            # EMA:
+            #self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
+            self.expected = self.V[state,int(choice),int(I>0)]*np.abs(I)
+            # Q:
+            # self.expected = self.Q[state,choice,int(I>0)]*np.abs(I)
+            self.action = self.action_number.inv[choice]
+            return self.action
+
+        else:
+            return None
 
 
     def reinforcement_learning(self,new_activated,reward):
