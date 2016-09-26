@@ -59,6 +59,7 @@ class Model:
         self.nb_events = 0
         self.intensities = np.zeros([self.nb_events]) # list of event's intensity between 0 and 1 (intensity or truth)
         self.event_number = {} # each event is numeroted {event_id <--> event_number}
+        self.number_event = {} # each event is numeroted {event_id <--> event_number}
         self.last_event = ""
         self.last_intensity = 0
 
@@ -72,10 +73,10 @@ class Model:
         self.expected = 0
         self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
         self.action_number = {} # set of events encoding actions
+        self.number_action = {} # set of events encoding actions
         self.nb_actions = 0
         # for TD learning in event space:
         self.Q = np.zeros([0,0]) # (event, action) --> value : indirect reward value learned by association ~ like QLearning with TD
-        self.V = np.zeros([0,0]) # (event, action) --> value : for actor-critic method
         self.n = np.zeros([0,0]) # (event, action) --> number : occurence of couple (event-action)
         self.matter = np.ones([0]) # importance of events (based on V)
 
@@ -83,6 +84,7 @@ class Model:
         #---------------------------------
         self.expected_action = np.zeros([0])
         self.expected_event = np.zeros([0])
+        self.expected_intensity = np.zeros([0]) # ???
 
 
     """ functions for creating/updating/using models """
@@ -94,6 +96,7 @@ class Model:
                 self.intensities.setdefault(event_id,0)
                 if event_id not in self.event_number:
                     self.event_number[event_id] = number
+                    self.number_event[number] = event_id
                     number += 1
 
                     new_counts = np.zeros([self.nb_actions,number, number])
@@ -113,12 +116,12 @@ class Model:
                     self.expected_action = new_EA
 
                     new_ES = np.zeros([number])
-                    new_ES[:self.nb_events,:] = self.ES
-                    self.ES = new_ES
+                    new_ES[:self.nb_events,:] = self.expected_event
+                    self.expected_event = new_ES
 
                     new_EI = np.zeros([number])
-                    new_EI[:self.nb_events,:] = self.EI
-                    self.EI = new_EI
+                    new_EI[:self.nb_events,:] = self.expected_intensity
+                    self.expected_intensity = new_EI
 
                     new_rewards = np.zeros([number])
                     new_rewards[:self.nb_events,:] = self.rewards
@@ -127,10 +130,6 @@ class Model:
                     new_Q = np.zeros([number, self.nb_actions])
                     new_Q[:self.nb_events,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
-
-                    new_V = np.zeros([number, self.nb_actions])
-                    new_V[:self.nb_events,:self.nb_actions,:] = self.V
-                    self.V = new_V
 
                     new_n = np.zeros([number, self.nb_actions])
                     new_n[:self.nb_events,:self.nb_actions,:] = self.n
@@ -145,6 +144,7 @@ class Model:
             for event_id in events_id:
                 if event_id not in self.action_number:
                     self.action_number[event_id] = number
+                    self.number_action[number] = event_id
                     number += 1
 
                     new_counts = np.zeros([number, self.nb_events, self.nb_events])
@@ -154,10 +154,6 @@ class Model:
                     new_Q = np.zeros([self.nb_events, number])
                     new_Q[:,:self.nb_actions,:] = self.Q
                     self.Q = new_Q
-
-                    new_V = np.zeros([self.nb_events, number])
-                    new_V[:,:self.nb_actions,:] = self.V
-                    self.V = new_V
 
                     new_n = np.zeros([self.nb_events, number])
                     new_n[:,:self.nb_actions,:] = self.n
@@ -176,7 +172,7 @@ class Model:
                 value=1.
             if value<-1:
                 value=-1.
-            self.rewards[self.event_number[event_id],int(value>0)] = reward
+            self.rewards[self.event_number[event_id]] = reward
 
     def set_instincts(self, obs_actions): # ~ a-priori knowledge
         for obs_action in obs_actions:
@@ -193,9 +189,9 @@ class Model:
                 value=-1.
             event_num = self.event_number[event_id]
             action_num = self.action_number[action]
-            self.Q[event_num,action_num,int(value>0)] = 1.
+            self.Q[event_num,action_num] = 1.
             # if EMA of TD:
-            self.V[event_num,action_num,int(value>0)] = 1.
+            self.V[event_num,action_num] = 1.
 
 
     def perceive_new_event(self, percepts, total_reward, elligibles):
@@ -213,7 +209,7 @@ class Model:
             elligibles.setdefault(percept_id,0)
             elligibles[percept_id] = np.exp(THETA2*self.matter[self.event_number[percept_id]])
 
-            if self.action and self.old_intensities:
+            if self.action :
                 total_reward += self.rewards[percept_num]*np.abs(self.last_intensity)
 
                 father = self.last_event
@@ -228,9 +224,7 @@ class Model:
 
     def update(self, possible_actions=None, percepts=None, social_reward=0):
 
-        # FIND THE NEXT ACTIVATED:
         elligibles = {}
-        new_intensities = {}
         total_reward = social_reward
 
         # REASONING (not yet):
@@ -247,14 +241,8 @@ class Model:
 
         # UPDATES:
         #=========
-        # stochastic election of incoming active event:
+        # stochastic election of incoming events:
         new_obs = random_pull_dict(elligibles)
-        
-        """if percepts :
-            print "percepts : "+percepts
-            print "obs : "+str(new_obs)
-        else:
-            print "think : "+str(next_activated)"""
 
         if total_reward>1:
             total_reward=1.
@@ -269,6 +257,54 @@ class Model:
         # decision making:
         #=================
         return self.decision_making(possible_actions)
+
+    def update_inverse(self, possible_actions=None, percepts=None, last_action=None):
+        '''imagine the update of other agents'''
+
+        elligibles = {}
+        total_reward = 0
+        if last_action:
+            if not (last_action in self.action_number):
+                self.add_actions([last_action])
+            if not (last_action in self.event_number):
+                self.add_events([last_action])
+            self.action = last_action
+
+        # REASONING (not yet):
+        #===========
+        #if self.last_event and not percepts:
+        #    elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
+
+        # PERCEPTION:
+        #============
+        if percepts:
+            total_reward, elligibles = self.perceive_new_event(percepts, total_reward, elligibles)
+
+        # UPDATES:
+        #=========
+        # stochastic election of incoming events:
+        new_obs = random_pull_dict(elligibles)
+
+        if total_reward>1:
+            total_reward=1.
+        if total_reward<-1:
+            total_reward=-1.
+
+        # inverse reinf. learning:
+        #=========================
+        if last_event:
+            self.inverse_learning()
+
+        # reinf. learning:
+        #=================
+        if self.action and percepts:
+            self.reinforcement_learning(new_obs,total_reward)
+
+        # DECISION:
+        #==========
+        #prediction = self.decision_making(possible_actions) # not used yet
+
+        return total_reward
 
 
     def hebbian_learning(self, event1, event2, action, intensity1, intensity2):
@@ -286,11 +322,11 @@ class Model:
 
     def decision_making(self, possible_actions=None):
         if self.last_event:
-            state = self.event_number(self.last_event)
-            intensity = self.last_intensity
+            last_state = self.event_number(self.last_event)
+            last_intensity = self.last_intensity
 
-            noise = np.random.rand(len(self.Q[state,:]))/1000.
-            values = self.Q[state,:]*intensity + noise
+            noise = np.random.rand(len(self.Q[last_state,:]))/1000.
+            values = self.Q[state,:]*last_intensity + noise
             new_values = -np.Infinity*np.ones(len(values))
 
             if possible_actions:
@@ -306,151 +342,79 @@ class Model:
                 choice = softmax(new_values)
             else:
                 # understandable behavior:
-                ES = int(self.expected_state[state])
-                EI = int(self.expected_intensity[state])
+                '''remember last time'''
+                expected_action = int(self.expected_action[last_state])
+                expected_state = int(self.expected_state[last_state])
+                expected_intensity = int(self.expected_intensity[last_state])
 
-                if self.R[ES,EI]>np.random.rand():
-                    choice = self.expected_action[state,int(I>0)]
+                if self.Q[axepected_state,expected_action]*expected_intensity>np.random.rand():
+                    '''repeat action'''
+                    choice = self.expected_action[last_state]
                 else:
-                    new_values[int(self.EA[state,int(I>0)])]=-np.Infinity
+                    '''change action'''
+                    new_values[int(self.expected_action[last_state])]=-np.Infinity
                     #choice = np.argmax(new_values)
                     choice = softmax(new_values)
 
-            # EMA:
-            #self.expected = np.max(self.V[state,:,int(I>0)]*np.abs(I))
-            self.expected = self.V[state,int(choice),int(I>0)]*np.abs(I)
-            # Q:
-            # self.expected = self.Q[state,choice,int(I>0)]*np.abs(I)
-            self.action = self.action_number.inv[choice]
+            self.expected = self.Q[state,int(choice)]*last_intensity
+            self.action = self.number_action[choice]
             return self.action
 
         else:
             return None
 
 
-    def reinforcement_learning(self,new_activated,reward):
-        if self.activateds and self.action and new_activated:
+    def reinforcement_learning(self, new_event, reward):
+        if self.last_event:
+            # last state
+            last_state = self.event_number(self.last_event)
+            last_intensity = self.last_intensity
 
-            # last state:
+            # action
             action = self.action_number[self.action]
-            last_state = self.event_number[self.activateds[-1]]
-            last_intensity = self.old_intensities[-1]
 
             # new state:
-            new_state = self.event_number[new_activated]
-            new_intensity = self.intensities[new_activated]
+            new_state = self.event_number(new_event)
+            new_intensity = self.intensities[new_state]
 
             # classic Q:
-            new_values = self.Q[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
-            """
-            # expect EMA of TD:
-            new_values = self.V[new_state,:,int(new_intensity>0)]*np.abs(new_intensity)
-            """
+            new_values = self.Q[new_state,:]*new_intensity
             reach = np.max(new_values)
 
             # TD learning:
             TD =  reward + DISCOUNT*reach - self.expected
-            n = self.n[last_state,action,int(last_intensity>0)]+1.
+            n = self.n[last_state,action]+1.
 
             # classic Qlearning
-            self.Q[last_state,action,int(last_intensity>0)] = (n*self.Q[last_state,action,int(last_intensity>0)] + TD)/(n+1.)
+            self.Q[last_state,action] = (n*self.Q[last_state,action] + TD)/(n+1.)
 
-            self.n[last_state,action,int(last_intensity>0)] += 1.
-            self.matter[new_state,int(new_intensity>0)] = (n*(self.matter[new_state,int(new_intensity>0)]) + abs(TD))/(n+1.)
-            self.R[new_state,int(new_intensity>0)] = (n*(self.R[new_state,int(new_intensity>0)]) + reward)/(n+1.)
+            # importance of the event
+            self.matter[new_state] = (n*(self.matter[new_state]) + abs(TD))/(n+1.)
 
-            # EMA of TD
-            self.V[last_state,action,int(last_intensity>0)] = ETA2*self.V[last_state,action,int(last_intensity>0)] + (1-ETA2)*TD
+            self.n[last_state,action] += 1.
 
             # understandable behavior
-            self.EA[last_state,int(last_intensity>0)] = action
-            self.ES[last_state,int(last_intensity>0)] = new_state
-            self.EI[last_state,int(last_intensity>0)] = int(new_intensity>0)
-            """
-            print "last "+str(self.activateds[-1])+" "+str(last_intensity)
-            print "act "+ str(self.action)
-            print "new "+str(new_activated)+" "+str(new_intensity)
-            print "rew "+str(TD)
-            print "======================"
-            """
+            self.expected_action[last_state] = action
+            self.expected_state[last_state] = new_state
+            self.expected_intensity[last_state] = new_intensity
 
 
-    def update_inverse(self, possible_actions=None, percepts=None, last_action=None):
-
-        # FIND THE NEXT ACTIVATED:
-        elligibles = {}
-        new_intensities = {}
-
-        if last_action:
-            if self.action_number:
-                if not last_action in set(self.action_number):
-                    self.add_actions([last_action])
-            else:
-                self.add_actions([last_action])
-            self.action = last_action
-
-        # REASONING:
-        #===========
-        if self.old_intensities and not percepts:
-            elligibles, new_intensities = self.think_new_event(elligibles, new_intensities)
-
-        # PERCEPTION:
-        #============
-        # could add an action "force_reasoning" where the robot doesnot do the perception loop
-        # like someone closing eyes in order to reason
-        tot_reward = 0
-        if percepts:
-            tot_reward, elligibles = self.perceive_new_event(percepts, tot_reward, elligibles)
-
-        # UPDATES:
-        #=========
-        # stochastic election of incoming active event:
-        next_activated = random_pull_dict(elligibles)
-
-        if len(self.activateds)>0:
-            last_activated = self.activateds[-1]
-            last_intensity = self.old_intensities[-1]
-            self.inverse_learning(last_activated,last_intensity)
-
-        if self.action:
-            self.reinforcement_learning(next_activated,tot_reward)
-
-        # new intensities:
-        for event in new_intensities:
-            if event not in self.modifieds:
-                self.intensities[event] = new_intensities[event]
-                self.modifieds.add(event)
-
-        # new activated event
-        if next_activated:
-            self.add_activated(next_activated)
-            self.add_intensity(self.intensities[next_activated])
-
-        # DECISION:
-        #==========
-        if possible_actions:
-            return tot_reward#self.decision(possible_actions)
-        else:
-            return tot_reward#self.decision()
-
-
-
-    def inverse_learning(self,last_activated,last_intensity):
-        if self.activateds and self.action:
+    def inverse_learning(self):
+        if self.last_event and self.action:
             # action:
             action = self.action_number[self.action]
-            last_state = self.event_number[last_activated]
+            last_state = self.event_number[self.last_event]
 
-            n = self.n[last_state,action,int(last_intensity>0)]
-            s = np.sum(self.n[last_state,:,int(last_intensity>0)])
+            n = self.n[last_state,action]
+            s = np.sum(self.n[last_state,:])
 
-            expected_state = int(self.ES[last_state,int(last_intensity>0)])
-            expected_intensity = self.EI[last_state,int(last_intensity>0)]
+            expected_state = self.expected_state[last_state]
+            expected_intensity = self.expected_intensity[last_state]
 
-            if action == self.EA[last_state,int(last_intensity>0)]:
-                self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] + 0.1
-            elif self.EA[last_state,int(last_intensity>0)]>=0:
-                self.rewards[expected_state,int(expected_intensity>0)] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
+            if action == self.expected_action[last_state]:
+                self.rewards[expected_state] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] + 0.1
+            else:
+                self.rewards[expected_state] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
 
 
 # static functions (of multiple models):
