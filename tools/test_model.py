@@ -3,14 +3,15 @@
 
 import numpy as np
 import random
-from mutualModelling import model
+from mutualModelling import model2 as model
+from mutualModelling import agent2 as agent
 import matplotlib.pyplot as plt
 
 def creat_robot():
     robot = model.Model("test")
     #robot.add_events(["fire","water","honey","d_energy","a1","a2","a3","n1","n2","n3"])
-    robot.add_events(["fire","water","honey","n1","n2","n3"])
-    robot.add_actions(["a1","a2","a3","a4"])
+    robot.add_events(["fire","no_fire","honey","n1","n2","n3"])
+    robot.add_actions(["a1","a2","a3"])
     robot.set_rewards([["fire",1.,-1.],["honey",1.,0.7]])
     return robot
 
@@ -35,60 +36,51 @@ def noise():
 def print_hebbian():
     print "counts :"
     print robot.counts
-    print "weights :"
-    print robot.cor
     print "----------------"
-    print robot.activateds
 
 def print_rl():
+    print "action:"
+    print robot.action
     print "Q:"
     print robot.Q
     print "rewards:"
     print robot.rewards
-    #print robot.R
     print "n:"
     print robot.n
+    print "matter:"
     print robot.matter
+    print '-----------------'
 
 
 def world_response(action,setofevent):
-    global a1,a2,a3
 
-    percepts = [(noise(),1-2*random.random())]
+    percepts = [(noise(),random.random())]
     #percepts = []
     new_set = set()
 
     energy = 0
 
     if "fire" in setofevent:
-        new_set.add("fire")
-        energy -=1
+        if action != "a2":
+            percepts.append(("fire",1))
+            new_set.add("fire")
+            energy -=1
 
     if action=="a1":
         percepts.append(("fire",1))
         new_set.add("fire")
+        energy -=1
 
     if action=="a2":
-        percepts.append(("fire",-1+0*random.random()))
-        new_set = set()
+        percepts.append(("no_fire",1))
 
     if action=="a3":
-        percepts.append(("honey",1))
-        energy += 1
-    elif action != "a4":
-        percepts.append(("honey",-1))
-
-    if action=="a4":
-        percepts.append(("water",1))
-
-    if "fire" in new_set:
-    #    energy -=1
-        percepts.append(("fire",1))
-
+        if not ("fire" in setofevent):
+            percepts.append(("honey",1))
+            energy += 1
 
     return percepts,new_set,energy
 
-#print_rl()
 
 m = 1000
 
@@ -100,25 +92,21 @@ ave_rew = np.zeros([m])
 ave_reg = np.zeros([m])
 
 n = 30
-test = False
 for j in range(n):
     robot = creat_robot()
-    #print_rl()
+
     for i in range(m):
         p,s,e = world_response(action,s)
-        if i>m/2.:
-            p = None
+        #if i>m/2.:
+        #    p = None
         action = robot.update(percepts=p)
 
-        if random.random()>0.7:
+        if random.random()>0.8:
             s.add("fire")
             optimal.append(-1)
-            test = True
-        elif test:
-            optimal.append(0)
-            test = False
         else:
             optimal.append(1)
+
         cum_rew.append(e)
 
     ave_rew += np.cumsum(np.array(cum_rew))

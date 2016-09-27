@@ -3,7 +3,8 @@
 
 import numpy as np
 import random
-from mutualModelling import model,agent
+from mutualModelling import model2 as model
+from mutualModelling import agent2 as agent
 import matplotlib.pyplot as plt
 import copy
 
@@ -11,7 +12,7 @@ def create_prisoner(name,all_names,RP,RW,RS):
     percepts = ["plonk","water","nothing","shock"]
     actions = ["cooperate","defect","ok","ko"]
     rewards = [["plonk",1.,RP],["water",1.,RW],["shock",1.,RS]]
-    prisoner = agent.Agent(name,all_names,percepts,actions,rewards)
+    prisoner = agent.Agent2(name,all_names,percepts,actions,rewards)
     return prisoner
 
 """
@@ -28,7 +29,7 @@ the other has to play and can't communicate anymore
 
 # parameters
 RP = 1.
-RW = 0.
+RW = 0.1
 RS = -1.
 
 GM_values = np.array([[(0,0),(RS,RP)],[(RP,RS),(RW,RW)]])
@@ -36,7 +37,7 @@ GM_percepts = np.array([[("nothing","nothing"),("shock","plonk")],[("plonk","sho
 
 name1 = "robert"
 name2 = "pierrot"
-all_names = [name1,name2]
+all_agents = [name1,name2]
 
 play = ["cooperate","defect"]
 
