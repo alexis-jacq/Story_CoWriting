@@ -12,7 +12,7 @@ def create_prisoner(name,all_names,RP,RW,RS):
     percepts = ["plonk","water","nothing","shock"]
     actions = ["cooperate","defect","ok","ko"]
     rewards = [["plonk",1.,RP],["water",1.,RW],["shock",1.,RS]]
-    prisoner = agent.Agent2(name,all_names,percepts,actions,rewards)
+    prisoner = agent.Agent(name,all_names,percepts,actions,rewards)
     return prisoner
 
 """
@@ -66,8 +66,8 @@ def world_update(action1,action2):
 for i in range(N):
     if i%10==0:
         print i
-    robert = create_prisoner(name1,all_names,RP,RW,RS)
-    pierrot = create_prisoner(name2,all_names,RP,RW,RS)
+    robert = create_prisoner(name1,all_agents,RP,RW,RS)
+    pierrot = create_prisoner(name2,all_agents,RP,RW,RS)
     cumrew1 = []
     cumrew2 = []
     model_percepts1 = None
@@ -80,6 +80,8 @@ for i in range(N):
 
         action1 = robert.update_models(None,model_percepts1,model_actions1)
         action2 = pierrot.update_models(None,model_percepts2,model_actions2)
+        print action1
+        print action2
         model_percepts1,model_percepts2,model_actions1,model_actions2,r1,r2 = world_update(action1,action2)
         cumrew1.append(r1)
         cumrew2.append(r2)
