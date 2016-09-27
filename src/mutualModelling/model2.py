@@ -107,10 +107,6 @@ class Model:
                     new_matter[:self.nb_events,:] = self.matter
                     self.matter = new_matter
 
-                    new_R = np.zeros([number])
-                    new_R[:self.nb_events,:] = self.R
-                    self.R = new_R
-
                     new_EA = -np.ones([number])
                     new_EA[:self.nb_events,:] = self.expected_action
                     self.expected_action = new_EA
@@ -412,9 +408,9 @@ class Model:
             expected_intensity = self.expected_intensity[last_state]
 
             if action == self.expected_action[last_state]:
-                self.rewards[expected_state] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] + 0.1
+                self.rewards[expected_state] = 0.9*self.rewards[expected_state] + 0.1
             else:
-                self.rewards[expected_state] = 0.9*self.rewards[expected_state,int(expected_intensity>0)] - 0.1
+                self.rewards[expected_state] = 0.9*self.rewards[expected_state] - 0.1
 
 
 # static functions (of multiple models):
@@ -427,7 +423,7 @@ def diff_reward(model1, model2):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist = np.sum(np.abs(model1.R[event_num1,:]-model2.rewards[event_num2,:]))#* np.abs(model1.R[event_num1,:]))#*matter
+        dist = np.sum(np.abs(model1.rewards[event_num1,:]-model2.rewards[event_num2,:]))
         event_diff.setdefault(event_id,dist)
         tot_dist += dist
     return event_diff,tot_dist
@@ -440,7 +436,7 @@ def diff_knowledge(model1,model2):
         I1 = model1.intensities[event_id]
         I2 = model2.intensities[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist = np.sum(np.abs(I1-I2))*model1.matter[event_num1,I1]
+        dist = np.sum(np.abs(I1-I2))*model1.matter[event_num1]
         event_diff.setdefault(event_id,dist)
         tot_dist += dist
     return event_diff,tot_dist
