@@ -39,7 +39,7 @@ class Agent:
                 self.M[agent+':'+self.name] = model.Model(name)
                 self.M[agent+':'+self.name].add_events(percepts)
                 self.M[agent+':'+self.name].add_actions(actions)
-                #self.M[agent+':'+self.name].set_rewards(rewards)
+                self.M[agent+':'+self.name].set_rewards(rewards)
                 self.Id[agent+':'+self.name] = agent
 
 
@@ -61,19 +61,20 @@ class Agent:
                 if model!=self.name:
                     r = self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
 
-                    if model in self.Id.values(): # if it's about me
-                        IR+=0*r
+                    if True:#(model in self.Id.values()): # if it's about me
+                        IR+=r
                         n+=1.
 
             diff = 0
             for agent in self.Id:
                 _,dist = diff_reward(self.M[self.name],self.M[agent])
                 diff += dist
+            d_error = np.sqrt((self.prev_diff - diff)**2)
             self.prev_diff = diff
             self.social_curve.append(diff)
 
             # 'c'est l'intention qui compte'
-            decision = self.M[self.name].update(possible_actions,self_percepts,explore,social_reward=IR/n)
+            decision = self.M[self.name].update(possible_actions,self_percepts,social_reward=IR/n, social_error=d_error)
 
             return decision
         else:
@@ -83,8 +84,8 @@ class Agent:
     # display functions:
     #-------------------
     def show_learned_goals(self,agent):
-        print self.M[agent].event_number.inv
-        print self.M[agent].action_number.inv
+        print self.M[agent].number_event
+        print self.M[agent].number_action
         print self.M[agent].rewards
 
     def show_goals_error(self,agent):

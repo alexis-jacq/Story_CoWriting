@@ -31,8 +31,11 @@ def random_pull_dict(distribution): # dist. is a dictionnary key->value
          return None
 
 def softmax(distribution): # dist. is a list (np.array) of values
+    global THETA1
     if list(distribution):
-        proba = np.exp(THETA1*distribution)
+        if THETA1<=0:
+            THETA1 = 1e-15
+        proba = np.exp(THETA1*np.array(distribution))
         proba = proba/np.sum(proba)
         return np.random.choice(len(distribution),1,p=proba)[0]
     else:
@@ -216,8 +219,7 @@ class Model:
         return total_reward, elligibles
 
 
-    def update(self, possible_actions=None, percepts=None, social_reward=0):
-
+    def update(self, possible_actions=None, percepts=None, social_reward=0, social_error=0 ):
         elligibles = {}
         total_reward = social_reward
 
@@ -250,10 +252,9 @@ class Model:
 
         # decision making:
         #=================
-        decision = self.decision_making(possible_actions)
-
-        # last update:
         self.last_event = new_obs
+        decision = self.decision_making(possible_actions, social_error)
+        
         return decision
 
     def update_inverse(self, possible_actions=None, percepts=None, last_action=None):
@@ -290,7 +291,7 @@ class Model:
 
         # inverse reinf. learning:
         #=========================
-        if last_event:
+        if self.last_event:
             self.inverse_learning()
 
         # reinf. learning:
@@ -321,49 +322,54 @@ class Model:
         self.counts[num_act,num_event1,num_event2] = (s*v+correlation)/(s+correlation+1e-5)
 
 
-    def decision_making(self, possible_actions=None):
+    def decision_making(self, possible_actions=None, social_error=0):
+        last_state = 0
+        last_intensity = 0
         if self.last_event:
             last_state = self.event_number[self.last_event]
             last_intensity = self.intensities[last_state]
+        else:
+            last_state = np.argmax(np.random.rand(self.nb_events))
+            last_intensity = self.intensities[last_state]
 
-            noise = np.random.rand(len(self.Q[last_state,:]))/1000.
-            values = self.Q[last_state,:]*last_intensity + noise
-            new_values = -np.Infinity*np.ones(len(values))
+        noise = np.random.rand(len(self.Q[last_state,:]))*1e-15
+        values = self.Q[last_state,:]*last_intensity + noise
+        new_values = -np.Infinity*np.ones(len(values))
 
-            if possible_actions:
-                indices = []
-                for action in possible_actions:
-                    indices.append(self.action_number[action])
-                new_values[np.array(indices)]=values[np.array(indices)]
-            else:
-                new_values = values
+        if possible_actions:
+            indices = []
+            for action in possible_actions:
+                indices.append(self.action_number[action])
+            new_values[np.array(indices)]=values[np.array(indices)]
+        else:
+            new_values = values
 
-            if True:
-                # normal behavior:
-                choice = softmax(new_values)
-                #choice = np.argmax(new_values)
-            else:
-                # understandable behavior:
-                '''remember last time'''
-                expected_action = int(self.expected_action[last_state])
-                expected_state = int(self.expected_state[last_state])
-                expected_intensity = int(self.expected_intensity[last_state])
 
-                if self.Q[axepected_state,expected_action]*expected_intensity>np.random.rand():
-                    '''repeat action'''
-                    choice = self.expected_action[last_state]
-                else:
-                    '''change action'''
-                    new_values[int(self.expected_action[last_state])]=-np.Infinity
-                    #choice = np.argmax(new_values)
-                    choice = softmax(new_values)
-
-            self.expected = self.Q[last_state,int(choice)]*last_intensity
-            self.action = self.number_action[choice]
-            return self.action
+        if social_error<np.random.rand()*0.5:
+        #if True:
+        #if False:
+            # normal behavior:
+            choice = softmax(new_values)
 
         else:
-            return None
+            # understandable behavior:
+            '''remember last time'''
+            expected_action = int(self.expected_action[last_state])
+            expected_state = int(self.expected_state[last_state])
+            expected_intensity = int(self.expected_intensity[last_state])
+
+            if self.Q[expected_state,expected_action]*expected_intensity>np.random.rand():
+                '''repeat action'''
+                choice = self.expected_action[last_state]
+            else:
+                '''change action'''
+                new_values[int(self.expected_action[last_state])]=-np.Infinity
+                #choice = np.argmax(new_values)
+                choice = softmax(new_values)
+
+        self.expected = self.Q[last_state,int(choice)]*last_intensity
+        self.action = self.number_action[choice]
+        return self.action
 
 
     def reinforcement_learning(self, new_event, reward):
@@ -410,13 +416,15 @@ class Model:
             n = self.n[last_state,action]
             s = np.sum(self.n[last_state,:])
 
-            expected_state = self.expected_state[last_state]
+            expected_state = int(self.expected_state[last_state])
             expected_intensity = self.expected_intensity[last_state]
 
             if action == self.expected_action[last_state]:
-                self.rewards[expected_state] = 0.9*self.rewards[expected_state] + 0.1
+                #self.rewards[expected_state] = 0.9*self.rewards[expected_state] + 0.001
+                pass
             else:
                 self.rewards[expected_state] = 0.9*self.rewards[expected_state] - 0.1
+
 
 
 # static functions (of multiple models):
@@ -429,7 +437,7 @@ def diff_reward(model1, model2):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist = np.sum(np.abs(model1.rewards[event_num1,:]-model2.rewards[event_num2,:]))
+        dist = np.sum(np.abs(model1.rewards[event_num1]-model2.rewards[event_num2]))
         event_diff.setdefault(event_id,dist)
         tot_dist += dist
     return event_diff,tot_dist
