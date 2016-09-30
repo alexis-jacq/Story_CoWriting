@@ -61,8 +61,8 @@ class Agent:
                 if model!=self.name:
                     r = self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
 
-                    if True:#(model in self.Id.values()): # if it's about me
-                        IR+=r
+                    if (model in self.Id.values()): # if it's (or not) about me
+                        IR+=0.5*r
                         n+=1.
 
             diff = 0

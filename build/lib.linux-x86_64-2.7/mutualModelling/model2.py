@@ -18,7 +18,7 @@ import copy
 #========================
 THETA1 = 10 # chose action (exponent for softmax pulling
 THETA2 = 10 # chose perception
-DISCOUNT = 0.99 # discount for the impact of futur on the temporal diff algo
+DISCOUNT = 0.8 # discount for the impact of futur on the temporal diff algo #0
 
 """ functions for random pulling"""
 #----------------------------------
@@ -68,7 +68,7 @@ class Model:
         #---------------------------------
         self.action = None
         self.expected = 0
-        self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective)
+        self.rewards = np.zeros([0]) # reward associated with goals (0 if no objective) 
         self.action_number = {} # set of events encoding actions
         self.number_action = {} # set of events encoding actions
         self.nb_actions = 0
@@ -81,7 +81,8 @@ class Model:
         #---------------------------------
         self.expected_action = np.zeros([0])
         self.expected_state = np.zeros([0])
-        self.expected_intensity = np.zeros([0]) # ???
+        self.expected_intensity = np.zeros([0]) # 
+        self.explicite_rewards = np.zeros([0]) # that another could learn given my behaviour
 
 
     """ functions for creating/updating/using models """
@@ -123,6 +124,10 @@ class Model:
                     new_rewards = np.zeros([number])
                     new_rewards[:self.nb_events] = self.rewards
                     self.rewards = new_rewards
+
+                    new_erewards = np.zeros([number])
+                    new_erewards[:self.nb_events] = self.explicite_rewards
+                    self.explicite_rewards = new_erewards
 
                     new_Q = np.zeros([number, self.nb_actions])
                     new_Q[:self.nb_events,:self.nb_actions] = self.Q
@@ -240,10 +245,12 @@ class Model:
         # stochastic election of incoming events:
         new_obs = random_pull_dict(elligibles)
 
+        '''
         if total_reward>1:
             total_reward=1.
         if total_reward<-1:
             total_reward=-1.
+        '''
 
         # reinf. learning:
         #=================
@@ -284,10 +291,12 @@ class Model:
         # stochastic election of incoming events:
         new_obs = random_pull_dict(elligibles)
 
+        '''
         if total_reward>1:
             total_reward=1.
         if total_reward<-1:
             total_reward=-1.
+        '''
 
         # inverse reinf. learning:
         #=========================
@@ -345,7 +354,8 @@ class Model:
             new_values = values
 
 
-        if social_error<np.random.rand()*0.5:
+        #if social_error<np.random.rand()*0.1:
+        if np.sum(np.sum(self.n))<300 or np.sum(np.sum(self.n))>700:
         #if True:
         #if False:
             # normal behavior:
@@ -358,7 +368,7 @@ class Model:
             expected_state = int(self.expected_state[last_state])
             expected_intensity = int(self.expected_intensity[last_state])
 
-            if self.Q[expected_state,expected_action]*expected_intensity>np.random.rand():
+            if self.rewards[expected_state]*expected_intensity>np.random.rand():
                 '''repeat action'''
                 choice = self.expected_action[last_state]
             else:
@@ -399,12 +409,14 @@ class Model:
             # importance of the event
             self.matter[new_state] = (n*(self.matter[new_state]) + abs(TD))/(n+1.)
 
-            self.n[last_state,action] += 1.
-
             # understandable behavior
             self.expected_action[last_state] = action
             self.expected_state[last_state] = new_state
             self.expected_intensity[last_state] = new_intensity
+            self.explicite_rewards[last_state] = (n*(self.matter[new_state]) + reward)/(n+1.)
+
+            self.n[last_state,action] += 1.
+
 
 
     def inverse_learning(self):
@@ -418,13 +430,19 @@ class Model:
 
             expected_state = int(self.expected_state[last_state])
             expected_intensity = self.expected_intensity[last_state]
+            '''
+            if action == self.expected_action[last_state]:
+                self.rewards[expected_state] = 0.99*self.rewards[expected_state] + 0.01
+                #pass
+            else:
+                self.rewards[expected_state] = 0.99*self.rewards[expected_state] - 0.01
+            '''
 
             if action == self.expected_action[last_state]:
-                #self.rewards[expected_state] = 0.9*self.rewards[expected_state] + 0.001
-                pass
+                self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] + 1/(np.sqrt(1+self.n[last_state,action]))
+                #pass
             else:
-                self.rewards[expected_state] = 0.9*self.rewards[expected_state] - 0.1
-
+                self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] - 1/(np.sqrt(1+self.n[last_state,action]))
 
 
 # static functions (of multiple models):
@@ -437,7 +455,19 @@ def diff_reward(model1, model2):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist = np.sum(np.abs(model1.rewards[event_num1]-model2.rewards[event_num2]))
+        dist = np.sum(np.abs(model1.explicite_rewards[event_num1]-model2.explicite_rewards[event_num2]))
+        event_diff.setdefault(event_id,dist)
+        tot_dist += dist
+    return event_diff,tot_dist
+
+def diff_Q(model1, model2):
+    tot_dist = 0
+    event_diff = {}
+    for event_id in set(model1.event_number).intersection(set(model2.event_number)):
+        event_num1 = model1.event_number[event_id]
+        event_num2 = model2.event_number[event_id]
+        # this distance function is arbitrary, could be L2, L3 etc...
+        dist = np.sum(np.abs(model1.Q[event_num1,:]-model2.Q[event_num2,:]))
         event_diff.setdefault(event_id,dist)
         tot_dist += dist
     return event_diff,tot_dist
