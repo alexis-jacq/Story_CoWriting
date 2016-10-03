@@ -362,13 +362,14 @@ class Model:
             choice = softmax(new_values)
 
         else:
+            # try to show just the extrinsic goals ?
             # understandable behavior:
             '''remember last time'''
             expected_action = int(self.expected_action[last_state])
             expected_state = int(self.expected_state[last_state])
             expected_intensity = int(self.expected_intensity[last_state])
 
-            if self.rewards[expected_state]*expected_intensity>np.random.rand():
+            if self.rewards[expected_state]*expected_intensity>1.1*np.random.rand():
                 '''repeat action'''
                 choice = self.expected_action[last_state]
             else:
@@ -437,13 +438,15 @@ class Model:
             else:
                 self.rewards[expected_state] = 0.99*self.rewards[expected_state] - 0.01
             '''
-
+            
             if action == self.expected_action[last_state]:
                 self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] + 1/(np.sqrt(1+self.n[last_state,action]))
                 #pass
             else:
                 self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] - 1/(np.sqrt(1+self.n[last_state,action]))
+            
 
+            # should be proportionnal to errors/ surprise
 
 # static functions (of multiple models):
 #---------------------------------------

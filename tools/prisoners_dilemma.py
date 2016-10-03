@@ -8,11 +8,11 @@ from mutualModelling import agent2 as agent
 import matplotlib.pyplot as plt
 import copy
 
-def create_prisoner(name,all_names,RP,RW,RS):
+def create_prisoner(name,all_names,RP,RW,RS, social_reward):
     percepts = ["plonk","water","nothing","shock"]
     actions = ["cooperate","defect"]#,"1","2"]#,"3"]#,"4","5"]#,"6","7","8","9"]
     rewards = [["plonk",1.,RP],["water",1.,RW],["shock",1.,RS],['nothing',1,RN]]
-    prisoner = agent.Agent(name,all_names,percepts,actions,rewards)
+    prisoner = agent.Agent(name,all_names,percepts,actions,rewards,social_reward)
     return prisoner
 
 """
@@ -29,7 +29,7 @@ the other has to play and can't communicate anymore
 
 # parameters
 RP = 1
-RW = 0.7
+RW = 0.5
 RS = -1
 RN = 0
 
@@ -79,8 +79,8 @@ def world_update(action1,action2,play):
 for i in range(N):
     if i%10==0:
         print i
-    robert = create_prisoner(name1,all_agents,RP,RW,RS)
-    pierrot = create_prisoner(name2,all_agents,RP,RW,RS)
+    robert = create_prisoner(name1,all_agents,RP,RW,RS,0)
+    pierrot = create_prisoner(name2,all_agents,RP,RW,RS,-1)
     cumrew1 = []
     cumrew2 = []
     cumdef1 = []

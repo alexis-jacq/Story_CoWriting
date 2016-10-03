@@ -11,7 +11,7 @@ import operator
 
 class Agent:
     """agent able of 1st and 2nd mutual modelling reasoning"""
-    def __init__(self,name,agents,percepts,actions,rewards): # if inverse RL => rewards is just for self.name !!
+    def __init__(self,name,agents,percepts,actions,rewards,social_reward=0): # if inverse RL => rewards is just for self.name !!
 
         self.name = name
         if name not in agents:
@@ -23,6 +23,8 @@ class Agent:
 
         self.Id = {}# identification of the agent who is modelling me
                     # a.Id[b:a] = b 
+
+        self.social_reward = social_reward
 
         self.prev_diff = 0
         self.social_curve = []
@@ -62,7 +64,7 @@ class Agent:
                     r = self.M[model].update_inverse(possible_actions,percepts=models_percepts[model],last_action=action)
 
                     if (model in self.Id.values()): # if it's (or not) about me
-                        IR+=0.5*r
+                        IR += self.social_reward * r
                         n+=1.
 
             diff = 0
