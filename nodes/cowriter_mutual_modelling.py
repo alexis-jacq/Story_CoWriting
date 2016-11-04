@@ -6,7 +6,7 @@ import time
 import rospy
 import json
 from std_msgs.msg import String, Empty, Float64
-from mutualModelling.agent import Agent
+from mutualModelling.agent2 import Agent
 
 # this node udate models of agents (by the robot) and publishes the choice of action by the robot:
 #-------------------------------------------------------------------------------------------------
@@ -20,8 +20,9 @@ ALL_NAMES = [ROBOT_NAME, HUMAN_NAME]
 robot_percepts = ["child_progress","reward","punish","justified_reward","justified_punish","justified_new_word","with_me"]
 robot_actions = ["converges","diverges","exaggerates","looks_tablet","looks_child_head","looks_out","looks_experimentator","looks_selection_tablet","points_tablet"]
 robot_rewards = [["justified_reward",1.,1.],["justified_punish",1.,1],["with_me",1.,1.],["with_me",-1.,-1.],["child_progress",1.,1.],["justified_new_word",1.,1.]]
-robot_instincts = [[HUMAN_NAME+"_looks_robot_head",1.,"looks_child_head"],[HUMAN_NAME+"_looks_robot_head",1.,"looks_tablet"], [HUMAN_NAME+"_looks_tablet",1.,"looks_child_head"],[HUMAN_NAME+"_looks_tablet",1.,"looks_tablet"], [HUMAN_NAME+"_looks_noise",1.,"looks_child_head"],[HUMAN_NAME+"_looks_noise",1.,"mimics"], [HUMAN_NAME+"_looks_selection_tablet",1.,"looks_selection_tablet"], [HUMAN_NAME+"_looks_experimentator",1.,"looks_experimentator"]]
-robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards,robot_instincts)
+#robot_instincts = [[HUMAN_NAME+"_looks_robot_head",1.,"looks_child_head"],[HUMAN_NAME+"_looks_robot_head",1.,"looks_tablet"], [HUMAN_NAME+"_looks_tablet",1.,"looks_child_head"],[HUMAN_NAME+"_looks_tablet",1.,"looks_tablet"], [HUMAN_NAME+"_looks_noise",1.,"looks_child_head"],[HUMAN_NAME+"_looks_noise",1.,"mimics"], [HUMAN_NAME+"_looks_selection_tablet",1.,"looks_selection_tablet"], [HUMAN_NAME+"_looks_experimentator",1.,"looks_experimentator"]]
+#robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards,robot_instincts)
+robot = Agent(ROBOT_NAME,ALL_NAMES,robot_percepts,robot_actions,robot_rewards)
 
 # the point of attention of the human is used to define what action of the robot is observed by the child:
 #---------------------------------------------------------------------------------------------------------
@@ -96,10 +97,10 @@ def makeDecision():
     global models_percepts
     new_robot_action = None
     if models_actions:
-        new_robot_action,test = robot.update_models(None,models_percepts,models_actions)
+        new_robot_action = robot.update_models(None,models_percepts,models_actions)
         rospy.loginfo(models_percepts)
         rospy.loginfo(models_actions)
-        rospy.loginfo(test)
+        #rospy.loginfo(test)
         rospy.loginfo("----------------------------------------")
     if new_robot_action:
         msg = String()

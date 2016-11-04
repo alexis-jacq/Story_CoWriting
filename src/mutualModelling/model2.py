@@ -79,6 +79,7 @@ class Model:
 
         # IRL and understandable behavior:
         #---------------------------------
+        self.be_explicite = True
         self.expected_action = np.zeros([0])
         self.expected_state = np.zeros([0])
         self.expected_intensity = np.zeros([0]) # 
@@ -354,7 +355,8 @@ class Model:
             new_values = values
 
 
-        #if social_error<np.random.rand()*0.1:
+        #if social_error<0.1:
+        #    self.be_explicite = False
         if np.sum(np.sum(self.n))<300 or np.sum(np.sum(self.n))>700:
         #if True:
         #if False:
@@ -362,6 +364,7 @@ class Model:
             choice = softmax(new_values)
 
         else:
+            self.be_explicite = True
             # try to show just the extrinsic goals ?
             # understandable behavior:
             '''remember last time'''
@@ -438,12 +441,12 @@ class Model:
             else:
                 self.rewards[expected_state] = 0.99*self.rewards[expected_state] - 0.01
             '''
-            
-            if action == self.expected_action[last_state]:
-                self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] + 1/(np.sqrt(1+self.n[last_state,action]))
-                #pass
-            else:
-                self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] - 1/(np.sqrt(1+self.n[last_state,action]))
+            if self.be_explicite:
+                if action == self.expected_action[last_state]:
+                    self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] + 1/(np.sqrt(1+self.n[last_state,action]))
+                    #pass
+                else:
+                    self.rewards[expected_state] = (1-1/(np.sqrt(1+self.n[last_state,action])))*self.rewards[expected_state] - 1/(np.sqrt(1+self.n[last_state,action]))
             
 
             # should be proportionnal to errors/ surprise
@@ -458,7 +461,7 @@ def diff_reward(model1, model2):
         event_num1 = model1.event_number[event_id]
         event_num2 = model2.event_number[event_id]
         # this distance function is arbitrary, could be L2, L3 etc...
-        dist = np.sum(np.abs(model1.explicite_rewards[event_num1]-model2.explicite_rewards[event_num2]))
+        dist = np.sum(np.abs(model1.rewards[event_num1]-model2.rewards[event_num2]))
         event_diff.setdefault(event_id,dist)
         tot_dist += dist
     return event_diff,tot_dist

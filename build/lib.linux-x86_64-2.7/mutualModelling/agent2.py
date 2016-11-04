@@ -5,7 +5,7 @@ import numpy as np
 import random
 from mutualModelling import model2 as model
 from mutualModelling.model2 import diff_reward
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import copy
 import operator
 
@@ -68,7 +68,7 @@ class Agent:
                         n+=1.
 
             diff = 0
-            for agent in self.Id:
+            for agent in self.M:
                 _,dist = diff_reward(self.M[self.name],self.M[agent])
                 diff += dist
             d_error = np.sqrt((self.prev_diff - diff)**2)

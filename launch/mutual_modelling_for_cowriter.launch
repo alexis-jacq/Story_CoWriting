@@ -6,10 +6,10 @@
   </include>
 
   <!--also launch nao control -->
-  <include file="$(find nao_bringup)/launch/nao_full_py.launch">
-    <arg name="nao_ip" value="10.0.0.4"/>
+  <!--include file="$(find nao_bringup)/launch/nao_full_py.launch"-->
+    <!--arg name="nao_ip" value="http://192.168.1.66"/-->
     <!--arg name="roscore_ip" value="10.0.0.6"/-->
-  </include>
+  <!--/include-->
 
   <node pkg="mutual_modelling" type="cowriter_agents_info.py" name="cowriter_agent_info">
   </node>

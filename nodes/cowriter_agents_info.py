@@ -6,7 +6,7 @@ import time
 import rospy
 import json
 from std_msgs.msg import String, Empty, Float64
-from mutualModelling.agent import Agent
+from mutualModelling.agent2 import Agent
 
 # this node collect all information about agents states/obs/actions:
 # and publish in one topic per agent (human, robot)
