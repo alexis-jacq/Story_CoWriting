@@ -271,6 +271,8 @@ class Model:
         elligibles = {}
         total_reward = 0
         if last_action:
+            if isinstance(last_action, list):
+                last_action = last_action[0] #HACK !
             if not (last_action in self.action_number):
                 self.add_actions([last_action])
             if not (last_action in self.event_number):
