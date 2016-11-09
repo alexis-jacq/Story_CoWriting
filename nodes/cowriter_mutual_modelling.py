@@ -68,7 +68,7 @@ def onRobotAction(msg):
     if last_info!=action:
         if human_target in visible_for_human_from:
             if action in visible_for_human_from[human_target]:
-                models_actions.setdefault(HUMAN_NAME+':'+ROBOT_NAME,[]).append(action)
+                models_actions[HUMAN_NAME+':'+ROBOT_NAME] = action
                 models_percepts.setdefault(HUMAN_NAME,[]).append((ROBOT_NAME+"_"+action,1.))
                 rospy.loginfo(ROBOT_NAME+"_"+action)
                 rospy.loginfo(".........................................")
@@ -81,7 +81,7 @@ def onHumanAction(msg):
     global last_info
     action = str(msg.data)
     if last_info!=action:
-        models_actions.setdefault(HUMAN_NAME,[]).append(action)
+        models_actions[HUMAN_NAME] = action
         models_percepts.setdefault(ROBOT_NAME,[]).append((HUMAN_NAME+'_'+action,1.))
         rospy.loginfo(HUMAN_NAME+'_'+action)
         rospy.loginfo("////////////////////////////////////////")

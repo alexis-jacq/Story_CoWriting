@@ -142,7 +142,6 @@ class Model:
 
     def add_actions(self, events_id):
         if isinstance(events_id, list) or isinstance(events_id, tuple):
-            self.add_events(events_id)
             number = self.nb_actions
             for event_id in events_id:
                 if event_id not in self.action_number:
@@ -163,6 +162,7 @@ class Model:
                     self.n = new_n
 
                     self.nb_actions = number
+            self.add_events(events_id)
 
     def set_rewards(self, goals):
         for goal in goals:
@@ -272,6 +272,7 @@ class Model:
         total_reward = 0
         if last_action:
             if isinstance(last_action, list):
+                print last_action
                 last_action = last_action[0] #HACK !
             if not (last_action in self.action_number):
                 self.add_actions([last_action])
