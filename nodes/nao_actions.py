@@ -80,14 +80,24 @@ if __name__=="__main__":
 
             listener.waitForTransform('/robot_head','/face_0', rospy.Time(0), rospy.Duration(4.0))
             (pose,rot) = listener.lookupTransform('/robot_head','/face_0', rospy.Time(0))
+
+            x = pose[0]
+            y = pose[1]
+            z = pose[2]
+
+            Zyaw = np.arctan(y/x)
+            Zpitch = np.arctan(-z/x)
+
             euler = tf.transformations.euler_from_quaternion(rot)
-            roll = euler[1]
-            pitch = euler[0] - np.pi/2.
-            yaw = -np.sign(euler[2])*(np.abs(euler[2])-np.pi/2.)
-            rospy.loginfo("pitch "+str(pitch))
-            rospy.loginfo("yaw "+str(yaw))
+            Xroll = euler[1]
+            Xpitch = euler[0] - np.pi/2.
+            Xyaw = -np.sign(euler[2])*(np.abs(euler[2])-np.pi/2.)
 
+            rospy.loginfo("pitch "+str(Xpitch))
+            rospy.loginfo("yaw "+str(Xyaw))
 
+            pitch = Zpitch + Xpitch
+            yaw = Zyaw + Xyaw
 
             if (np.abs(yaw)>np.pi/6. or pitch> np.pi/7. or pitch< -np.pi/6 or stay) and ok:
 
