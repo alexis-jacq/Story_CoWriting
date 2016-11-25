@@ -16,37 +16,16 @@ from naoqi import ALProxy
 from naoqi import ALBroker
 from naoqi import ALModule
 
-############################################# global values
-NAO_IP = "146.193.224.10"
-port = 9559
-speed = 0.1
-
-############################################# init proxies
-myBroker = ALBroker("myBroker", #
-    "0.0.0.0",   # listen to anyone
-    0,           # find a free port and use it
-    NAO_IP,      # parent broker IP
-    port)        # parent broker port
-hasFallen = False
-motionProxy = ALProxy("ALMotion", NAO_IP, port)
-memoryProxy = ALProxy("ALMemory", NAO_IP, port)
-postureProxy = ALProxy("ALRobotPosture", NAO_IP, port)
-faceProxy = ALProxy("ALFaceDetection", NAO_IP, port)
-tracker = ALProxy("ALTracker", NAO_IP, port)
-tts = ALProxy("ALTextToSpeech", NAO_IP, port)
-tts.setLanguage("English")
-
 
 #########################################"### moving functions
-def StiffnessOn():
-	global motionProxy
+def StiffnessOn(motionProxy):
 	pNames = "Body"
 	pStiffnessLists = 1.0
 	pTimeLists = 1.0
 	motionProxy.stiffnessInterpolation(pNames, pStiffnessLists, pTimeLists)
 
-def StiffnessOff():
-	global motionProxy
+def StiffnessOff(motionProxy):
+	speed = 0.1
 	motionProxy.setAngles("LShoulderPitch", 1.5, speed)
 	motionProxy.setAngles("RShoulderPitch", 1.5, speed)
 	time.sleep(2)
@@ -55,9 +34,7 @@ def StiffnessOff():
 	pTimeLists = 1.0
 	motionProxy.stiffnessInterpolation(pNames, pStiffnessLists, pTimeLists)
 
-def trackFace():
-	global motionProxy
-	global tracker
+def trackFace(motionProxy,tracker):
 	targetName = "Face"
 	faceWidth = 0.1
 	tracker.registerTarget(targetName, faceWidth)
@@ -65,8 +42,7 @@ def trackFace():
 	motionProxy.setStiffnesses("Head", 1.0)
 	tracker.track(targetName)
 
-def telling_arms_gesturs(wordToSay):
-	global motionProxy
+def telling_arms_gesturs(motionProxy,tts,speed,wordToSay):
 	LShoulderPitch = np.random.uniform(-0.5,0.7)#-2.0857 to 2.0857
 	LShoulderRoll  = np.random.uniform(0.2,0.8)#-0.3142 to 1.3265
 	LElbowYaw  = np.random.uniform(-1,1)#-2.0857 to 2.0857
@@ -107,17 +83,3 @@ def telling_arms_gesturs(wordToSay):
 	tts.say(wordToSay)
 
 
-if __name__=="__main__":
-
-	StiffnessOn()
-
-
-	trackFace()
-
-	for i in range(1,10):
-
-		time.sleep(1)
-		telling_arms_gesturs(str(2**i))
-	
-
-	StiffnessOff()
