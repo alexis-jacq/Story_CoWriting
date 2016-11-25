@@ -5,13 +5,13 @@ import os
 from distutils.core import setup
 import glob
 
-setup(name='mutualModelling',
+setup(name='NaoStoryTelling',
       version='0.0',
       license='ISC',
-      description='library of functions/algorithms to build, update and compaire models of different agents built by a robot',
+      description='library of random story-telling-like gestures for Nao robot',
       author='Alexis Jacq',
-      author_email='alexis.jacq@gmail.ch',
+      author_email='alexis.jacq@gmail.com',
       package_dir = {'': 'src'},
-      packages=['mutualModelling'],
-      data_files=[('share/doc/mutualModelling', ['AUTHORS', 'LICENSE', 'README.md'])]
+      packages=['NaoStoryTelling'],
+      data_files=[('share/doc/NaoStoryTelling', ['AUTHORS', 'LICENSE', 'README.md'])]
       )

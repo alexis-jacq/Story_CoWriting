@@ -64,6 +64,8 @@ if __name__=="__main__":
 
     while True:
 
+	# need a "point object" condition
+
         '''mimic = False
         if np.random.rand()>0.99 or stay:
             mimic = True

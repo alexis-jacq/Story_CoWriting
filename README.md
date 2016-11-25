@@ -1,3 +1,3 @@
-# Mutual_Modelling
+# Story Cowriting
 
-depends: openface_tracker, nao_bringup
+depends: openface_tracker, pynaoqi

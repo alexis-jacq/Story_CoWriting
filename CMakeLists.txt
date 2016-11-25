@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(mutual_modelling)
+project(story_cowriting)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -19,13 +19,12 @@ catkin_package(
 )
 
 install(PROGRAMS
-  nodes/cowriter_agents_info.py
-  nodes/cowriter_mutual_modelling.py
-  nodes/nao_actions.py
+  nodes/gaze_behavior.py
+  nodes/main_activity.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 install(FILES
-  launch/mutual_modelling_for_cowriter.launch
+  launch/story_cowriting.launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
