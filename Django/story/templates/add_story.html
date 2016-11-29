@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Add Story{% endblock %}
+{% block body %}
+
+	{% if error_message %}
+		<p><strong>{{ error_message }}</strong></p>p
+	{% endif %}
+
+{{ request.data }}
+{{ request.data.C_MC }} 
+
+	<form action="{% url 'storyteste' %}" method="post">
+		{% csrf_token %}
+
+		{% for item in request.data.C_MC %}
+			<input type="radio" name="C_MC" id="item{{ forloop.counter }}" value="{{ item }}"/>
+			<label for="item{{ forloop.counter }}">
+				{{ item }}
+				<img src="https://cdn4.iconfinder.com/data/icons/SIGMA/networking/png/128/piracy.png">
+			</label><br>
+
+		{% endfor %}
+		<input type="hidden" value="{{ request.data.C_MCg }}" name="C_MCg" />
+		<input type="hidden" value="Opt" name="Opt" />
+
+		<input type="submit" value="NEXT">
+	</form>
+{% endblock %}
+
