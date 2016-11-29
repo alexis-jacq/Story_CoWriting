@@ -80,7 +80,6 @@ class FullStoryList(APIView):
 					getPost.object_decoder(request.data)
 					#print request.data
 					response = render(request, template_name, request.data)
-
 				return response
 
 			else:
@@ -94,26 +93,22 @@ class FullStoryList(APIView):
 					option = request.POST.get("emotion",None)
 					print ("receiveid option =") 
 					print (option)
-					if item is not None:
-						text = {'selection':item, 'emotion':option}
-						# f = open('text.txt', 'w+')
-						# #f.write(text)
+					if item and option is not None:
+						text = '{\'selection\': \' '+ item + '\', \'emotion\': \'' +option + '\'} \n'
+						f = open('text.txt', 'a')
+						f.write(text)
 						# json.dump(text,f)
-						# f.close()
-
+						f.close()
+					else:
+						raise Exception()
 				except Exception as e:
 					print ("errors???")
-					print e
-					return render(request,'add_story.html',{'error_message':'Nothing Selected'})
+					print (e)
+					return render(request,'add_story.html',{'request.data':request.data,'error_message':'Nothing Selected'})
 				else:
 					print ("Everything went well")
 					data = {'C_MCg':dt}
 					print (data)
-					test = request
-
-					del test["C_MC"]
-					print ("test")
-					print test
 					return render(request,'add_story.html',data)	
 ######old version
 			#return Response(serializers.data, status=status.HTTP_201_CREATED)
@@ -136,8 +131,8 @@ class FullStoryList(APIView):
 				if item is not None:
 					text = {'selection':item, 'emotion':option}
 					f = open('text.txt', 'w+')
-					#f.write(text)
-					json.dump(text,f)
+					f.write(str(text))
+					#json.dump(text,f)
 					f.close()
 
 			except Exception as e:
