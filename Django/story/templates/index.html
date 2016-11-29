@@ -1,0 +1,14 @@
+{% extends 'base.html' %}«
+{% block title %}Story CoWriting{% endblock %}
+
+{% block body %}
+
+ 	{% for story in all_stories %}
+		<h1>{{ story.namest }}</h1>
+		<p>Script: {{ story.script }}</p>
+		<p>Type of story: {{ story.idty.id }}</p>
+		<!-- <p>Date: {% now "jS F Y H:i" %}</p> -->
+		<p>Date: {% now "jS F Y" %}</p>
+		<hr> 
+	{% endfor %}
+{% endblock %}

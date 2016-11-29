@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %} Story Generation{% endblock %}
+{% block body %}
+{% csrf_token %}
+
+
+<!-- {{ request.data }}
+ -->
+
+    <h1>Main Character</h1>
+    <p>Name: 
+		{% for cMC in request.data.C_MC %}
+			{{ cMC }},
+		{% endfor %}</p>
+    <p>Gender: 
+		{% for cMCg in request.data.C_MCg %}
+			{{ cMCg }},
+		{% endfor %}</p>
+    <p>Job Man: 
+    	{% for C_MCj_man in request.data.C_MCj_man %}
+			{{ C_MCj_man }},
+		{% endfor %}</p>
+    <p>Job Woman: 
+		{% for C_MCj_woman in request.data.C_MCj_woman %}
+			{{ C_MCj_woman }},
+		{% endfor %}</p>
+    <p>Job Robot: 
+	    {% for C_MCj_robot in request.data.C_MCj_robot %}
+			{{ C_MCj_robot }},
+		{% endfor %}</p>
+    <p>Favourite Drink: 
+    	{% for C_MCd in request.data.C_MCd %}
+			{{ C_MCd }},
+		{% endfor %}</p>
+    <p>Weapon: 
+    	{% for C_MCw in request.data.C_MCw %}
+			{{ C_MCw }},
+		{% endfor %}</p>
+    <p>Place: 
+    	{% for C_P in request.data.C_P %}
+			{{ C_P }},
+		{% endfor %}</p>
+
+    <hr> 
+
+    <h1>Secondary Character</h1>
+     <p>Name: 
+		{% for cSC in request.data.C_SC %}
+			{{ cSC }},
+		{% endfor %}</p>
+    <p>Gender: 
+    	{% for C_SCg in request.data.C_SCg %}
+			{{ C_SCg }},
+		{% endfor %}</p>
+    <p>Species Human:  
+    	{% for C_SCs_human in request.data.C_SCs_human %}
+			{{ C_SCs_human }},
+		{% endfor %}</p>
+    <p>Species Robot: 
+    	{% for C_SCs_robot in request.data.C_SCs_robot %}
+			{{ C_SCs_robot }},
+		{% endfor %}</p>
+    <p>Favourite Dance: 
+    	{% for C_SC_dance in request.data.C_SC_dance %}
+			{{ C_SC_dance }},
+		{% endfor %}</p>
+
+    <hr>
+
+    <h1>Bad Guy</h1>
+     <p>Name: 
+		{% for cBG in request.data.C_BG %}
+			{{ cBG }},
+		{% endfor %}</p>
+    <p>Gender: 
+    	{% for C_BGg in request.data.C_BGg %}
+			{{ C_BGg }},
+		{% endfor %}</p>
+    <p>Job Man: 
+    	{% for C_BGj_man in request.data.C_BGj_man %}
+			{{ C_BGj_man }},
+		{% endfor %}</p>
+    <p>Job Woman: 
+    	{% for C_BGj_woman in request.data.C_BGj_woman %}
+			{{ C_BGj_woman }},
+		{% endfor %}</p>
+    <p>Job Robot: 
+    	{% for C_BGj_robot in request.data.C_BGj_robot %}
+			{{ C_BGj_robot }},
+		{% endfor %}</p>
+    <p>Favourite Drink: 
+    	{% for C_BGd in request.data.C_BGd %}
+			{{ C_BGd }},
+		{% endfor %}</p>
+    <p>Bad Actions: 
+    	{% for C_Ba in request.data.C_Ba %}
+			{{ C_Ba }},
+		{% endfor %}</p>
+    <p>Place: 
+	    {% for C_BGpC_BGp in request.data.C_BGp %}
+			{{ C_BGpC_BGp }},
+		{% endfor %}</p>
+
+    <hr>
+
+{% endblock %}
