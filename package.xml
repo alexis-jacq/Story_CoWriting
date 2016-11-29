@@ -4,10 +4,10 @@
   <version>0.1.0</version>
   <description>incoming</description>
 
-  <maintainer email="alexis.jacq@gaips.inesc-id.pt/">Alexis Jacq</maintainer>
+  <maintainer email="alexis.jacq@gaips.inesc-id.pt">Alexis Jacq</maintainer>
   <license>BSD</license>
-  <author email="alexis.jacq@gaips.inesc-id.pt/">Alexis Jacq</author>
-  <author email="maria.jose.ferreira@gaips.inesc-id.pt/">Maria Jose Ferreira</author>
+  <author email="alexis.jacq@gaips.inesc-id.pt">Alexis Jacq</author>
+  <author email="maria.jose.ferreira@gaips.inesc-id.pt">Maria Jose Ferreira</author>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>std_msgs</build_depend>

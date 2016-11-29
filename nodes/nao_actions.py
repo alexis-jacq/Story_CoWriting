@@ -5,20 +5,31 @@ import sys
 import time
 import numpy as np
 import random
-
 import rospy
+import tf
+
 from geometry_msgs.msg import PointStamped
 from std_msgs.msg import String, Empty, Header
-#from naoqi_bridge_msgs.msg import JointAnglesWithSpeed
-import tf
+from NaoStoryTelling import story_gestures as sg
 
 from naoqi import ALProxy
 from naoqi import ALBroker
 from naoqi import ALModule
 
 
-NAO_IP = "146.193.224.153"
+############################################# global values
+NAO_IP = "146.193.224.10"
 port = 9559
+speed = 0.1
+current_target = "/face_0"
+action2target = {"tablet":"/tablet", "child_head":"/face_0", "experimentator":"/experimenter", "selection_tablet":"/selection_tablet"}
+ok = False
+stay = False
+stop = False
+point_screen = False
+have_to_talk = False
+
+############################################# init proxies
 myBroker = ALBroker("myBroker", #
     "0.0.0.0",   # listen to anyone
     0,           # find a free port and use it
@@ -30,57 +41,66 @@ memoryProxy = ALProxy("ALMemory", NAO_IP, port)
 postureProxy = ALProxy("ALRobotPosture", NAO_IP, port)
 faceProxy = ALProxy("ALFaceDetection", NAO_IP, port)
 tracker = ALProxy("ALTracker", NAO_IP, port)
-
-def StiffnessOn(proxy):
-    # We use the "Body" name to signify the collection of all joints
-    pNames = "Body"
-    pStiffnessLists = 1.0
-    pTimeLists = 1.0
-    proxy.stiffnessInterpolation(pNames, pStiffnessLists, pTimeLists)
-
-current_target = "/face_0"
-action2target = {"looks_tablet":"/tablet", "looks_child_head":"/face_0", "looks_experimentator":"/experimenter", "looks_selection_tablet":"/selection_tablet"}
-ok = False
-stay = False
-speed = 0.1
+tts = ALProxy("ALTextToSpeech", NAO_IP, port)
+tts.setLanguage("English")
 
 
-def onReceiveAction(msg):
+############################################# what if new action message
+def onReceiveTarget(msg):
     global current_target
     action = str(msg.data)
-    #if action in action2target:
-    #    current_target = action2target[action]
+    # gaze behavior
+    if action in action2target:
+        current_target = action2target[action]
+
+def onReceiveSay(msg):
+    global message_to_tell
+    global have_to_talk
+    message_to_tell = str(msg.data)
+    have_to_talk = True
+
+def onReceivePoint(msg):
+    global point_screen
+    # use the message if you want the robot to point a specific (x,y) of the screen
+    point_screen = True
+
+def onExit(msg):
+    global stop
+    stop = True
 
 
+############################################# main loop
 if __name__=="__main__":
 
     rospy.init_node("nao_actions")
 
-    """ Nao Bridge or naoqi : """
-    StiffnessOn(motionProxy)
+    sg.StiffnessOn(motionProxy)
+    sg.telling_arms_gesturs(motionProxy,tts,speed,"hello")
 
     listener = tf.TransformListener()
     listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(4.0))
 
-    while True:
-
-	# need a "point object" condition
-
-        '''mimic = False
-        if np.random.rand()>0.99 or stay:
-            mimic = True
-            stay = True
-            if np.random.rand()>0.99:
-                stay = False'''
+    while not stop:
 
         test  = listener.getFrameStrings()
-        rospy.Subscriber('robot_action_topic', String, onReceiveAction)
+
+        rospy.Subscriber('robot_target_topic', String, onReceiveTarget)
+        rospy.Subscriber('robot_say_topic', String, onReceiveSay)
+        rospy.Subscriber('robot_point_topic', String, onReceivePoint)
+        rospy.Subscriber('exit_topic', String, onExit)
+
+        if point_screen:
+            print("we need that movement")
+            point_screen = False
+
+        if have_to_talk:
+            time.sleep(1)
+            sg.telling_arms_gesturs(motionProxy,tts,speed,message_to_tell)
+            have_to_talk = False
 
         if "base_footprint" in test and "robot_head" in test and "face_0" in test:
-            rospy.loginfo("frames found !!!!!!")
-            #if not mimic:
+            rospy.loginfo("frames found! (child head condition")
 
-            listener.waitForTransform('/robot_head','/face_0', rospy.Time(0), rospy.Duration(4.0))
             (pose,rot) = listener.lookupTransform('/robot_head','/face_0', rospy.Time(0))
 
             x = pose[0]
@@ -112,8 +132,6 @@ if __name__=="__main__":
                     stay = False
                     ok = False
 
-
-
             else:
                 listener.waitForTransform('/robot_head', current_target, rospy.Time(0), rospy.Duration(4.0))
                 (pose,rot) = listener.lookupTransform('/robot_head', current_target, rospy.Time(0))
@@ -134,10 +152,11 @@ if __name__=="__main__":
                 if np.random.rand()>0.95:
                     stay = True
                     ok = True
-        
+    
 
         rospy.sleep(0.1)
 
-    #motionProxy.rest()
+    sg.StiffnessOff(motionProxy)
+
     rospy.spin()
 

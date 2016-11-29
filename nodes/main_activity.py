@@ -16,37 +16,49 @@ from naoqi import ALProxy
 from naoqi import ALBroker
 from naoqi import ALModule
 
-############################################# global values
-NAO_IP = "146.193.224.10"
-port = 9559
-speed = 0.1
+########################################## ros publishers
+pub_robot_target = rospy.Publisher('robot_target_topic', String, queue_size=1)
+pub_robot_say = rospy.Publisher('robot_say_topic', String, queue_size=1)
+pub_robot_point = rospy.Publisher('robot_point_topic', String, queue_size=1)
+pub_exit = rospy.Publisher('exit_topic', String, queue_size=1)
 
-############################################# init proxies
-myBroker = ALBroker("myBroker", #
-    "0.0.0.0",   # listen to anyone
-    0,           # find a free port and use it
-    NAO_IP,      # parent broker IP
-    port)        # parent broker port
-hasFallen = False
-motionProxy = ALProxy("ALMotion", NAO_IP, port)
-memoryProxy = ALProxy("ALMemory", NAO_IP, port)
-postureProxy = ALProxy("ALRobotPosture", NAO_IP, port)
-faceProxy = ALProxy("ALFaceDetection", NAO_IP, port)
-tracker = ALProxy("ALTracker", NAO_IP, port)
-tts = ALProxy("ALTextToSpeech", NAO_IP, port)
-tts.setLanguage("English")
+########################################## action robot functions
+def look_at(target):
+	msg = String()
+	msg.data = target
+	pub_robot_target.publish(msg)
+
+def say(to_say):
+	msg = String()
+	msg.data = to_say
+	pub_robot_say.publish(msg)
+
+def point(button):
+	msg = String()
+	msg.data = button
+	pub_robot_point.publish(msg)
+
+def ending(test):
+	msg = String()
+	msg.data = ""
+	pub_exit.publish(msg)
+
 
 if __name__=="__main__":
 
-	sg.StiffnessOn(motionProxy)
+	rospy.init_node("main_activity")
+
+	time.sleep(10)
+	say("hello, my name is Nando.")
+	time.sleep(5)
+	say("do you want to write an amazing story with me ?")
+	time.sleep(10)
+	look_at("experimentator")
+	time.sleep(5)
+	look_at("child_head")
+	time.sleep(5)
+
+	ending("")
 
 
-	sg.trackFace(motionProxy,tracker)
-
-	for i in range(1,10):
-
-		time.sleep(1)
-		sg.telling_arms_gesturs(motionProxy,tts,speed,str(2**i))
 	
-
-	sg.StiffnessOff(motionProxy)

@@ -19,7 +19,7 @@ catkin_package(
 )
 
 install(PROGRAMS
-  nodes/gaze_behavior.py
+  nodes/nao_actions.py
   nodes/main_activity.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
