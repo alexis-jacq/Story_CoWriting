@@ -14,6 +14,12 @@ from .post import *
 
 from .models import *
 
+################################# ROS
+import rospy
+from std_msgs.msg import String, Empty, Header
+pub_child_choice = rospy.Publisher('child_choice', String, queue_size=1)
+#################################
+
 class IndexView(generic.ListView):
 	template_name = 'index.html'
 	context_object_name = 'all_stories'
@@ -139,6 +145,9 @@ class FullStoryList(APIView):
 					#f.write(text)
 					json.dump(text,f)
 					f.close()
+					msg = String()
+					msg.data = text
+					pub_child_choice.publish(msg)
 
 			except Exception as e:
 				print ("errors???")
