@@ -10,19 +10,29 @@ import tf
 
 from geometry_msgs.msg import PointStamped
 from std_msgs.msg import String, Empty, Header
-from NaoStoryTelling import story_gestures as sg
+from naoStoryTelling import story_gestures as sg
+from nextChoice import story_maker as sm
+from nextChoice.decision import decision_maker as dm
 
 from naoqi import ALProxy
 from naoqi import ALBroker
 from naoqi import ALModule
 
 ########################################## ros publishers
+# for nao_actions:
 pub_robot_target = rospy.Publisher('robot_target_topic', String, queue_size=1)
 pub_robot_say = rospy.Publisher('robot_say_topic', String, queue_size=1)
 pub_robot_point = rospy.Publisher('robot_point_topic', String, queue_size=1)
 pub_exit = rospy.Publisher('exit_topic', String, queue_size=1)
 
+# for interface:
+pub_human_turn = rospy.Publisher('human_turn_topic', String, queue_size=1)
+pub_human_chosen = rospy.Publisher('human_chosen_topic', String, queue_size=1)
+pub_human_predict = rospy.Publisher('human_predict_topic', String, queue_size=1)
+pub_robot_turn = rospy.Publisher('robot_turn_topic', String, queue_size=1)
+pub_robot_chosen = rospy.Publisher('robot_chosen_topic', String, queue_size=1)
 ########################################## action robot functions
+
 def look_at(target):
 	msg = String()
 	msg.data = target

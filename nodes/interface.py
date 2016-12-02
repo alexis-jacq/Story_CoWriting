@@ -3,19 +3,35 @@ import ttk
 import time
 import rospy
 
-
+################################################ ros publishers
+pub_human_choice = rospy.Publisher('human_choice_topic', String, queue_size=1)
+pub_human_prediction = rospy.Publisher('human_prediction_topic', String, queue_size=1)
 ################################################ ros events
-def robot_turn(p, label, items):
-	p.robot(label, items)
-	p.mainframe.tkraise()
+def read_msg(msg):
+	message = msg.data
+	label, choice, rest = message.split(",")
+	items = rest.split("-")
+	return label, choice, items
 
-def human_turn(p, label, items):
-	p.human(label, items)
-	p.mainframe.tkraise()
+def robot_turn(msg):
+	label, _, items = read_msg(msg)
+	p1.robot(label, items)
+	p1.mainframe.tkraise()
 
-def robot_have_chosen(p, label, items, choice):
-	p.chosen(label, items, choice)
-	p.mainframe.tkraise()
+def human_turn(msg):
+	label, _, items = read_msg(msg)
+	p1.human(label, items)
+	p1.mainframe.tkraise()
+
+def human_predict(msg):
+	label, _, items = read_msg(msg)
+	p1.human_predict(label, items)
+	p1.mainframe.tkraise()
+
+def have_chosen(msg):
+	label, choice, items = read_msg(msg)
+	p1.chosen(label, items, choice)
+	p1.mainframe.tkraise()
 
 ################################################ window events
 def human_choice(choice):
@@ -31,6 +47,11 @@ class choice_button:
 	def __init__(self,choice,frame,row,col):
 		self.choice = choice
 		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_choice(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
+
+class predict_button:
+	def __init__(self,choice,frame,row,col):
+		self.choice = choice
+		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_predict(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
 ################################################
 class page:
 
@@ -62,6 +83,17 @@ class page:
 			col = ind%4 + 1
 			row = ind/4 + 1
 			button = choice_button(item, self.mainframe,row,col)
+			ind+=1
+
+	def human_predict(self, label, items):	
+		self.add_emoji()
+		self.set_title(label)
+
+		ind = 0
+		for item in items:
+			col = ind%4 + 1
+			row = ind/4 + 1
+			button = predict_button(item, self.mainframe,row,col)
 			ind+=1
 
 	def robot(self, label,items):
@@ -112,6 +144,12 @@ p1 = page(root)
 if __name__=="__main__":
 
 	#rospy.init_node("interface")
-
-	human_turn(p1, "mc name is...", images)
+	p1.mainframe.tkraise()
 	root.mainloop()
+
+	while True:
+		rospy.Subscriber('human_turn_topic', String, human_turn)
+		rospy.Subscriber('human_chosen_topic', String, have_chosen)
+		rospy.Subscriber('human_predict_turn_topic', String, human_predict)
+		rospy.Subscriber('robot_turn_topic', String, robot_turn)
+		rospy.Subscriber('robot_chosen_topic', String, have_chosen)
