@@ -1,2 +1,0 @@
-{'selection': ' Maria', 'emotion': 'sad'} 
-{'selection': ' i', 'emotion': 'super_sad'} 

@@ -9,5 +9,7 @@
   </node>
   <node pkg="story_cowriting" type="main_activity.py" name="main_activity">
   </node>
+  <node pkg="story_cowriting" type="views.py" name="website_response">
+  </node>
 
 </launch>

@@ -21,6 +21,7 @@ catkin_package(
 install(PROGRAMS
   nodes/nao_actions.py
   nodes/main_activity.py
+  Django/story/views.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
