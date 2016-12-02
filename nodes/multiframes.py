@@ -19,7 +19,6 @@ def robot_have_chosen(p, label, items, choice):
 
 ################################################ window events
 def human_choice(choice):
-	human_turn(p1, "mc job is...", items)
 	print choice
 
 def juge(emoji):
@@ -96,13 +95,13 @@ root = Tk()
 root.geometry("1000x1000")
 root.bind("<Configure>", configure)
 ################################################
-lol = PhotoImage(file="lol.gif")
-good = PhotoImage(file="up.gif")
-bad = PhotoImage(file="down.gif")
-wtf = PhotoImage(file="wtf.gif")
+lol = PhotoImage(file="../share/lol.gif")
+good = PhotoImage(file="../share/up.gif")
+bad = PhotoImage(file="../share/down.gif")
+wtf = PhotoImage(file="../share/wtf.gif")
 
-pirate = PhotoImage(file="pirate.gif")
-gray = PhotoImage(file="gray.gif")
+pirate = PhotoImage(file="../share/pirate.gif")
+gray = PhotoImage(file="../share/gray.gif")
 images = {"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate}
 items = ("Jack","Nosicaa","R1D1","Bender","Jack","Nosicaa")
 ################################################
@@ -112,7 +111,7 @@ p1 = page(root)
 
 if __name__=="__main__":
 
-	rospy.init_node("interface")
+	#rospy.init_node("interface")
 
 	human_turn(p1, "mc name is...", images)
 	root.mainloop()
