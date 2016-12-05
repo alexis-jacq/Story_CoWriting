@@ -10,7 +10,7 @@ import tf
 
 from geometry_msgs.msg import PointStamped
 from std_msgs.msg import String, Empty, Header
-from NaoStoryTelling import story_gestures as sg
+from naoStoryTelling import story_gestures as sg
 
 from naoqi import ALProxy
 from naoqi import ALBroker
@@ -46,6 +46,8 @@ tts.setLanguage("English")
 
 
 ############################################# what if new action message
+message_to_tell = ""
+
 def onReceiveTarget(msg):
     global current_target
     action = str(msg.data)
@@ -61,7 +63,7 @@ def onReceiveSay(msg):
 
 def onReceivePoint(msg):
     global point_screen
-    # use the message if you want the robot to point a specific (x,y) of the screen
+    message_to_tell = "hmm... I choose "+ msg.data
     point_screen = True
 
 def onExit(msg):
@@ -75,7 +77,7 @@ if __name__=="__main__":
     rospy.init_node("nao_actions")
 
     sg.StiffnessOn(motionProxy)
-    sg.telling_arms_gesturs(motionProxy,tts,speed,"hello")
+    #sg.telling_arms_gesturs(motionProxy,tts,speed,"hello")
 
     listener = tf.TransformListener()
     listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(4.0))
@@ -90,7 +92,8 @@ if __name__=="__main__":
         rospy.Subscriber('exit_topic', String, onExit)
 
         if point_screen:
-            print("we need that movement")
+            time.sleep(1)
+            sg.pointing_object(motionProxy,tts,speed,message_to_tell )
             point_screen = False
 
         if have_to_talk:

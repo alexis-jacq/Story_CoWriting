@@ -43,9 +43,9 @@ def say(to_say):
 	msg.data = to_say
 	pub_robot_say.publish(msg)
 
-def point(button):
+def point(robot_choice):
 	msg = String()
-	msg.data = button
+	msg.data = robot_choice
 	pub_robot_point.publish(msg)
 
 def ending(test):
@@ -126,8 +126,6 @@ if __name__=="__main__":
 	look_at("child_head")
 	time.sleep(5)"""
 
-	
-	#item_test = ["Jack","Nosicaa","R1D1","Bender","pirate"]
 
 	while not received:
 		human_turn("main character is ...", sm.C_MCg)
@@ -141,7 +139,7 @@ if __name__=="__main__":
 
 	chosen = False
 	human_chosen("main character is ...", sm.C_MCg, choice)
-	rospy.sleep(1)
+	rospy.sleep(5)
 
 	human_predict("predict main character job is ...", sm.C_MCj_man)
 
@@ -154,12 +152,13 @@ if __name__=="__main__":
 	rospy.sleep(1)
 
 	robot_turn("main character drink is ...", sm.C_MCj_man)
-	rospy.sleep(2)
+	rospy.sleep(5)
 
 	robot_choice = robot.choose(last_human_choice, last_human_prediction, sm.C_MCj_man)
+	point(robot_choice)
+	rospy.sleep(1)
 
-	chosen = False
-	human_chosen("main character drink is ...", sm.C_MCj_man, choice)
+	robot_chosen("main character drink is ...", sm.C_MCj_man, robot_choice)
 	rospy.sleep(5)
 
 

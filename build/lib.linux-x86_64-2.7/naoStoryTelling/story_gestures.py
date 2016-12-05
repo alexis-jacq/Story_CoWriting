@@ -82,4 +82,21 @@ def telling_arms_gesturs(motionProxy,tts,speed,wordToSay):
 	motionProxy.setAngles("RHand", RHand, speed)
 	tts.say(wordToSay)
 
+def pointing_object(motionProxy,tts,speed,wordToSay):
+
+	RShoulderPitch = 0
+	RShoulderRoll  = 0
+	RElbowYaw  = 0
+	RElbowRoll  = np.random.uniform(0.2,0.5)#-1.5446 to -0.0349
+	RWristYaw  = 0
+	RHand = 0
+
+	motionProxy.setAngles("RShoulderPitch", RShoulderPitch, speed)
+	motionProxy.setAngles("RShoulderRoll", RShoulderRoll, speed)
+	motionProxy.setAngles("RElbowYaw", RElbowYaw, speed)
+	motionProxy.setAngles("RElbowRoll", RElbowRoll, speed)
+	motionProxy.setAngles("RWristYaw", RWristYaw, speed)
+	motionProxy.setAngles("RHand", RHand, speed)
+	tts.say(wordToSay)
+
 
