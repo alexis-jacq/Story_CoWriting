@@ -12,7 +12,7 @@ from geometry_msgs.msg import PointStamped
 from std_msgs.msg import String, Empty, Header
 from naoStoryTelling import story_gestures as sg
 from nextChoice import story_maker as sm
-from nextChoice.decision import decision_maker as dm
+from nextChoice.decision import *
 
 from naoqi import ALProxy
 from naoqi import ALBroker
@@ -28,10 +28,10 @@ pub_exit = rospy.Publisher('exit_topic', String, queue_size=1)
 # for interface:
 pub_human_turn = rospy.Publisher('human_turn_topic', String, queue_size=1)
 pub_human_chosen = rospy.Publisher('human_chosen_topic', String, queue_size=1)
-pub_human_predict = rospy.Publisher('human_predict_topic', String, queue_size=1)
+pub_human_predict = rospy.Publisher('human_predict_turn_topic', String, queue_size=1)
 pub_robot_turn = rospy.Publisher('robot_turn_topic', String, queue_size=1)
 pub_robot_chosen = rospy.Publisher('robot_chosen_topic', String, queue_size=1)
-########################################## action robot functions
+########################################## publishing
 
 def look_at(target):
 	msg = String()
@@ -53,12 +53,59 @@ def ending(test):
 	msg.data = ""
 	pub_exit.publish(msg)
 
+def robot_turn(label, items):
+	msg = String()
+	msg.data = label+",_,"+"-".join(items)
+	pub_robot_turn.publish(msg)
+
+def human_turn(label, items):
+	msg = String()
+	msg.data = label+",_,"+"-".join(items)
+	pub_human_turn.publish(msg)
+
+def human_predict(label, items):
+	msg = String()
+	msg.data = label+",_,"+"-".join(items)
+	pub_human_predict.publish(msg)
+
+def human_chosen(label, items, choice):
+	msg = String()
+	msg.data = label+","+choice+","+"-".join(items)
+	pub_human_chosen.publish(msg)
+
+def robot_chosen(label, items, choice):
+	msg = String()
+	msg.data = label+","+choice+","+"-".join(items)
+	pub_robot_chosen.publish(msg)
+
+######################################## reacting
+
+chosen = False
+received = False
+choice = ""
+
+def onNewChoice(msg):
+	global chosen
+	global choice
+	chosen = True
+	choice = msg.data
+
+def onReceived(msg):
+	global received
+	received = True
+
+
+
+sequence = [("main character is ...", sm.C_MCg), ()]
+
+robot = decision_maker("incoherant")
+
 
 if __name__=="__main__":
 
 	rospy.init_node("main_activity")
 
-	time.sleep(10)
+	"""time.sleep(10)
 	say("hello, my name is Nando.")
 	time.sleep(5)
 	say("do you want to write an amazing story with me ?")
@@ -66,7 +113,44 @@ if __name__=="__main__":
 	look_at("experimentator")
 	time.sleep(5)
 	look_at("child_head")
-	time.sleep(5)
+	time.sleep(5)"""
+
+	
+	item_test = ["Jack","Nosicaa","R1D1","Bender","pirate"]
+
+	while not received:
+		human_turn("main character is ...", item_test)
+		rospy.Subscriber('reception_topic', String, onReceived)
+		rospy.sleep(0.1)
+	received = False
+
+	while not chosen:
+		rospy.Subscriber('human_choice_topic', String, onNewChoice)
+		rospy.sleep(0.05)
+
+	chosen = False
+	human_chosen("main character is ...", item_test, choice)
+	rospy.sleep(1)
+
+	human_predict("main character job is ...", item_test)
+
+	while not chosen:
+		rospy.Subscriber('human_prediction_topic', String, onNewChoice)
+		rospy.sleep(0.05)
+
+	chosen = False
+	human_chosen("main character job is ...", item_test, choice)
+	rospy.sleep(1)
+
+	"""robot_turn("main character drink is ...", item_test)
+
+	robot_choice = robot.choose(last_human_choice,last_human_prediction,sm.C_BGj_woman)
+
+	chosen = False
+	human_chosen("main character job is ...", item_test, choice)
+	rospy.sleep(1)"""
+
+
 
 	ending("")
 

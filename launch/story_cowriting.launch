@@ -5,8 +5,8 @@
       <arg name="camera_device_arg" value="1" />
   </include>
 
-  <node pkg="story_cowriting" type="nao_actions.py" name="nao_actions">
-  </node>
+  <!--node pkg="story_cowriting" type="nao_actions.py" name="nao_actions"-->
+  <!--/node-->
   <node pkg="story_cowriting" type="interface.py" name="interface">
   </node>
   <node pkg="story_cowriting" type="main_activity.py" name="main_activity">

@@ -1,11 +1,21 @@
+#!/usr/bin/env python
+#coding: utf-8
+
 from Tkinter import *
 import ttk
 import time
 import rospy
+import thread
+
+from std_msgs.msg import String, Empty, Header
+
+################################################
+last_message = ""
 
 ################################################ ros publishers
 pub_human_choice = rospy.Publisher('human_choice_topic', String, queue_size=1)
 pub_human_prediction = rospy.Publisher('human_prediction_topic', String, queue_size=1)
+pub_reception = rospy.Publisher('reception_topic', String, queue_size=1)
 ################################################ ros events
 def read_msg(msg):
 	message = msg.data
@@ -14,28 +24,59 @@ def read_msg(msg):
 	return label, choice, items
 
 def robot_turn(msg):
-	label, _, items = read_msg(msg)
-	p1.robot(label, items)
-	p1.mainframe.tkraise()
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		label, _, items = read_msg(msg)
+		p1.robot(label, items)
+		p1.mainframe.tkraise()
 
 def human_turn(msg):
-	label, _, items = read_msg(msg)
-	p1.human(label, items)
-	p1.mainframe.tkraise()
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		label, _, items = read_msg(msg)
+		p1.human(label, items)
+		p1.mainframe.tkraise()
 
 def human_predict(msg):
-	label, _, items = read_msg(msg)
-	p1.human_predict(label, items)
-	p1.mainframe.tkraise()
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		label, _, items = read_msg(msg)
+		p1.human_predict(label, items)
+		p1.mainframe.tkraise()
 
 def have_chosen(msg):
-	label, choice, items = read_msg(msg)
-	p1.chosen(label, items, choice)
-	p1.mainframe.tkraise()
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		label, choice, items = read_msg(msg)
+		p1.chosen(label, items, choice)
+		p1.mainframe.tkraise()
 
 ################################################ window events
 def human_choice(choice):
-	print choice
+	msg = String()
+	msg.data = choice
+	pub_human_choice.publish(msg)
+
+def human_prediction(choice):
+	msg = String()
+	msg.data = choice
+	pub_human_prediction.publish(msg)
 
 def juge(emoji):
 	print emoji
@@ -51,7 +92,7 @@ class choice_button:
 class predict_button:
 	def __init__(self,choice,frame,row,col):
 		self.choice = choice
-		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_predict(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
+		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_prediction(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
 ################################################
 class page:
 
@@ -127,15 +168,30 @@ root = Tk()
 root.geometry("1000x1000")
 root.bind("<Configure>", configure)
 ################################################
-lol = PhotoImage(file="../share/lol.gif")
-good = PhotoImage(file="../share/up.gif")
-bad = PhotoImage(file="../share/down.gif")
-wtf = PhotoImage(file="../share/wtf.gif")
+lol = PhotoImage(file="/home/alexis/Desktop/share/lol.gif")
+good = PhotoImage(file="/home/alexis/Desktop/share/up.gif")
+bad = PhotoImage(file="/home/alexis/Desktop/share/down.gif")
+wtf = PhotoImage(file="/home/alexis/Desktop/share/wtf.gif")
 
-pirate = PhotoImage(file="../share/pirate.gif")
-gray = PhotoImage(file="../share/gray.gif")
-images = {"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate}
+pirate = PhotoImage(file="/home/alexis/Desktop/share/pirate.gif")
+gray = PhotoImage(file="/home/alexis/Desktop/share/gray.gif")
+images = {"pirate":pirate,"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate}
 items = ("Jack","Nosicaa","R1D1","Bender","Jack","Nosicaa")
+################################################
+def ros_loop(test):
+	while True:
+
+		rospy.Subscriber('human_turn_topic', String, human_turn)
+		rospy.Subscriber('human_chosen_topic', String, have_chosen)
+		rospy.Subscriber('human_predict_turn_topic', String, human_predict)
+		rospy.Subscriber('robot_turn_topic', String, robot_turn)
+		rospy.Subscriber('robot_chosen_topic', String, have_chosen)
+
+		rospy.sleep(0.1)
+	
+	rospy.spin()
+
+
 ################################################
 
 
@@ -143,13 +199,9 @@ p1 = page(root)
 
 if __name__=="__main__":
 
-	#rospy.init_node("interface")
+	rospy.init_node("interface")
 	p1.mainframe.tkraise()
-	root.mainloop()
 
-	while True:
-		rospy.Subscriber('human_turn_topic', String, human_turn)
-		rospy.Subscriber('human_chosen_topic', String, have_chosen)
-		rospy.Subscriber('human_predict_turn_topic', String, human_predict)
-		rospy.Subscriber('robot_turn_topic', String, robot_turn)
-		rospy.Subscriber('robot_chosen_topic', String, have_chosen)
+	thread.start_new_thread(ros_loop, ("",))
+
+	root.mainloop()
