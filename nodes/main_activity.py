@@ -116,22 +116,21 @@ if __name__=="__main__":
 
 	rospy.init_node("main_activity")
 
-	"""time.sleep(10)
+	rospy.sleep(5)
 	say("hello, my name is Nando.")
-	time.sleep(5)
+	rospy.sleep(5)
 	say("do you want to write an amazing story with me ?")
-	time.sleep(10)
-	look_at("experimentator")
-	time.sleep(5)
+	rospy.sleep(5)
 	look_at("child_head")
-	time.sleep(5)"""
+	rospy.sleep(1)
+
+	say("OK ! first, we need a main character !")
+	rospy.sleep(5)
+	say("What do you prefere, a man, a woman or a robot ?")
+	rospy.sleep(1)
 
 
-	while not received:
-		human_turn("main character is ...", sm.C_MCg)
-		rospy.Subscriber('reception_topic', String, onReceived)
-		rospy.sleep(0.1)
-	received = False
+	human_turn("main character is ...", sm.C_MCg)
 
 	while not chosen:
 		rospy.Subscriber('human_choice_topic', String, onNewChoice)
