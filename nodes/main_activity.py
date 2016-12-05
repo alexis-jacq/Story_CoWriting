@@ -79,7 +79,8 @@ def robot_chosen(label, items, choice):
 	pub_robot_chosen.publish(msg)
 
 ######################################## reacting
-
+last_human_prediction = ""
+last_human_choice = ""
 chosen = False
 received = False
 choice = ""
@@ -87,6 +88,16 @@ choice = ""
 def onNewChoice(msg):
 	global chosen
 	global choice
+	global last_human_choice
+	last_human_choice = msg.data
+	chosen = True
+	choice = msg.data
+
+def onNewPrediction(msg):
+	global chosen
+	global choice
+	global last_human_prediction
+	last_human_prediction = msg.data
 	chosen = True
 	choice = msg.data
 
@@ -116,10 +127,10 @@ if __name__=="__main__":
 	time.sleep(5)"""
 
 	
-	item_test = ["Jack","Nosicaa","R1D1","Bender","pirate"]
+	#item_test = ["Jack","Nosicaa","R1D1","Bender","pirate"]
 
 	while not received:
-		human_turn("main character is ...", item_test)
+		human_turn("main character is ...", sm.C_MCg)
 		rospy.Subscriber('reception_topic', String, onReceived)
 		rospy.sleep(0.1)
 	received = False
@@ -129,26 +140,27 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("main character is ...", item_test, choice)
+	human_chosen("main character is ...", sm.C_MCg, choice)
 	rospy.sleep(1)
 
-	human_predict("main character job is ...", item_test)
+	human_predict("predict main character job is ...", sm.C_MCj_man)
 
 	while not chosen:
-		rospy.Subscriber('human_prediction_topic', String, onNewChoice)
+		rospy.Subscriber('human_prediction_topic', String, onNewPrediction)
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("main character job is ...", item_test, choice)
+	human_chosen("predict main character job is ...", sm.C_MCj_man, choice)
 	rospy.sleep(1)
 
-	"""robot_turn("main character drink is ...", item_test)
+	robot_turn("main character drink is ...", sm.C_MCj_man)
+	rospy.sleep(2)
 
-	robot_choice = robot.choose(last_human_choice,last_human_prediction,sm.C_BGj_woman)
+	robot_choice = robot.choose(last_human_choice, last_human_prediction, sm.C_MCj_man)
 
 	chosen = False
-	human_chosen("main character job is ...", item_test, choice)
-	rospy.sleep(1)"""
+	human_chosen("main character drink is ...", sm.C_MCj_man, choice)
+	rospy.sleep(5)
 
 
 

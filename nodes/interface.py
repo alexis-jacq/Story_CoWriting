@@ -175,8 +175,10 @@ wtf = PhotoImage(file="/home/alexis/Desktop/share/wtf.gif")
 
 pirate = PhotoImage(file="/home/alexis/Desktop/share/pirate.gif")
 gray = PhotoImage(file="/home/alexis/Desktop/share/gray.gif")
-images = {"pirate":pirate,"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate}
-items = ("Jack","Nosicaa","R1D1","Bender","Jack","Nosicaa")
+################################################
+
+images = {"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate,"man":pirate, "woman":pirate, "robot":pirate,"pirate":pirate, "detective":pirate,"knight":pirate,"space pioneer":pirate, "lumberjack":pirate, "prince":pirate, "wizard":pirate, "princess":pirate, "fairy":pirate,"robot pirate":pirate, "robot detective":pirate,"robot knight":pirate,"robot space pioneer":pirate, "robot lumberjack":pirate, "robot prince":pirate, "robot princess":pirate, "robot fairy":pirate, "robot wizard":pirate,"tea":pirate, "rhum":pirate, "lazer juice":pirate, "wine":pirate, "coffee":pirate, "bear":pirate, "milk":pirate,"light sabre":pirate, "sabre":pirate, "sword":pirate, "lazergun":pirate, "gun":pirate,"spoon":pirate,"planet":pirate, "forest":pirate, "kingdom":pirate, "island":pirate, "village":pirate,"ghost":pirate, "alien":pirate, "monkey":pirate, "fisherman":pirate, "robot":pirate,"ghost robot":pirate, "alien robot":pirate, "robot monkey":pirate, "fisherman robot":pirate,"waltz":pirate,"tango":pirate,"polka":pirate,"salsa":pirate,"rock":pirate,"Time travelor":pirate, "scientist":pirate, "warlock":pirate, "emperor":pirate, "general":pirate, "witch":pirate,"robot Time travelor":pirate, "robot scientist":pirate, "robot warlock":pirate, "robot emperor":pirate, "robot general":pirate, "robot witch":pirate,"trip":pirate, "poke":pirate, "bad-bmouth":pirate, "trap":pirate, "rob":pirate, "blackmail":pirate, "terrorise":pirate,"manor":pirate, "spacecraft":pirate, "laboratory":pirate, "castle":pirate,"scotch":pirate,"Wiskhy":pirate,"rhum":pirate,"wine":pirate, "milk":pirate,"blood":pirate, "robot blood":pirate}
+
 ################################################
 def ros_loop(test):
 	while True:
