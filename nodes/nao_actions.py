@@ -28,6 +28,7 @@ stay = False
 stop = False
 point_screen = False
 have_to_talk = False
+have_to_talk_long = False
 
 ############################################# init proxies
 myBroker = ALBroker("myBroker", #
@@ -47,6 +48,7 @@ tts.setLanguage("English")
 
 ############################################# what if new action message
 message_to_tell = ""
+long_message_to_tell = ""
 
 def onReceiveTarget(msg):
     global current_target
@@ -61,9 +63,16 @@ def onReceiveSay(msg):
     message_to_tell = str(msg.data)
     have_to_talk = True
 
+def onReceiveSayLong(msg):
+    global long_message_to_tell
+    global have_to_talk_long
+    message = str(msg.data)
+    long_message_to_tell = message.split(".")
+    have_to_talk_long = True
+
 def onReceivePoint(msg):
     global point_screen
-    message_to_tell = "hmm... I choose "+ msg.data
+    message_to_tell = "So I'm choosing "+ msg.data
     point_screen = True
 
 def onExit(msg):
@@ -88,6 +97,7 @@ if __name__=="__main__":
 
         rospy.Subscriber('robot_target_topic', String, onReceiveTarget)
         rospy.Subscriber('robot_say_topic', String, onReceiveSay)
+        rospy.Subscriber('robot_say_long_topic', String, onReceiveSayLong)
         rospy.Subscriber('robot_point_topic', String, onReceivePoint)
         rospy.Subscriber('exit_topic', String, onExit)
 
@@ -97,9 +107,23 @@ if __name__=="__main__":
             point_screen = False
 
         if have_to_talk:
+            tracker.stopTracker()
             time.sleep(1)
             sg.telling_arms_gesturs(motionProxy,tts,speed,message_to_tell)
             have_to_talk = False
+
+        if have_to_talk_long:
+                # Add target to track.
+            targetName = "Face"
+            faceWidth = 1#faceSize
+            tracker.registerTarget(targetName, faceWidth)
+            # Then, start tracker.
+            tracker.track(targetName)
+            for message in long_message_to_tell:
+                time.sleep(1)
+                sg.telling_arms_gesturs(motionProxy,tts,speed,message)
+            have_to_talk_long = False
+            tracker.stopTracker()
 
         if "base_footprint" in test and "robot_head" in test and "face_0" in test:
             rospy.loginfo("frames found! (child head condition")
@@ -157,7 +181,7 @@ if __name__=="__main__":
                     ok = True
     
 
-        rospy.sleep(0.1)
+        rospy.sleep(0.2)
 
     sg.StiffnessOff(motionProxy)
 

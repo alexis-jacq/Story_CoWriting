@@ -19,9 +19,9 @@ pub_reception = rospy.Publisher('reception_topic', String, queue_size=1)
 ################################################ ros events
 def read_msg(msg):
 	message = msg.data
-	label, choice, rest = message.split(",")
+	label, choice, rest, name = message.split(",")
 	items = rest.split("-")
-	return label, choice, items
+	return label, choice, items, name
 
 def robot_turn(msg):
 	global last_message
@@ -30,8 +30,8 @@ def robot_turn(msg):
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		label, _, items = read_msg(msg)
-		p1.robot(label, items)
+		label, _, items, name = read_msg(msg)
+		p1.robot(label, items, name)
 		p1.mainframe.tkraise()
 
 def human_turn(msg):
@@ -41,8 +41,8 @@ def human_turn(msg):
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		label, _, items = read_msg(msg)
-		p1.human(label, items)
+		label, _, items, name = read_msg(msg)
+		p1.human(label, items, name)
 		p1.mainframe.tkraise()
 
 def human_predict(msg):
@@ -52,8 +52,8 @@ def human_predict(msg):
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		label, _, items = read_msg(msg)
-		p1.human_predict(label, items)
+		label, _, items, name = read_msg(msg)
+		p1.human_predict(label, items, name)
 		p1.mainframe.tkraise()
 
 def have_chosen(msg):
@@ -63,23 +63,25 @@ def have_chosen(msg):
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		label, choice, items = read_msg(msg)
-		p1.chosen(label, items, choice)
+		label, choice, items, name = read_msg(msg)
+		p1.chosen(label, items, choice,name)
 		p1.mainframe.tkraise()
 
 ################################################ window events
 def human_choice(choice):
+	rospy.loginfo("human choice "+choice)
 	msg = String()
 	msg.data = choice
 	pub_human_choice.publish(msg)
 
 def human_prediction(choice):
+	rospy.loginfo("human predict "+choice)
 	msg = String()
 	msg.data = choice
 	pub_human_prediction.publish(msg)
 
 def juge(emoji):
-	print emoji
+	rospy.loginfo("human juge "+emoji)
 
 def configure(event):
 	p1.change_padding(root.winfo_width(),root.winfo_height())
@@ -89,21 +91,32 @@ class choice_button:
 		self.choice = choice
 		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_choice(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
 
+class choice_button_name:
+	def __init__(self,choice,frame,row,col):
+		self.choice = choice
+		self.button = ttk.Button(frame, text=self.choice,command=lambda:human_choice(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
+
 class predict_button:
 	def __init__(self,choice,frame,row,col):
 		self.choice = choice
 		self.button = ttk.Button(frame, text=self.choice, image=images[self.choice], compound="top",command=lambda:human_prediction(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
+
+class predict_button_name:
+	def __init__(self,choice,frame,row,col):
+		self.choice = choice
+		self.button = ttk.Button(frame, text=self.choice,command=lambda:human_prediction(self.choice)).grid(column=col, row=row, sticky=N+S+E+W)
+
 ################################################
 class page:
 
 	def __init__(self,root):
 		self.mainframe = ttk.Frame(root)
-		self.mainframe.grid(column=6, row=4, sticky=(N, W, E, S))
-		self.mainframe.rowconfigure(4, weight=1)
+		self.mainframe.grid(column=5, row=4, sticky=(N, W, E, S))
+		#self.mainframe.rowconfigure(4, weight=1)
 
 
 	def change_padding(self,x,y):
-		for child in self.mainframe.winfo_children(): child.grid_configure(padx=max(0,(x-900)/10.), pady=y/40.)
+		for child in self.mainframe.winfo_children(): child.grid_configure(padx=max(0,(x-900)/30.), pady=y/40.)
 
 	def set_title(self, title):
 		ttk.Label(self.mainframe, text=title).grid(column=2, row=0, sticky=(W,E))
@@ -115,51 +128,74 @@ class page:
 		ttk.Button(self.mainframe, text="bad", image=bad, compound="top", command=lambda:juge("bad")).grid(column=4, row=4, sticky=N+S+E+W)
 
 
-	def human(self, label, items):	
+	def human(self, label, items, name):	
+		for child in self.mainframe.winfo_children():
+			child.destroy()
 		self.add_emoji()
 		self.set_title(label)
 
 		ind = 0
 		for item in items:
-			col = ind%4 + 1
-			row = ind/4 + 1
-			button = choice_button(item, self.mainframe,row,col)
-			ind+=1
-
-	def human_predict(self, label, items):	
-		self.add_emoji()
-		self.set_title(label)
-
-		ind = 0
-		for item in items:
-			col = ind%4 + 1
-			row = ind/4 + 1
-			button = predict_button(item, self.mainframe,row,col)
-			ind+=1
-
-	def robot(self, label,items):
-		self.add_emoji()
-		self.set_title(label)
-
-		ind = 0
-		for item in items:
-			col = ind%4 + 1
-			row = ind/4 + 1
-			ttk.Button(self.mainframe, text=item, image=images[item], compound="top").grid(column=col, row=row, sticky=N+S+E+W)
-			ind+=1
-
-	def chosen(self, label, items, choice):
-		self.add_emoji()
-		self.set_title(label)
-
-		ind = 0
-		for item in items:
-			col = ind%4 + 1
-			row = ind/4 + 1
-			if item==choice:
-				ttk.Button(self.mainframe, text=item, image=images[item], compound="top").grid(column=col, row=row, sticky=N+S+E+W)
+			col = ind%5 + 1
+			row = ind/5 + 1
+			if name=="true":
+				button = choice_button_name(item, self.mainframe,row,col)
 			else:
-				ttk.Button(self.mainframe, text="", image=gray, compound="top").grid(column=col, row=row, sticky=N+S+E+W)
+				button = choice_button(item, self.mainframe,row,col)
+			ind+=1
+
+	def human_predict(self, label, items, name):
+		for child in self.mainframe.winfo_children():
+			child.destroy()	
+		self.add_emoji()
+		self.set_title(label)
+
+		ind = 0
+		for item in items:
+			col = ind%5 + 1
+			row = ind/5 + 1
+			if name=="true":
+				button = predict_button_name(item, self.mainframe,row,col)
+			else:
+				button = predict_button(item, self.mainframe,row,col)
+			ind+=1
+
+	def robot(self, label,items, name):
+		for child in self.mainframe.winfo_children():
+			child.destroy()	
+		self.add_emoji()
+		self.set_title(label)
+
+		ind = 0
+		for item in items:
+			col = ind%5 + 1
+			row = ind/5 + 1
+			if name=="true":
+				ttk.Button(self.mainframe, text=item).grid(column=col, row=row, sticky=N+S+E+W)
+			else:
+				ttk.Button(self.mainframe, text=item, image=images[item], compound="top").grid(column=col, row=row, sticky=N+S+E+W)
+			ind+=1
+
+	def chosen(self, label, items, choice, name):
+		#for child in self.mainframe.winfo_children():
+		#	child.destroy()	
+		self.add_emoji()
+		self.set_title(label)
+
+		ind = 0
+		for item in items:
+			col = ind%5 + 1
+			row = ind/5 + 1
+			if name=="true":
+				if item==choice:
+					ttk.Button(self.mainframe, text=item).grid(column=col, row=row, sticky=N+S+E+W)
+				else:
+					ttk.Button(self.mainframe, text="").grid(column=col, row=row, sticky=N+S+E+W)
+			else:
+				if item==choice:
+					ttk.Button(self.mainframe, text=item, image=images[item], compound="top").grid(column=col, row=row, sticky=N+S+E+W)
+				else:
+					ttk.Button(self.mainframe, text="", image=gray, compound="top").grid(column=col, row=row, sticky=N+S+E+W)
 			ind+=1
 
 
@@ -177,7 +213,11 @@ pirate = PhotoImage(file="/home/alexis/Desktop/share/pirate.gif")
 gray = PhotoImage(file="/home/alexis/Desktop/share/gray.gif")
 ################################################
 
-images = {"Jack":pirate,"Nosicaa":pirate,"R1D1":pirate,"Bender":pirate,"man":pirate, "woman":pirate, "robot":pirate,"pirate":pirate, "detective":pirate,"knight":pirate,"space pioneer":pirate, "lumberjack":pirate, "prince":pirate, "wizard":pirate, "princess":pirate, "fairy":pirate,"robot pirate":pirate, "robot detective":pirate,"robot knight":pirate,"robot space pioneer":pirate, "robot lumberjack":pirate, "robot prince":pirate, "robot princess":pirate, "robot fairy":pirate, "robot wizard":pirate,"tea":pirate, "rhum":pirate, "lazer juice":pirate, "wine":pirate, "coffee":pirate, "bear":pirate, "milk":pirate,"light sabre":pirate, "sabre":pirate, "sword":pirate, "lazergun":pirate, "gun":pirate,"spoon":pirate,"planet":pirate, "forest":pirate, "kingdom":pirate, "island":pirate, "village":pirate,"ghost":pirate, "alien":pirate, "monkey":pirate, "fisherman":pirate, "robot":pirate,"ghost robot":pirate, "alien robot":pirate, "robot monkey":pirate, "fisherman robot":pirate,"waltz":pirate,"tango":pirate,"polka":pirate,"salsa":pirate,"rock":pirate,"Time travelor":pirate, "scientist":pirate, "warlock":pirate, "emperor":pirate, "general":pirate, "witch":pirate,"robot Time travelor":pirate, "robot scientist":pirate, "robot warlock":pirate, "robot emperor":pirate, "robot general":pirate, "robot witch":pirate,"trip":pirate, "poke":pirate, "bad-bmouth":pirate, "trap":pirate, "rob":pirate, "blackmail":pirate, "terrorise":pirate,"manor":pirate, "spacecraft":pirate, "laboratory":pirate, "castle":pirate,"scotch":pirate,"Wiskhy":pirate,"rhum":pirate,"wine":pirate, "milk":pirate,"blood":pirate, "robot blood":pirate}
+items = {"spam","man", "woman", "robot","pirate", "detective","knight","space pioneer", "lumberjack", "prince", "wizard", "princess", "fairy","robot pirate", "robot detective","robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","tea", "rhum", "lazer juice", "wine", "coffee", "beer", "milk","light saber", "saber", "sword", "lazer gun", "gun","spoon","planet", "forest", "kingdom", "island", "village","ghost", "alien", "monkey", "fisherman", "robot","ghost robot", "alien robot", "robot monkey", "fisherman robot","waltz","tango","polka","salsa","rock","time travelor", "scientist", "warlock", "emperor", "general", "witch","robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch","trip", "poke", "badmouth", "trap", "rob", "blackmail", "terrorise","manor", "spacecraft", "laboratory", "castle","scotch","whisky","rhum","wine", "milk","blood", "robot blood"}
+images = {}
+
+for item in items:
+	images[item] = PhotoImage(file="/home/alexis/Desktop/share/"+item.replace(" ", "_")+".gif")
 
 ################################################
 def ros_loop(test):

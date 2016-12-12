@@ -5,10 +5,10 @@ import operator
 import story_maker as sm
 
 # coherences
-anyway = ["man", "woman", "detective", "wine", "coffee","waltz","tango","polka","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
-noway = ["lumberjack","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth"]
-sf = ["robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light sabre","gun","lazergun","planet","alien", "alien robot", "robot monkey","Time travelor","robot Time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
-pirate = ["pirate","rhum","sabre","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
+anyway = ["Baltor","Psychlo","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
+noway = ["robot blood","MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
+sf = ["spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light sabre","gun","lazergun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
+pirate = ["MRCK","DB9","C3P8","R2D3","Metalshin2047","Hal","pirate","rhum","sabre","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
 midage = ["knight","prince", "wizard", "princess", "fairy","tea","milk", "sword", "forest", "kingdom", "island", "village","ghost", "monkey", "dragon","witch","warlock","manor", "laboratory", "castle","island"]
 contextes = {"sf":sf,"pirate":pirate,"midage":midage}
 

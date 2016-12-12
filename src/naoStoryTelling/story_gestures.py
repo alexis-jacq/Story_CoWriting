@@ -43,7 +43,7 @@ def trackFace(motionProxy,tracker):
 	tracker.track(targetName)
 
 def telling_arms_gesturs(motionProxy,tts,speed,wordToSay):
-	LShoulderPitch = np.random.uniform(-0.5,0.7)#-2.0857 to 2.0857
+	LShoulderPitch = np.random.uniform(-0.5,0.1)#-2.0857 to 2.0857
 	LShoulderRoll  = np.random.uniform(0.2,0.8)#-0.3142 to 1.3265
 	LElbowYaw  = np.random.uniform(-1,1)#-2.0857 to 2.0857
 	LElbowRoll  = np.random.uniform(-1,-0.2)#-1.5446 to -0.0349
@@ -51,7 +51,7 @@ def telling_arms_gesturs(motionProxy,tts,speed,wordToSay):
 	LHand = np.random.choice([0,1])
 
 	# assymetric
-	RShoulderPitch = np.random.uniform(-0.5,0.7)#-2.0857 to 2.0857
+	RShoulderPitch = np.random.uniform(-0.5,0.1)#-2.0857 to 2.0857
 	RShoulderRoll  = np.random.uniform(-0.8,0.2)#-0.3142 to 1.3265
 	RElbowYaw  = np.random.uniform(-1,1)#-2.0857 to 2.0857
 	RElbowRoll  = np.random.uniform(0.2,1)#-1.5446 to -0.0349
@@ -97,6 +97,7 @@ def pointing_object(motionProxy,tts,speed,wordToSay):
 	motionProxy.setAngles("RElbowRoll", RElbowRoll, speed)
 	motionProxy.setAngles("RWristYaw", RWristYaw, speed)
 	motionProxy.setAngles("RHand", RHand, speed)
+	tts.setParameter("speed", 100)
 	tts.say(wordToSay)
 
 

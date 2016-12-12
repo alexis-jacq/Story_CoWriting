@@ -1,19 +1,19 @@
 
 # choices
 
-C_MC = []
+C_MC = ["Jack","Bianca","C3P8","Dolores","Deckard","Luc","Nosicaa","Hal","R2D3", "Metalshin2047"]
 C_MCg = ["man", "woman", "robot"]
 C_MCj_man = ["pirate", "detective","knight","space pioneer", "lumberjack", "prince", "wizard"]
 C_MCj_woman = ["pirate", "detective","knight","space pioneer", "lumberjack", "princess", "fairy"]
 C_MCj_robot = ["robot pirate", "robot detective","robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard"]
 
-C_MCd = ["tea", "rhum", "lazer juice", "wine", "coffee", "bear", "milk"]
+C_MCd = ["tea", "rhum", "lazer juice", "wine", "coffee", "beer", "milk"]
 
-C_MCw = ["light sabre", "sabre", "sword", "lazergun", "gun","spoon"]
+C_MCw = ["light saber", "saber", "sword", "lazer gun", "gun","spoon"]
 
 C_P = ["planet", "forest", "kingdom", "island", "village"]
 
-C_SC = []
+C_SC = ["Daxter","Pedro","Lisa","DB9","Moulinex", "MRCK", "36Flip"]
 C_SCg = ["man", "woman","robot"]
 C_SCs_human= ["ghost", "alien", "monkey", "fisherman", "robot"]
 C_SCs_robot= ["ghost robot", "alien robot", "robot monkey", "fisherman robot"]
@@ -22,118 +22,160 @@ C_SC_dance = ["waltz","tango","polka","salsa","rock"]
 #C_Pp = add_s(C_SCs)
 C_Pp = C_SCs_human
 
-C_BG = []
+C_BG = ["Baltor","MarineLePen", "Psychlo", "Neurodark", "Turbomecanoid"]
 C_BGg = ["man", "woman","robot"]
-C_BGj_man = ["Time travelor", "scientist", "warlock", "emperor", "general"]
-C_BGj_woman = ["Time travelor", "scientist", "emperor", "general", "witch"]
-C_BGj_robot = ["robot Time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch"]
+C_BGj_man = ["time travelor", "scientist", "warlock", "emperor", "general"]
+C_BGj_woman = ["time travelor", "scientist", "emperor", "general", "witch"]
+C_BGj_robot = ["robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch"]
 
 C_BGd = C_Pp
-C_Ba = ["trip", "poke", "bad-bmouth", "trap", "rob", "blackmail", "terrorise"]
+C_Ba = ["trip", "poke", "badmouth", "trap", "rob", "blackmail", "terrorise", "spam"]
 
 C_BGp = ["manor", "spacecraft", "laboratory", "castle"]
-C_BGd = ["scotch","Wiskhy","rhum","wine", "milk","blood", "robot blood"]
+C_BGdrink = ["scotch","whisky","rhum","wine", "milk","blood", "robot blood"]
 
 
 
-# Default values
-
-MC = "Jack" # main char. name (child)
-MCg = "man" # main char gender (child)
-MCj = "pirate" # main char. job (robot)
-MCd = "tea" # main char. favorite drink (robot)
-MCw = "light sabre" # main ch weapon (child)
-
-P = "Planet" # story place (child)
-Pp = "ghosts" # place brave people (robot)
-
-SC = "Baxter" # second character name (robot)
-SCg = "robot" # second character species (child)
-SCs = "robot monkey"
-SC_dance = "waltz" # (robot)
-
-BG = "Albatar" # Bad guy (robot)
-BGg = "man"
-BGj = "time travelor" # bad guy job (child)
-BGd = "alien" # bad guy dogs (robot)
-BGa = "bad-mouth" # nefast action perfomed by bad guy's dogs (child)
-BGp = "manor" # bad guy place (child)
-BGd = "rum" # bad guy drink (robot)
-
-# dependencies
-
-C_MC_vehicule = {"pirate":"boat", "detective":"car","knight":"horse","space pioneer":"spaceship", "lumberjack":"truck", "princess":"unicorn", "witch":"broom", "fairy":"dragonfly"}
-C_MC_vehicule_place = {"pirate":"port", "detective":"parking","knight":"stable","space pioneer":"space port", "lumberjack":"warhouse", "princess":"rainbow", "witch":"cupboard", "fairy":"stream"}
-C_MC_transport = {"pirate":"sailed", "detective":"drove","knight":"rode","space pioneer":"sailed", "lumberjack":"drove", "princess":"rode", "witch":"flyed", "fairy":"rode"}
-C_MCd_glass = {"tea":"cup", "rhum":"glass", "lazer juice":"glass", "wine":"glass", "coffee":"cup", "beer":"pint", "milk":"glass"}
-C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "wizard":"Master", "emperor":"sir", "general":"general", "witch":""}
-C_Ba_part = {"trip":" up", "poke":"", "bad-mouth":"", "prod":"", "rob":"", "blackmail":"", "terrorise":""}
-C_Ba_target = {"trip":" walker", "poke":"walker", "bad-mouth":Pp, "prod":"walker", "rob":"walker", "blackmail":Pp, "trap":"walker"}
-C_Ba_result = {"trip":"trip", "poke":"poke", "bad-mouth":"critic", "rob":"rob", "blackmail":"blackmail", "trap":"trap"}
-C_BG_tool = {"time travelor":"computer", "scientist":"computer", "wizard":"spell", "emperor":"computer", "general":"computer","witch":"spell"}
-
-# Dependent values
-
-MC_vehicule = C_MC_vehicule[MCj]
-MC_vehicule_place = C_MC_vehicule_place[MCj]
-MC_transport = C_MC_transport[MCj]
-MCd_glass = C_MCd_glass[MCd]
-BG_title = C_BG_title[BGj]
-BGt = C_BG_tool[BGj]
-BGa_part = C_Ba_part[BGa]
-BGa_result = C_Ba_result[BGa]
-BGa_target = C_Ba_target[BGa]
-
-phrase1 = "."
-if BGa in ["trip","trap"]:
-	phrase1 = " as soon as they were trying to walk: ''No more "+Pp+" dare to have a walk outside since every ten meters, an "+BGd+" leg arises for a "+BGa_result+""+BGa_part+" and then the walking "+Pp+" fall down, nose on the floor''."
-if BGa in ["poke"]:
-	phrase1 = " as soon as they were going outside: ''No more "+Pp+" dare to have a walk outside since every ten meters, an "+BGd+" hand arises for a "+BGa_result+""+BGa_part+"."
-if BGa in ["robe"]:
-	phrase1 = " as soon as they were not paying attention: ''No more "+Pp+" dare to have a walk outside since every ten meters, an "+BGd+" hand arises and "+BGa+" everything they have in their pokets."
-if BGa in ["bad-mouth"]:
-	phrase1 = ": ''No more "+Pp+" dare to have a walk outside since every ten meters, a team of "+BGd+" arises and launches hundreds of "+BGa_result+"s."
-if BGa in ["blackmail"]:
-	phrase1 = ": ''No more "+Pp+" dare to have a walk outside since every ten meters, a team of "+BGd+" arises and finds a way to "+BGa+" the poor passing "+Pp+"."
 
 
-MC_ppos = "its"
-MC_pper_s = "it"
-MC_pper_o = "it"
-if MCg=="man":
-	MC_ppos = "his"
-	MC_pper_s = "he"
-	MC_pper_o = "him"
-if MCg=="woman":
-	MC_ppos = "her"
-	MC_pper_s = "she"
-	MC_pper_o = "her"
+class story:
+	def __init__(self):
+		# Default values
 
-SC_ppos = "its"
-SC_pper_s = "it"
-SC_pper_o = "it"
-if SCg=="man":
-	SC_ppos = "his"
-	SC_pper_s = "he"
-	SC_pper_o = "him"
-if SCg=="woman":
-	SC_ppos = "her"
-	MC_pper_s = "she"
-	MC_pper_o = "her"
+		self.MC = "Jack" # main char. name (child)
+		self.MCg = "man" # main char gender (child)
+		self.MCj = "pirate" # main char. job (robot)
+		self.MCd = "tea" # main char. favorite drink (robot)
+		self.MCw = "light saber" # main ch weapon (child)
 
-BG_ppos = "its"
-BG_pper_s = "it"
-BG_pper_o = "it"
-if BGg=="man":
-	BG_ppos = "his"
-	BG_pper_s = "he"
-	BG_pper_o = "him"
-if BGg=="woman":
-	BG_ppos = "her"
-	BG_pper_s = "she"
-	BG_pper_o = "her"
+		self.C_MCj = C_MCj_robot
+		self.C_SCs = C_SCs_robot
+		self.C_BGj = C_BGj_robot
 
-if __name__=="__main__":
+		self.P = "Planet" # story place (child)
+		self.Pp = "ghost" # place brave people (robot)
 
-	story = "Once upon a time, on a "+P+" far away populated by "+Pp+"s"+", was living a wild "+MCj+" named "+MC+". "+MC+", subtle amateur of "+MCd+", was tall and thin and mastered the fight to the "+MCw+". But in these peacful times, no works were requiring a "+MCj+"'s skills. while "+MC_pper_s+" was dreaming of adventur, the brave "+Pp+"s"+" of the "+P+" were borring "+MC_pper_o+". That's when, a morning, a "+SCs+" named "+SC+" cam to meet "+MC_pper_o+". "+SC+" was not so tall, more or less creepy but, however, elegant. "+SC_pper_s+" seemed to be affraid but "+SC_pper_s+" was successfully keeping "+SC_ppos+" calm. "+MC+" suggested a "+MCd_glass+" of "+MCd+". "+SC+" explained that a crazy "+BGj+", the maleficent "+BG_title+" "+BG+", was sending hordes of "+BGd+"s"+" to "+BGa+" everyone"+BGa_part+phrase1+" ''That's enough! said "+MC+". I'm on the way to stop this ignoble "+BG_title+" "+BG+" and to make "+BG_pper_o+" pay "+BG_ppos+" offences! '' Thereby "+MC+" started "+MC_ppos+" quest of the terrible "+BG_title+" "+BG+"'s "+BGp+". After walking up to the "+MC_vehicule_place+" and having suffered of twenty "+BGd+" "+BGa_result+"s"+BGa_part+", "+MC_pper_s+" reached "+MC_ppos+" "+MC_vehicule+". Then "+MC_pper_s+" "+MC_transport+" seven days and finally arrived at the entrance of the dark house. The door was wide open... "+MC+" entered and, as a surprise, "+MC_pper_s+" found the "+BG_title+" in a sad look, wallowing in "+BG_ppos+" misery in front of a bottle of "+BGd+". After serving a glass for himself, "+MC+" asked what misfortune led the "+BG_title+" into such a state. Ah! exclamed the "+BG_title+" Those "+BGd+"... I did not send them. That was my "+BGt+". I just aimed to provide it with a bit more autonomy but it came to far and I lost control. Now it's sending hordes of "+BGd+"s"+" everywhere in order to "+BGa+""+BGa_part+" any single "+BGa_target+" of this "+P+". ''How to stop this "+BGt+"? '' asked "+MC+". ''There are no ways '', answered the "+BGj+". ''I tried everithing ''. But, while "+MC+" and the "+BGj+" were talking, "+SC+" was approaching the unchained "+BGt+". As if "+SC_pper_s+" was bewitched, "+SC_pper_s+" was slowly walking without fear, staring at the "+BGt+". Out of the blue, a "+SC_dance+" melody filled the room. "+SC+" gave a hand and asked for a dance. Shyly, the "+BGt+" accepted and they danced the most beautifull "+SC_dance+" ever danced by a "+BGt+" and a "+SCs+". The "+BGt+" stopped its eerie program and "+BGd+"s"+" returned from where they came. On the "+P+", everyone started dancing. Then "+MC+" went back home, served to "+MC_pper_o+"self a "+MCd_glass+" of "+MCd+" which "+MC_pper_s+" drunk down. ''Damn it! '' "+MC_pper_s+" said, subjugated. ''What a story! '' "
-	print story
+		self.SC = "Baxter" # second character name (robot)
+		self.SCg = "robot" # second character species (child)
+		self.SCs = "robot monkey"
+		self.SC_dance = "waltz" # (robot)
+
+		self.BG = "Albatar" # Bad guy (robot)
+		self.BGg = "robot"
+		self.BGj = "time travelor" # bad guy job (child)
+		self.BGd = "alien" # bad guy dogs (robot)
+		self.BGa = "badmouth" # nefast action perfomed by bad guy's dogs (child)
+		self.BGp = "manor" # bad guy place (child)
+		self.BGdrink = "rum" # bad guy drink (robot)
+
+		# dependencies
+
+		self.C_MC_vehicule = {"pirate":"boat", "detective":"car","knight":"horse","space pioneer":"spaceship", "lumberjack":"truck","prince":"horse", "princess":"unicorn", "witch":"broom","wizard":"broom", "fairy":"dragonfly"}
+		self.C_MC_vehicule_place = {"pirate":"port", "detective":"parking","knight":"stable","prince":"stable","space pioneer":"space port", "lumberjack":"warhouse", "princess":"rainbow", "witch":"cupboard","wizard":"cupboard", "fairy":"stream"}
+		self.C_MC_transport = {"pirate":"sailed", "detective":"drove","knight":"rode","prince":"rode","space pioneer":"sailed", "lumberjack":"drove", "princess":"rode", "witch":"flyed","wizard":"flyed", "fairy":"rode"}
+		self.C_MCd_glass = {"tea":"cup", "rhum":"glass", "lazer juice":"glass", "wine":"glass", "coffee":"cup", "beer":"pint", "milk":"glass"}
+		self.C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "warlock":"Master", "emperor":"sir", "general":"general", "witch":""}
+		self.C_Ba_part = {"trip":" up", "poke":"", "badmouth":"", "prod":"", "rob":"", "blackmail":"", "terrorise":""}
+		self.C_Ba_target = {"trip":" walker", "poke":"walker", "badmouth":self.Pp, "prod":"walker", "rob":"walker", "blackmail":self.Pp, "trap":"walker"}
+		self.C_Ba_result = {"trip":"trip", "poke":"poke", "badmouth":"critic", "rob":"rob", "blackmail":"blackmail", "trap":"trap"}
+		self.C_BG_tool = {"time travelor":"computer", "scientist":"computer", "warlock":"spell", "emperor":"computer", "general":"computer","witch":"spell"}
+
+		# Dependent values
+
+		self.MC_vehicule = self.C_MC_vehicule[self.MCj.replace("robot ","")]
+		self.MC_vehicule_place = self.C_MC_vehicule_place[self.MCj.replace("robot ","")]
+		self.MC_transport = self.C_MC_transport[self.MCj.replace("robot ","")]
+		self.MCd_glass = self.C_MCd_glass[self.MCd]
+		self.BG_title = self.C_BG_title[self.BGj.replace("robot ","")]
+		self.BGt = self.C_BG_tool[self.BGj.replace("robot ","")]
+		self.BGa_part = self.C_Ba_part[self.BGa]
+		self.BGa_result = self.C_Ba_result[self.BGa]
+		self.BGa_target = self.C_Ba_target[self.BGa]
+
+		self.MC_ppos = "its"
+		self.MC_pper_s = "it"
+		self.MC_pper_o = "it"
+		self.SC_ppos = "its"
+		self.SC_pper_s = "it"
+		self.SC_pper_o = "it"
+		self.BG_ppos = "its"
+		self.BG_pper_s = "it"
+		self.BG_pper_o = "it"
+
+		self.phrase1 = "."
+		if self.BGa in ["trip","trap"]:
+			self.phrase1 = " as soon as they were trying to walk: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.BGa_result+""+self.BGa_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
+		if self.BGa in ["poke"]:
+			self.phrase1 = " as soon as they were going outside: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.BGa_result+""+self.BGa_part+"."
+		if self.BGa in ["robe"]:
+			self.phrase1 = " as soon as they were not paying attention: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.BGa+" everything they have in their pokets."
+		if self.BGa in ["badmouth"]:
+			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and launches hundreds of "+self.BGa_result+"s."
+		if self.BGa in ["blackmail"]:
+			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.BGa+" the poor passing "+self.Pp+"."
+
+
+	def update(self):
+
+		self.MC_vehicule = self.C_MC_vehicule[self.MCj.replace("robot ","")]
+		self.MC_vehicule_place = self.C_MC_vehicule_place[self.MCj.replace("robot ","")]
+		self.MC_transport = self.C_MC_transport[self.MCj.replace("robot ","")]
+		self.MCd_glass = self.C_MCd_glass[self.MCd]
+		self.BG_title = self.C_BG_title[self.BGj.replace("robot ","")]
+		self.BGt = self.C_BG_tool[self.BGj.replace("robot ","")]
+		self.BGa_part = self.C_Ba_part[self.BGa]
+		self.BGa_result = self.C_Ba_result[self.BGa]
+		self.BGa_target = self.C_Ba_target[self.BGa]
+
+		self.C_Ba_target = {"trip":" walker", "poke":"walker", "badmouth":self.Pp, "prod":"walker", "rob":"walker", "blackmail":self.Pp, "trap":"walker"}
+
+
+		if self.MCg=="man":
+			self.MC_ppos = "his"
+			self.MC_pper_s = "he"
+			self.MC_pper_o = "him"
+			self.C_MCj = C_MCj_man
+		if self.MCg=="woman":
+			self.MC_ppos = "her"
+			self.MC_pper_s = "she"
+			self.MC_pper_o = "her"
+			self.C_MCj = C_MCj_woman
+
+		if self.SCg=="man":
+			self.SC_ppos = "his"
+			self.SC_pper_s = "he"
+			self.SC_pper_o = "him"
+			self.C_SCs = C_SCs_human
+		if self.SCg=="woman":
+			self.SC_ppos = "her"
+			self.MC_pper_s = "she"
+			self.MC_pper_o = "her"
+			self.C_SCs = C_SCs_human
+
+		if self.BGg=="man":
+			self.BG_ppos = "his"
+			self.BG_pper_s = "he"
+			self.BG_pper_o = "him"
+			self.C_BGj = C_BGj_man
+		if self.BGg=="woman":
+			self.BG_ppos = "her"
+			self.BG_pper_s = "she"
+			self.BG_pper_o = "her"
+			self.C_BGj = C_BGj_woman
+
+		self.phrase1 = "."
+		if self.BGa in ["trip","trap"]:
+			self.phrase1 = " as soon as they were trying to walk: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.BGa_result+""+self.BGa_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
+		if self.BGa in ["poke"]:
+			self.phrase1 = " as soon as they were going outside: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.BGa_result+""+self.BGa_part+"."
+		if self.BGa in ["robe"]:
+			self.phrase1 = " as soon as they were not paying attention: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.BGa+" everything they have in their pokets."
+		if self.BGa in ["badmouth"]:
+			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+"s arises and launches hundreds of "+self.BGa_result+"s."
+		if self.BGa in ["blackmail"]:
+			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.BGa+" the poor passing "+self.Pp+"."
+
+
+	def generate(self):
+		self.update()
+		return "Once upon a time, in a "+self.P+" far away populated by "+self.Pp+"s"+", was living a wild "+self.MCj+" named "+self.MC+". "+self.MC+", subtle amateur of "+self.MCd+", was tall and thin and mastered the fight to the "+self.MCw+". But in these peacful times, no works were requiring a "+self.MCj+"'s skills. while "+self.MC_pper_s+" was dreaming of adventur, the brave "+self.Pp+"s"+" of the "+self.P+" were borring "+self.MC_pper_o+". That's when, a morning, a "+self.SCs+" named "+self.SC+" cam to meet "+self.MC_pper_o+". "+self.SC+" was not so tall, more or less creepy but, however, elegant. "+self.SC_pper_s+" seemed to be affraid but "+self.SC_pper_s+" was successfully keeping "+self.SC_ppos+" calm. "+self.MC+" suggested a "+self.MCd_glass+" of "+self.MCd+". "+self.SC+" explained that a crazy "+self.BGj+", the maleficent "+self.BG_title+" "+self.BG+", was sending hordes of "+self.BGd+"s"+" to "+self.BGa+" everyone"+self.BGa_part+self.phrase1+" ''That's enough! said "+self.MC+". I'm on the way to stop this ignoble "+self.BG_title+" "+self.BG+" and to make "+self.BG_pper_o+" pay "+self.BG_ppos+" offences! '' Thereby "+self.MC+" started "+self.MC_ppos+" quest of the terrible "+self.BG_title+" "+self.BG+"'s "+self.BGp+". After walking up to the "+self.MC_vehicule_place+" and having suffered of twenty "+self.BGd+" "+self.BGa_result+"s"+self.BGa_part+", "+self.MC_pper_s+" reached "+self.MC_ppos+" "+self.MC_vehicule+". Then "+self.MC_pper_s+" "+self.MC_transport+" seven days and finally arrived at the entrance of the dark house. The door was wide open... "+self.MC+" entered and, as a surprise, "+self.MC_pper_s+" found the "+self.BG_title+" in a sad look, wallowing in "+self.BG_ppos+" misery in front of a bottle of "+self.BGdrink+". After serving a glass for himself, "+self.MC+" asked what misfortune led the "+self.BG_title+" into such a state. Ah! exclamed the "+self.BG_title+" Those "+self.BGd+"... I did not send them. That was my "+self.BGt+". I just aimed to provide it with a bit more autonomy but it came to far and I lost control. Now it's sending hordes of "+self.BGd+"s"+" everywhere in order to "+self.BGa+""+self.BGa_part+" any single "+self.BGa_target+" of this "+self.P+". ''How to stop this "+self.BGt+"? '' asked "+self.MC+". ''There are no ways '', answered the "+self.BGj+". ''I tried everithing ''. But, while "+self.MC+" and the "+self.BGj+" were talking, "+self.SC+" was approaching the unchained "+self.BGt+". As if "+self.SC_pper_s+" was bewitched, "+self.SC_pper_s+" was slowly walking without fear, staring at the "+self.BGt+". Out of the blue, a "+self.SC_dance+" melody filled the room. "+self.SC+" gave a hand and asked for a dance. Shyly, the "+self.BGt+" accepted and they danced the most beautifull "+self.SC_dance+" ever danced by a "+self.BGt+" and a "+self.SCs+". The "+self.BGt+" stopped its eerie program and "+self.BGd+"s"+" returned from where they came. On the "+self.P+", everyone started dancing. Then "+self.MC+" went back home, served to "+self.MC_pper_o+"self a "+self.MCd_glass+" of "+self.MCd+" which "+self.MC_pper_s+" drunk down. ''Damn it! '' "+self.MC_pper_s+" said, subjugated. ''What a story! '' "
