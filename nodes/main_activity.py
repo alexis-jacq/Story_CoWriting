@@ -116,7 +116,7 @@ def onReceived(msg):
 
 sequence = [("main character is ...", sm.C_MCg), ()]
 
-robot = decision_maker("incoherant")
+robot = decision_maker("coherant")
 
 
 if __name__=="__main__":

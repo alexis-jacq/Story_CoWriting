@@ -7,8 +7,8 @@ import story_maker as sm
 # coherences
 anyway = ["Baltor","Psychlo","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
 noway = ["robot blood","MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
-sf = ["spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light sabre","gun","lazergun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
-pirate = ["MRCK","DB9","C3P8","R2D3","Metalshin2047","Hal","pirate","rhum","sabre","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
+sf = ["spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light saber","gun","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
+pirate = ["MRCK","DB9","C3P8","R2D3","Metalshin2047","Hal","pirate","rhum","saber","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
 midage = ["knight","prince", "wizard", "princess", "fairy","tea","milk", "sword", "forest", "kingdom", "island", "village","ghost", "monkey", "dragon","witch","warlock","manor", "laboratory", "castle","island"]
 contextes = {"sf":sf,"pirate":pirate,"midage":midage}
 
@@ -71,8 +71,14 @@ class decision_maker:
 
 		decision = ""
 		if self.condition == "coherant":
-			context_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
-			decision = np.random.choice(context_choice)
+			context_choice = list(set(contextes[self.r_most_likely_context]).intersection(choice))
+			larger_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
+			if len(context_choice)>0:
+				decision = np.random.choice(context_choice)
+			elif len(larger_choice)>0:
+				decision = np.random.choice(larger_choice)
+			else:
+				decision = np.random.choice(choice)
 
 		else:
 			if lcp in contextes[self.r_most_likely_context]+anyway: # predict coherant
@@ -122,7 +128,7 @@ class decision_maker:
 if __name__=="__main__":
 
 	robot = decision_maker("incoherant")
-	decision = robot.choose("space pioneer","sabre",sm.C_BGj_woman)
+	decision = robot.choose("space pioneer","saber",sm.C_BGj_woman)
 	print decision
 
 
