@@ -132,7 +132,7 @@ if __name__=="__main__":
 	rospy.sleep(6)
 	say("hello, my name is Nando.")
 	rospy.sleep(4)
-
+	
 	say("do you want to write an amazing story with me ?")
 	rospy.sleep(3)
 
@@ -143,7 +143,7 @@ if __name__=="__main__":
 	rospy.sleep(6)
 
 	########################################## PLACE
-
+	
 	human_turn("What is the place of the story... ", sm.C_P)
 
 	while not chosen:
@@ -187,7 +187,7 @@ if __name__=="__main__":
 	say(choice+" is a great idea...")
 	rospy.sleep(2)
 
-	robot_turn("main character job is ...", sm.C_Pp)
+	robot_turn("peacefull peaople of the place are ...", sm.C_Pp)
 	rospy.sleep(3)
 
 	point(robot_choice)
@@ -201,7 +201,7 @@ if __name__=="__main__":
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("main character job is ...", sm.C_Pp, robot_choice)
+	robot_chosen("peacefull peaople of the place are", sm.C_Pp, robot_choice)
 
 	say("Ok your turn! we need a main character! what do you prefer, a man, a woman or a robot ?")
 	rospy.sleep(6)
@@ -617,7 +617,7 @@ if __name__=="__main__":
 	story.update()
 	human_chosen("Bad guy servants are "+story.BGd, sm.C_BGd, choice)
 
-	say(" bad guy is served by "+story.BGd+", hm.")
+	say(" bad guy is served by "+story.BGd+", hmm.")
 	rospy.sleep(4)
 
 	look_at("child_head")
