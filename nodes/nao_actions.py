@@ -128,8 +128,8 @@ if __name__=="__main__":
             tracker.track(targetName)
             for message in long_message_to_tell:
                 time.sleep(1)
-                sg.telling_arms_gesturs(motionProxy,tts,speed,message)
                 story_telling(message)
+                sg.telling_arms_gesturs(motionProxy,tts,speed,message)
             have_to_talk_long = False
             tracker.stopTracker()
 

@@ -56,7 +56,7 @@ class story:
 		self.Pp = "alien" # place brave people (robot)
 
 		self.SC = "DB9" # second character name (robot)
-		self.SCg = "woman" # second character species (child)
+		self.SCg = "robot" # second character species (child)
 		self.SCs = "alien robot"
 		self.SC_dance = "polka" # (robot)
 
@@ -104,15 +104,15 @@ class story:
 
 		self.phrase1 = "."
 		if self.Ba in ["trip","trap"]:
-			self.phrase1 = " as soon as they were trying to walk: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
+			self.phrase1 = " as soon as they were trying to walk:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
 		if self.Ba in ["poke"]:
-			self.phrase1 = " as soon as they were going outside: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
+			self.phrase1 = " as soon as they were going outside:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
 		if self.Ba in ["robe"]:
-			self.phrase1 = " as soon as they were not paying attention: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
+			self.phrase1 = " as soon as they were not paying attention:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
 		if self.Ba in ["badmouth"]:
-			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and launches hundreds of "+self.Ba_result+"s."
+			self.phrase1 = ":. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and launches hundreds of "+self.Ba_result+"s."
 		if self.Ba in ["blackmail"]:
-			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.Ba+" the poor passing "+self.Pp+"."
+			self.phrase1 = ":. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.Ba+" the poor passing "+self.Pp+"."
 
 
 	def update(self):
@@ -164,15 +164,15 @@ class story:
 
 		self.phrase1 = "."
 		if self.Ba in ["trip","trap"]:
-			self.phrase1 = " as soon as they were trying to walk: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
+			self.phrase1 = " as soon as they were trying to walk:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
 		if self.Ba in ["poke"]:
-			self.phrase1 = " as soon as they were going outside: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
+			self.phrase1 = " as soon as they were going outside:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
 		if self.Ba in ["robe"]:
-			self.phrase1 = " as soon as they were not paying attention: ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
+			self.phrase1 = " as soon as they were not paying attention:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
 		if self.Ba in ["badmouth"]:
-			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+"s arises and launches hundreds of "+self.Ba_result+"s."
+			self.phrase1 = ":. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+"s arises and launches hundreds of "+self.Ba_result+"s."
 		if self.Ba in ["blackmail"]:
-			self.phrase1 = ": ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.Ba+" the poor passing "+self.Pp+"."
+			self.phrase1 = ":. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and finds a way to "+self.Ba+" the poor passing "+self.Pp+"."
 
 
 	def generate(self):
