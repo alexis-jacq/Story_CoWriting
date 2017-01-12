@@ -132,7 +132,7 @@ if __name__=="__main__":
 	rospy.sleep(6)
 	say("hello, my name is Nando.")
 	rospy.sleep(4)
-	
+
 	say("do you want to write an amazing story with me ?")
 	rospy.sleep(3)
 
@@ -143,7 +143,7 @@ if __name__=="__main__":
 	rospy.sleep(6)
 
 	########################################## PLACE
-	
+	'''
 	human_turn("What is the place of the story... ", sm.C_P)
 
 	while not chosen:
@@ -516,7 +516,7 @@ if __name__=="__main__":
 	robot_chosen("The second character is a "+story.SCs, story.C_SCs, robot_choice)
 	rospy.sleep(2)
 
-	say("Ok, now it is your turn, and we need to choose a bad guy. Is the bad guy a man, a woman or a robot ?")	
+	say("Ok, now it is your turn, and we need to choose a bad guy. Is the bad guy a man, a woman or a robot ?")
 	rospy.sleep(6)
 
 	############################################## BG gender
@@ -601,7 +601,7 @@ if __name__=="__main__":
 	robot_chosen("The bad guy job is "+story.BGj, story.C_BGj, robot_choice)
 	rospy.sleep(2)
 
-	say("Your turn ! the bad guy is going to have servant, what kind of servants ?")	
+	say("Your turn ! the bad guy is going to have servant, what kind of servants ?")
 	rospy.sleep(6)
 
 	############################################## BG dogs
@@ -613,7 +613,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	story.BGd = choice
+	story.BGd = choicewtf = PhotoImage(file=icone_folder+"/wtf.gif")
 	story.update()
 	human_chosen("Bad guy servants are "+story.BGd, sm.C_BGd, choice)
 
@@ -664,7 +664,7 @@ if __name__=="__main__":
 	robot_chosen("The bad action is "+story.Ba, sm.C_Ba, robot_choice)
 	rospy.sleep(2)
 
-	say("Great. Now it's your turn. We need to choose the favourite drink of the bad guy!")	
+	say("Great. Now it's your turn. We need to choose the favourite drink of the bad guy!")
 	rospy.sleep(6)
 
 	############################################## BG drink
@@ -727,7 +727,8 @@ if __name__=="__main__":
 		robot_chosen("The bad guy lives in a "+story.BGp, sm.C_BGp, robot_choice)
 	rospy.sleep(2)
 
-	say("ok now I can guess the story, let me tell it for you.")	
+	'''
+	say("ok now I can guess the story, let me tell it for you.")
 	rospy.sleep(4)
 
 	result = story.generate()
@@ -742,6 +743,3 @@ if __name__=="__main__":
 	say("ha !")
 	rospy.sleep(2)
 	ending("")
-
-
-	

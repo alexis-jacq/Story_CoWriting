@@ -18,7 +18,7 @@ from naoqi import ALModule
 
 
 ############################################# global values
-NAO_IP = "146.193.224.10"
+NAO_IP = "146.193.224.236"
 port = 9559
 speed = 0.1
 current_target = "/face_0"
