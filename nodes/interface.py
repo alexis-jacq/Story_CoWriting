@@ -74,8 +74,8 @@ def new_phrase(msg):
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		label, _, items, phrase = read_msg(msg)
-		p1.telling(label, items, phrase)
+		phrase, _,_,_ = read_msg(msg)
+		p1.telling(phrase)
 		p1.mainframe.tkraise()
 
 ################################################ window events
@@ -210,9 +210,8 @@ class page:
 			ind+=1
 
 	def telling(self, phrase):
-
 		self.add_emoji()
-		self.set_title(phrase)
+		ttk.Label(self.mainframe, text=phrase, font=("Comic Sans MS", 20, "italic"), foreground="blue", wraplength=1000).grid(column=1, columnspan=5, row=0, sticky=N+S+E+W)
 
 
 ################################################
@@ -220,22 +219,21 @@ root = Tk()
 root.geometry("1000x1000")
 root.bind("<Configure>", configure)
 ################################################
-lol = PhotoImage(file="/home/alexis/Desktop/share/lol.gif")
-good = PhotoImage(file="/home/alexis/Desktop/share/up.gif")
-bad = PhotoImage(file="/home/alexis/Desktop/share/down.gif")
-wtf = PhotoImage(file="/home/alexis/Desktop/share/wtf.gif")
-
-pirate = PhotoImage(file="/home/alexis/Desktop/share/pirate.gif")
-gray = PhotoImage(file="/home/alexis/Desktop/share/gray.gif")
+test = rospy.search_param("icones")
+icone_folder = rospy.get_param(test)
+################################################
+lol = PhotoImage(file=icone_folder+"/lol.gif")
+good = PhotoImage(file=icone_folder+"/up.gif")
+bad = PhotoImage(file=icone_folder+"/down.gif")
+wtf = PhotoImage(file=icone_folder+"/wtf.gif")
 ################################################
 
 items = {"spam","man", "woman", "robot","pirate", "detective","knight","space pioneer", "lumberjack", "prince", "wizard", "princess", "fairy","robot pirate", "robot detective","robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","tea", "rhum", "lazer juice", "wine", "coffee", "beer", "milk","light saber", "saber", "sword", "lazer gun", "gun","spoon","planet", "forest", "kingdom", "island", "village","ghost", "alien", "monkey", "fisherman", "robot","ghost robot", "alien robot", "robot monkey", "fisherman robot","waltz","tango","polka","salsa","rock","time travelor", "scientist", "warlock", "emperor", "general", "witch","robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch","trip", "poke", "badmouth", "trap", "rob", "blackmail", "terrorise","manor", "spacecraft", "laboratory", "castle","scotch","whisky","rhum","wine", "milk","blood", "robot blood"}
 images = {}
 
-test = rospy.search_param("icones")
-icone_folder = rospy.get_param(test)
 for item in items:
-	images[item] = PhotoImage(file=icone_folder+item.replace(" ", "_")+".gif")
+	images[item] = PhotoImage(file=icone_folder+"/"+item.replace(" ", "_")+".gif")
+	#images[item] = PhotoImage(file="/home/alexis/Desktop/share/"+item.replace(" ", "_")+".gif")
 
 ################################################
 def ros_loop(test):
@@ -262,6 +260,11 @@ if __name__=="__main__":
 
 	rospy.init_node("interface")
 	p1.mainframe.tkraise()
+
+	test = String()
+	test.data = "grosse phrase  tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres tres looooooooonnnnnnnnguuuuuueeeeeee,,,"
+	new_phrase(test)
+	new_phrase(test)
 
 	thread.start_new_thread(ros_loop, ("",))
 
