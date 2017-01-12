@@ -1,5 +1,5 @@
 # Story Cowriting
-#================
+=================
 
 ## Description:
 
