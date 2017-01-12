@@ -14,6 +14,7 @@ Two possible condition: the robot is predictable, or un-predictable.
 ## Code dependencies: 
 
 openface_tracker (https://github.com/CoWriter-Project/openface_tracker) 
+
 pynaoqi (http://doc.aldebaran.com/1-14/dev/python/install_guide.html)
 
 ## Authors:
