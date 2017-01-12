@@ -45,6 +45,13 @@ tracker = ALProxy("ALTracker", NAO_IP, port)
 tts = ALProxy("ALTextToSpeech", NAO_IP, port)
 tts.setLanguage("English")
 
+############################################## publisher for interface
+pub_story_telling = rospy.Publisher('story_telling', String, queue_size = 1)
+
+def story_telling(phrase):
+	msg = String()
+	msg.data = phrase
+	pub_story_telling.publish(msg)
 
 ############################################# what if new action message
 message_to_tell = ""
@@ -122,6 +129,7 @@ if __name__=="__main__":
             for message in long_message_to_tell:
                 time.sleep(1)
                 sg.telling_arms_gesturs(motionProxy,tts,speed,message)
+                story_telling(message)
             have_to_talk_long = False
             tracker.stopTracker()
 
@@ -151,7 +159,7 @@ if __name__=="__main__":
             if (np.abs(yaw)>np.pi/6. or pitch> np.pi/7. or pitch< -np.pi/6 or stay) and ok:
 
                 stay = True
-                
+
                 motionProxy.setAngles("HeadYaw", yaw, speed)
                 motionProxy.setAngles("HeadPitch", pitch, speed)
 
@@ -179,11 +187,10 @@ if __name__=="__main__":
                 if np.random.rand()>0.95:
                     stay = True
                     ok = True
-    
+
 
         rospy.sleep(0.2)
 
     sg.StiffnessOff(motionProxy)
 
     rospy.spin()
-

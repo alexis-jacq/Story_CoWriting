@@ -67,6 +67,17 @@ def have_chosen(msg):
 		p1.chosen(label, items, choice,name)
 		p1.mainframe.tkraise()
 
+def new_phrase(msg):
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		label, _, items, phrase = read_msg(msg)
+		p1.telling(label, items, phrase)
+		p1.mainframe.tkraise()
+
 ################################################ window events
 def human_choice(choice):
 	rospy.loginfo("human choice "+choice)
@@ -128,7 +139,7 @@ class page:
 		ttk.Button(self.mainframe, text="bad", image=bad, compound="top", command=lambda:juge("bad")).grid(column=4, row=4, sticky=N+S+E+W)
 
 
-	def human(self, label, items, name):	
+	def human(self, label, items, name):
 		for child in self.mainframe.winfo_children():
 			child.destroy()
 		self.add_emoji()
@@ -146,7 +157,7 @@ class page:
 
 	def human_predict(self, label, items, name):
 		for child in self.mainframe.winfo_children():
-			child.destroy()	
+			child.destroy()
 		self.add_emoji()
 		self.set_title(label)
 
@@ -162,7 +173,7 @@ class page:
 
 	def robot(self, label,items, name):
 		for child in self.mainframe.winfo_children():
-			child.destroy()	
+			child.destroy()
 		self.add_emoji()
 		self.set_title(label)
 
@@ -178,7 +189,7 @@ class page:
 
 	def chosen(self, label, items, choice, name):
 		#for child in self.mainframe.winfo_children():
-		#	child.destroy()	
+		#	child.destroy()
 		self.add_emoji()
 		self.set_title(label)
 
@@ -197,6 +208,11 @@ class page:
 				else:
 					ttk.Button(self.mainframe, text="", image=gray, compound="top").grid(column=col, row=row, sticky=N+S+E+W)
 			ind+=1
+
+	def telling(self, phrase):
+
+		self.add_emoji()
+		self.set_title(phrase)
 
 
 ################################################
@@ -228,9 +244,10 @@ def ros_loop(test):
 		rospy.Subscriber('human_predict_turn_topic', String, human_predict)
 		rospy.Subscriber('robot_turn_topic', String, robot_turn)
 		rospy.Subscriber('robot_chosen_topic', String, have_chosen)
+		rospy.Subscriber('story_telling', String, new_phrase)
 
 		rospy.sleep(0.1)
-	
+
 	rospy.spin()
 
 
