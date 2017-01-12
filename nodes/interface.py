@@ -232,8 +232,10 @@ gray = PhotoImage(file="/home/alexis/Desktop/share/gray.gif")
 items = {"spam","man", "woman", "robot","pirate", "detective","knight","space pioneer", "lumberjack", "prince", "wizard", "princess", "fairy","robot pirate", "robot detective","robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","tea", "rhum", "lazer juice", "wine", "coffee", "beer", "milk","light saber", "saber", "sword", "lazer gun", "gun","spoon","planet", "forest", "kingdom", "island", "village","ghost", "alien", "monkey", "fisherman", "robot","ghost robot", "alien robot", "robot monkey", "fisherman robot","waltz","tango","polka","salsa","rock","time travelor", "scientist", "warlock", "emperor", "general", "witch","robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch","trip", "poke", "badmouth", "trap", "rob", "blackmail", "terrorise","manor", "spacecraft", "laboratory", "castle","scotch","whisky","rhum","wine", "milk","blood", "robot blood"}
 images = {}
 
+test = rospy.search_param("icones")
+icone_folder = rospy.get_param(test)
 for item in items:
-	images[item] = PhotoImage(file="/home/alexis/Desktop/share/"+item.replace(" ", "_")+".gif")
+	images[item] = PhotoImage(file=icone_folder+item.replace(" ", "_")+".gif")
 
 ################################################
 def ros_loop(test):

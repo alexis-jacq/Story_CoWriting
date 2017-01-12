@@ -8,9 +8,10 @@
   <node pkg="story_cowriting" type="nao_actions.py" name="nao_actions">
   </node>
   <node pkg="story_cowriting" type="interface.py" name="interface">
+    <param name="icones" value="$(find Story_CoWriting)/share"/>
   </node>
   <node pkg="story_cowriting" type="main_activity.py" name="main_activity">
   </node>
-  
+
 
 </launch>
