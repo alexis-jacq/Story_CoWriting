@@ -47,11 +47,11 @@ class decision_maker:
 		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
-		if self.last_child_prediction in sf:
+		if self.last_child_predict in sf:
 			self.r_sf_score += 1
-		if self.last_child_prediction in pirate:
+		if self.last_child_predict in pirate:
 			self.r_pirate_score += 1
-		if self.last_child_prediction in midage:
+		if self.last_child_predict in midage:
 			self.r_midage_score += 1
 		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -70,7 +70,7 @@ class decision_maker:
 
 		self.last_child_move = lcm
 		self.update()
-		self.last_child_prediction = lcp
+		self.last_child_predict = lcp
 
 		decision = ""
 		if self.condition == "coherant":
