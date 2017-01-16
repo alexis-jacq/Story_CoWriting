@@ -71,12 +71,30 @@ def new_phrase(msg):
 	global last_message
 	if msg.data!=last_message:
 		last_message = msg.data
-		phrase = msg.data
 		received_msg = String()
 		received_msg.data = "receives: " + msg.data
 		pub_reception.publish(received_msg)
-		p1.telling(phrase)
+		p1.telling(msg.data)
 		p1.mainframe.tkraise()
+
+def new_element(msg):
+	global last_message
+	if msg.data!=last_message:
+		last_message = msg.data
+		received_msg = String()
+		received_msg.data = "receives: " + msg.data
+		pub_reception.publish(received_msg)
+		p1.update_trace(msg.data)
+		p1.mainframe.tkraise()
+
+################################################ for the trace
+
+def unique(array):
+	out = []
+	for mec in array:
+		if not mec in out:
+			out.append(mec)
+	return out
 
 ################################################ window events
 def human_choice(choice):
@@ -123,8 +141,8 @@ class page:
 	def __init__(self,root):
 		self.mainframe = ttk.Frame(root)
 		self.mainframe.grid(column=5, row=4, sticky=(N, W, E, S))
+		self.trace = []
 		#self.mainframe.rowconfigure(4, weight=1)
-
 
 	def change_padding(self,x,y):
 		for child in self.mainframe.winfo_children(): child.grid_configure(padx=max(0,(x-900)/30.), pady=y/40.)
@@ -138,17 +156,24 @@ class page:
 		ttk.Button(self.mainframe, text="wtf", image=wtf, compound="top", command=lambda:juge("wtf")).grid(column=3, row=4, sticky=N+S+E+W)
 		ttk.Button(self.mainframe, text="bad", image=bad, compound="top", command=lambda:juge("bad")).grid(column=4, row=4, sticky=N+S+E+W)
 
+	def update_trace(self,element):
+		self.trace.append(element)
+		self.trace = unique(self.trace)
+
+	def add_trace(self):
+		ttk.Label(self.mainframe, text="\n".join(self.trace),wraplength=1000).grid(column=5, row=0, rowspan = 5, sticky=N+W)
 
 	def human(self, label, items, name):
 		for child in self.mainframe.winfo_children():
 			child.destroy()
 		self.add_emoji()
+		self.add_trace()
 		self.set_title(label)
 
 		ind = 0
 		for item in items:
-			col = ind%5 + 1
-			row = ind/5 + 1
+			col = ind%4 + 1
+			row = ind/4 + 1
 			if name=="true":
 				button = choice_button_name(item, self.mainframe,row,col)
 			else:
@@ -159,12 +184,13 @@ class page:
 		for child in self.mainframe.winfo_children():
 			child.destroy()
 		self.add_emoji()
+		self.add_trace()
 		self.set_title(label)
 
 		ind = 0
 		for item in items:
-			col = ind%5 + 1
-			row = ind/5 + 1
+			col = ind%4 + 1
+			row = ind/4 + 1
 			if name=="true":
 				button = predict_button_name(item, self.mainframe,row,col)
 			else:
@@ -175,12 +201,13 @@ class page:
 		for child in self.mainframe.winfo_children():
 			child.destroy()
 		self.add_emoji()
+		self.add_trace()
 		self.set_title(label)
 
 		ind = 0
 		for item in items:
-			col = ind%5 + 1
-			row = ind/5 + 1
+			col = ind%4 + 1
+			row = ind/4 + 1
 			if name=="true":
 				ttk.Button(self.mainframe, text=item).grid(column=col, row=row, sticky=N+S+E+W)
 			else:
@@ -191,12 +218,13 @@ class page:
 		#for child in self.mainframe.winfo_children():
 		#	child.destroy()
 		self.add_emoji()
+		self.add_trace()
 		self.set_title(label)
 
 		ind = 0
 		for item in items:
-			col = ind%5 + 1
-			row = ind/5 + 1
+			col = ind%4 + 1
+			row = ind/4 + 1
 			if name=="true":
 				if item==choice:
 					ttk.Button(self.mainframe, text=item).grid(column=col, row=row, sticky=N+S+E+W)
@@ -210,8 +238,11 @@ class page:
 			ind+=1
 
 	def telling(self, phrase):
+		for child in self.mainframe.winfo_children():
+			child.destroy()
 		self.add_emoji()
-		ttk.Label(self.mainframe, text=phrase, font=("Comic Sans MS", 20, "italic"), foreground="blue", wraplength=1000).grid(column=1, columnspan=5, row=0, sticky=N+S+E+W)
+		self.add_trace()
+		ttk.Label(self.mainframe, text=phrase, font=("Comic Sans MS", 20, "italic"), foreground="blue", wraplength=1000).grid(column=1, columnspan=4, row=0, sticky=N+S+E+W)
 
 
 ################################################
@@ -230,6 +261,7 @@ def ros_loop(test):
 		rospy.Subscriber('robot_turn_topic', String, robot_turn)
 		rospy.Subscriber('robot_chosen_topic', String, have_chosen)
 		rospy.Subscriber('story_telling', String, new_phrase)
+		rospy.Subscriber('new_element', String, new_element)
 
 		rospy.sleep(0.1)
 
@@ -237,7 +269,6 @@ def ros_loop(test):
 
 
 ################################################
-
 
 p1 = page(root)
 

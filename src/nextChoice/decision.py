@@ -36,22 +36,22 @@ class decision_maker:
 		self.randoms = 0
 		self.coherances = 4.
 
-	def update(self, lcm,lcp):
+	def update(self):
 
-		if lcm in sf:
+		if self.last_child_move in sf:
 			self.ch_sf_score += 1
-		if lcm in pirate:
+		if self.last_child_move in pirate:
 			self.ch_pirate_score += 1
-		if lcm in midage:
+		if self.last_child_move in midage:
 			self.ch_midage_score += 1
 		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
-		if lcp in sf:
+		if self.last_child_prediction in sf:
 			self.r_sf_score += 1
-		if lcp in pirate:
+		if self.last_child_prediction in pirate:
 			self.r_pirate_score += 1
-		if lcp in midage:
+		if self.last_child_prediction in midage:
 			self.r_midage_score += 1
 		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -65,9 +65,12 @@ class decision_maker:
 		print self.less_likely_context
 
 
+
 	def choose(self, lcm, lcp, choice):
 
-		self.update(lcm,lcp)
+		self.last_child_move = lcm
+		self.update()
+		self.last_child_prediction = lcp
 
 		decision = ""
 		if self.condition == "coherant":
@@ -130,9 +133,3 @@ if __name__=="__main__":
 	robot = decision_maker("incoherant")
 	decision = robot.choose("space pioneer","saber",sm.C_BGj_woman)
 	print decision
-
-
-
-
-
-

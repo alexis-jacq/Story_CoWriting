@@ -33,6 +33,8 @@ pub_human_chosen = rospy.Publisher('human_chosen_topic', String, queue_size=1)
 pub_human_predict = rospy.Publisher('human_predict_turn_topic', String, queue_size=1)
 pub_robot_turn = rospy.Publisher('robot_turn_topic', String, queue_size=1)
 pub_robot_chosen = rospy.Publisher('robot_chosen_topic', String, queue_size=1)
+pub_new_element = rospy.Publisher('new_element', String, queue_size=1)
+
 ########################################## publishing
 
 def look_at(target):
@@ -76,14 +78,20 @@ def human_predict(label, items, name="false"):
 	pub_human_predict.publish(msg)
 
 def human_chosen(label, items, choice, name="false"):
-	msg = String()
-	msg.data = label+","+choice+","+"-".join(items)+','+name
-	pub_human_chosen.publish(msg)
+	msg1 = String()
+	msg2 = String()
+	msg1.data = label+","+choice+","+"-".join(items)+','+name
+	pub_human_chosen.publish(msg1)
+	msg2.data = "(You) "+label+"\n"
+	pub_new_element.publish(msg2)
 
 def robot_chosen(label, items, choice, name="false"):
-	msg = String()
-	msg.data = label+","+choice+","+"-".join(items)+','+name
-	pub_robot_chosen.publish(msg)
+	msg1 = String()
+	msg2 = String()
+	msg1.data = label+","+choice+","+"-".join(items)+','+name
+	pub_robot_chosen.publish(msg1)
+	msg2.data = "(Nando) "+label+"\n"
+	pub_new_element.publish(msg2)
 
 ######################################## reacting
 last_human_prediction = ""
@@ -112,10 +120,6 @@ def onReceived(msg):
 	global received
 	received = True
 
-
-
-sequence = [("main character is ...", sm.C_MCg), ()]
-
 robot = decision_maker("coherant")
 
 
@@ -143,7 +147,7 @@ if __name__=="__main__":
 	rospy.sleep(6)
 
 	########################################## PLACE
-	'''
+
 	human_turn("What is the place of the story... ", sm.C_P)
 
 	while not chosen:
@@ -175,7 +179,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_Pp, choice)
+	human_chosen("you predicted "+choice, sm.C_Pp, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -201,7 +205,7 @@ if __name__=="__main__":
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("peacefull peaople of the place are", sm.C_Pp, robot_choice)
+	robot_chosen("peacefull peaople of the place are "+robot_choice, sm.C_Pp, robot_choice)
 
 	say("Ok your turn! we need a main character! what do you prefer, a man, a woman or a robot ?")
 	rospy.sleep(6)
@@ -254,7 +258,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", story.C_MCj, choice)
+	human_chosen("you predicted "+choice, story.C_MCj, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -266,7 +270,7 @@ if __name__=="__main__":
 	say(choice+" is a great idea...")
 	rospy.sleep(2)
 
-	robot_turn("main character job is ...", story.C_MCj)
+	robot_turn("main character job is ... ", story.C_MCj)
 	rospy.sleep(3)
 
 	point(robot_choice)
@@ -280,7 +284,7 @@ if __name__=="__main__":
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("main character job is ...", story.C_MCj, robot_choice)
+	robot_chosen("main character job is "+robot_choice, story.C_MCj, robot_choice)
 
 	say("Ok your turn! let's find a favorite drink for the main character!")
 	rospy.sleep(6)
@@ -319,7 +323,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_MCw, choice)
+	human_chosen("you predicted "+choice, sm.C_MCw, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -345,7 +349,7 @@ if __name__=="__main__":
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("main character weapon is ...", sm.C_MCw, robot_choice)
+	robot_chosen("main character weapon is "+robot_choice, sm.C_MCw, robot_choice)
 
 	say("Your turn. What is the favourite dance of the main character ?")
 	rospy.sleep(6)
@@ -383,7 +387,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_SCg, choice)
+	human_chosen("you predicted "+choice, sm.C_SCg, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -425,7 +429,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_SC, choice, "true")
+	human_chosen("you predicted "+choice, sm.C_SC, choice, "true")
 	rospy.sleep(3)
 
 	# actual
@@ -484,12 +488,13 @@ if __name__=="__main__":
 
 	human_predict("predict what the robot is going to choose ...", story.C_SCs)
 
+	chosen=False
 	while not chosen:
 		rospy.Subscriber('human_prediction_topic', String, onNewPrediction)
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", story.C_SCs, choice)
+	human_chosen("you predicted "+choice, story.C_SCs, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -574,7 +579,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", story.C_BGj, choice)
+	human_chosen("you predicted "+choice, story.C_BGj, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -613,7 +618,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	story.BGd = choicewtf = PhotoImage(file=icone_folder+"/wtf.gif")
+	story.BGd = choice
 	story.update()
 	human_chosen("Bad guy servants are "+story.BGd, sm.C_BGd, choice)
 
@@ -637,7 +642,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_Ba, choice)
+	human_chosen("you predicted "+choice, sm.C_Ba, choice)
 	rospy.sleep(3)
 
 	# actual
@@ -700,7 +705,7 @@ if __name__=="__main__":
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted ", sm.C_BGp, choice)
+	human_chosen("you predicted "+choice, sm.C_BGp, choice)
 	rospy.sleep(3)
 	story.update()
 
@@ -727,7 +732,7 @@ if __name__=="__main__":
 		robot_chosen("The bad guy lives in a "+story.BGp, sm.C_BGp, robot_choice)
 	rospy.sleep(2)
 
-	'''
+
 	say("ok now I can guess the story, let me tell it for you.")
 	rospy.sleep(4)
 
