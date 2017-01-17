@@ -74,7 +74,7 @@ class story:
 		self.C_MC_vehicule_place = {"pirate":"port", "detective":"parking","knight":"stable","prince":"stable","space pioneer":"space port", "lumberjack":"warhouse", "princess":"rainbow", "witch":"cupboard","wizard":"cupboard", "fairy":"stream"}
 		self.C_MC_transport = {"pirate":"sailed", "detective":"drove","knight":"rode","prince":"rode","space pioneer":"sailed", "lumberjack":"drove", "princess":"rode", "witch":"flyed","wizard":"flyed", "fairy":"rode"}
 		self.C_MCd_glass = {"tea":"cup", "rhum":"glass", "lazer juice":"glass", "wine":"glass", "coffee":"cup", "beer":"pint", "milk":"glass"}
-		self.C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "warlock":"Master", "emperor":"sir", "general":"general", "witch":""}
+		self.C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "warlock":"Master", "emperor":"sir", "general":"general", "witch":"witch"}
 		self.C_Ba_part = {"trip":" up", "poke":"", "badmouth":"", "prod":"", "rob":"", "blackmail":"", "terrorise":"","trap":"", "terrorise":"","spam":""}
 		self.C_Ba_target = {"trip":" walker", "poke":"walker", "badmouth":self.Pp, "rob":"walker", "blackmail":self.Pp, "trap":"walker","terrorise":"walker","spam":self.Pp}
 		self.C_Ba_result = {"trip":"trip", "poke":"poke", "badmouth":"critic", "rob":"rob", "blackmail":"blackmail", "trap":"trap", "terrorise":"terrorise","spam":"spam"}

@@ -479,14 +479,14 @@ if __name__=="__main__":
 	look_at("child_head")
 	rospy.sleep(1)
 
-	say("Now, we have to choose the specy of the second character. And it's my turn ! what do you predict ?")
+	say("Now, we have to choose what the second character is. And it's my turn ! what do you predict ?")
 	rospy.sleep(6)
 
 	############################################## SC specie
 
 	# prediction
 
-	human_predict("predict what the robot is going to choose ...", story.C_SCs)
+	human_predict("predict what the robot is going to choose for the second character ...", story.C_SCs)
 
 	chosen=False
 	while not chosen:
