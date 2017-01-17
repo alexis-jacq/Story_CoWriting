@@ -120,7 +120,7 @@ def onReceived(msg):
 	global received
 	received = True
 
-robot = decision_maker("coherant")
+robot = decision_maker("predictable")
 
 
 if __name__=="__main__":

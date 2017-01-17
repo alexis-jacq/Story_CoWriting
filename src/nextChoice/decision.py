@@ -5,13 +5,17 @@ import operator
 import story_maker as sm
 
 # coherences
-anyway = ["Baltor","Psychlo","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
-noway = ["robot blood","MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
+anyway = ["DB9","MRCK","C3P8","Hal","R2D3","Jack","Deckard","Luc","Daxter","Pedro","Bianca","Dolores","Nosicaa","Lisa","Baltor","Psychlo", "Neurodark", "Turbomecanoid","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
+noway = ["MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
 sf = ["MRCK","DB9","C3P8","R2D3","Metalshin2047","Hal","robot blood","spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light saber","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
 pirate = ["pirate","rhum","saber","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
 midage = ["knight","prince", "wizard", "princess", "fairy","tea","milk", "sword", "forest", "kingdom", "island", "village","ghost", "monkey", "dragon","witch","warlock","manor", "laboratory", "castle","island"]
 contextes = {"sf":sf,"pirate":pirate,"midage":midage}
 
+women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]
+men = ["Jack","Deckard","Luc","Daxter","Pedro","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
+robots = ["C3P8","Hal","R2D3", "Metalshin2047","DB9","Moulinex", "MRCK", "36Flip","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
+gender = {"woman":women, "man":men, "robot":robot}
 
 class decision_maker:
 
@@ -20,6 +24,7 @@ class decision_maker:
 		self.condition = condition
 		self.last_child_move = ""
 		self.last_child_predict = ""
+		self.logic_names = women+men+obots
 
 		self.ch_sf_score = 0
 		self.ch_pirate_score = 0
@@ -68,22 +73,33 @@ class decision_maker:
 
 	def choose(self, lcm, lcp, choice):
 
+		if choice[0] in gender:
+			self.logic_names = gender[type]
+
+		if choice[0] in women+men+obots:
+			logic_choice = self.logic_names
+			illogic_choice = women+men+obots-self.logic_names
+		else:
+			logic_choice = choice
+			illogic_choice = choice
+
 		self.last_child_move = lcm
 		self.update()
 		self.last_child_predict = lcp
 
 		decision = ""
-		if self.condition == "coherant":
-			context_choice = list(set(contextes[self.r_most_likely_context]).intersection(choice))
-			larger_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
+		if self.condition == "predictable":
+			context_choice = list(set(contextes[self.r_most_likely_context]).intersection(logic_choice))
+			larger_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(logic_choice))
 			if len(context_choice)>0:
 				decision = np.random.choice(context_choice)
 			elif len(larger_choice)>0:
 				decision = np.random.choice(larger_choice)
 			else:
-				decision = np.random.choice(choice)
+				decision = np.random.choice(logic_choice)
 
 		else:
+			# new idea : take the prediction and moove for the opposite
 			if lcp in contextes[self.r_most_likely_context]+anyway: # predict coherant
 				if self.randoms>self.coherances:
 					context_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
