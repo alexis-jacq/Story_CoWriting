@@ -43,21 +43,37 @@ class decision_maker:
 
 	def update(self):
 
+		eta = 0.9 # forget quickly
+
 		if self.last_child_move in sf:
-			self.ch_sf_score += 1
+			self.ch_sf_score = (1-eta)*self.ch_sf_score + eta
+			self.ch_pirate_score *= (1-eta)
+			self.ch_midage_score *= (1-eta)
 		if self.last_child_move in pirate:
-			self.ch_pirate_score += 1
+			self.ch_sf_score *= (1-eta)
+			self.ch_pirate_score = 1-eta)*ch_pirate_score + eta
+			self.ch_midage_score *= (1-eta)
 		if self.last_child_move in midage:
-			self.ch_midage_score += 1
+			self.ch_sf_score *= (1-eta)
+			self.ch_pirate_score *= (1-eta)
+			self.ch_midage_score = (1-eta)*ch_midage_score + eta
+
 		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
 		if self.last_child_predict in sf:
-			self.r_sf_score += 1
+			self.r_sf_score = (1-eta)*self.r_sf_score + eta
+			self.r_pirate_score *= (1-eta)
+			self.r_midage_score *= (1-eta)
 		if self.last_child_predict in pirate:
-			self.r_pirate_score += 1
+			self.r_sf_score *= (1-eta)
+			self.r_pirate_score = (1-eta)*r_pirate_score + eta
+			self.r_midage_score *= (1-eta)
 		if self.last_child_predict in midage:
-			self.r_midage_score += 1
+			self.r_sf_score *= (1-eta)
+			self.r_pirate_score *= (1-eta)
+			self.r_midage_score = (1-eta)*r_midage_score + eta
+
 		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
@@ -84,13 +100,13 @@ class decision_maker:
 			illogic_choice = choice
 
 		self.last_child_move = lcm
-		self.update()
 		self.last_child_predict = lcp
+		self.update()
 
 		decision = ""
-		if self.condition == "predictable":
-			context_choice = list(set(contextes[self.r_most_likely_context]).intersection(logic_choice))
-			larger_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(logic_choice))
+		if self.condition == "predictable": # BE COHERENT take in account last move only
+			context_choice = list(set(contextes[self.ch_most_likely_context]).intersection(logic_choice))
+			larger_choice = list(set(contextes[self.ch_most_likely_context]+anyway).intersection(logic_choice))
 			if len(context_choice)>0:
 				decision = np.random.choice(context_choice)
 			elif len(larger_choice)>0:
@@ -100,44 +116,32 @@ class decision_maker:
 
 		else:
 			# new idea : take the prediction and moove for the opposite
-			if lcp in contextes[self.r_most_likely_context]+anyway: # predict coherant
-				if self.randoms>self.coherances:
-					context_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
+			if lcp in contextes[self.ch_most_likely_context]+anyway: # predict coherant
+				if self.randoms>self.coherances: # coherent unprobable, then, be coherent
+					context_choice = list(set(contextes[self.ch_most_likely_context]+anyway).intersection(logic_choice))
 					if len(context_choice)>0:
 						decision = np.random.choice(context_choice)
 						self.coherances += 1
 					else:
 						decision = np.random.choice(choice)
-					if decision in sf:
-						self.r_sf_score += 1
-					if decision in pirate:
-						self.r_pirate_score += 1
-					if decision in midage:
-						self.r_midage_score += 1
-				else:
-					context_choice = list(set(contextes[self.less_likely_context]+noway).intersection(choice))
+				else: # coherent too probable, stay incoherent
+					context_choice = list(set(contextes[self.less_likely_context]+noway).intersection(illogic_choice))
 					if len(context_choice)>0:
 						decision = np.random.choice(context_choice)
 						self.randoms += 1
 					else:
-						decision = np.random.choice(choice)
+						decision = np.random.choice(illogic_choice)
 			else: # predict incoherant
-				if self.randoms>self.coherances:
+				if self.randoms<self.coherances: # incoherent unprobable, be incoherant as predicted
 					decision = lcp
 					self.randoms += 1
-				else:
-					context_choice = list(set(contextes[self.r_most_likely_context]+anyway).intersection(choice))
+				else: # coherent unprobable, then, be coherent
+					context_choice = list(set(contextes[self.ch_most_likely_context]+anyway).intersection(logic_choice))
 					if len(context_choice)>0:
 						decision = np.random.choice(context_choice)
 						self.coherances += 1
 					else:
 						decision = np.random.choice(choice)
-					if decision in sf:
-						self.r_sf_score += 1
-					if decision in pirate:
-						self.r_pirate_score += 1
-					if decision in midage:
-						self.r_midage_score += 1
 
 
 		return decision
