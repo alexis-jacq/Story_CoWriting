@@ -15,7 +15,7 @@ contextes = {"sf":sf,"pirate":pirate,"midage":midage}
 women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]
 men = ["Jack","Deckard","Luc","Daxter","Pedro","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
 robots = ["C3P8","Hal","R2D3", "Metalshin2047","DB9","Moulinex", "MRCK", "36Flip","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
-gender = {"woman":women, "man":men, "robot":robot}
+gender = {"woman":women, "man":men, "robot":robots}
 
 class decision_maker:
 
@@ -24,7 +24,7 @@ class decision_maker:
 		self.condition = condition
 		self.last_child_move = ""
 		self.last_child_predict = ""
-		self.logic_names = women+men+obots
+		self.logic_names = women+men+robots
 
 		self.ch_sf_score = 0
 		self.ch_pirate_score = 0
@@ -51,12 +51,12 @@ class decision_maker:
 			self.ch_midage_score *= (1-eta)
 		if self.last_child_move in pirate:
 			self.ch_sf_score *= (1-eta)
-			self.ch_pirate_score = 1-eta)*ch_pirate_score + eta
+			self.ch_pirate_score = (1-eta)*self.ch_pirate_score + eta
 			self.ch_midage_score *= (1-eta)
 		if self.last_child_move in midage:
 			self.ch_sf_score *= (1-eta)
 			self.ch_pirate_score *= (1-eta)
-			self.ch_midage_score = (1-eta)*ch_midage_score + eta
+			self.ch_midage_score = (1-eta)*self.ch_midage_score + eta
 
 		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -67,12 +67,12 @@ class decision_maker:
 			self.r_midage_score *= (1-eta)
 		if self.last_child_predict in pirate:
 			self.r_sf_score *= (1-eta)
-			self.r_pirate_score = (1-eta)*r_pirate_score + eta
+			self.r_pirate_score = (1-eta)*self.r_pirate_score + eta
 			self.r_midage_score *= (1-eta)
 		if self.last_child_predict in midage:
 			self.r_sf_score *= (1-eta)
 			self.r_pirate_score *= (1-eta)
-			self.r_midage_score = (1-eta)*r_midage_score + eta
+			self.r_midage_score = (1-eta)*self.r_midage_score + eta
 
 		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
@@ -89,12 +89,14 @@ class decision_maker:
 
 	def choose(self, lcm, lcp, choice):
 
-		if choice[0] in gender:
-			self.logic_names = gender[type]
+		if lcm in gender:
+			self.logic_names = gender[lcm]
 
-		if choice[0] in women+men+obots:
+		if choice[0] in women+men+robots:
 			logic_choice = self.logic_names
-			illogic_choice = women+men+obots-self.logic_names
+			illogic_choice = women+men+robots
+			for x in logic_choice:
+				illogic_choice.remove(x)
 		else:
 			logic_choice = choice
 			illogic_choice = choice
@@ -143,7 +145,8 @@ class decision_maker:
 					else:
 						decision = np.random.choice(choice)
 
-
+		if decision in gender:
+			self.logic_names = gender[decision]
 		return decision
 
 

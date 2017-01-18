@@ -22,10 +22,10 @@ C_SC_dance = ["waltz","tango","polka","salsa","rock"]
 #C_Pp = add_s(C_SCs)
 C_Pp = C_SCs_human
 
-C_BG = ["Baltor","MarineLePen", "Psychlo", "Neurodark", "Turbomecanoid"]
+C_BG = ["Baltor","MarineLePen","Psychlo", "Neurodark", "Turbomecanoid","Ursula","Grimhilde"]
 C_BGg = ["man", "woman","robot"]
 C_BGj_man = ["time travelor", "scientist", "warlock", "emperor", "general"]
-C_BGj_woman = ["time travelor", "scientist", "emperor", "general", "witch"]
+C_BGj_woman = ["time travelor", "scientist", "emperor", "general", "witch", "queen"]
 C_BGj_robot = ["robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch"]
 
 C_BGd = C_Pp
@@ -74,7 +74,7 @@ class story:
 		self.C_MC_vehicule_place = {"pirate":"port", "detective":"parking","knight":"stable","prince":"stable","space pioneer":"space port", "lumberjack":"warhouse", "princess":"rainbow", "witch":"cupboard","wizard":"cupboard", "fairy":"stream"}
 		self.C_MC_transport = {"pirate":"sailed", "detective":"drove","knight":"rode","prince":"rode","space pioneer":"sailed", "lumberjack":"drove", "princess":"rode", "witch":"flyed","wizard":"flyed", "fairy":"rode"}
 		self.C_MCd_glass = {"tea":"cup", "rhum":"glass", "lazer juice":"glass", "wine":"glass", "coffee":"cup", "beer":"pint", "milk":"glass"}
-		self.C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "warlock":"Master", "emperor":"sir", "general":"general", "witch":""}
+		self.C_BG_title = {"time travelor": "Professor", "scientist":"Professor", "warlock":"Master", "emperor":"sir", "general":"general", "witch":"witch", "queen":"queen"}
 		self.C_Ba_part = {"trip":" up", "poke":"", "badmouth":"", "prod":"", "rob":"", "blackmail":"", "terrorise":"","trap":"", "terrorise":"","spam":""}
 		self.C_Ba_target = {"trip":" walker", "poke":"walker", "badmouth":self.Pp, "rob":"walker", "blackmail":self.Pp, "trap":"walker","terrorise":"walker","spam":self.Pp}
 		self.C_Ba_result = {"trip":"trip", "poke":"poke", "badmouth":"critic", "rob":"rob", "blackmail":"blackmail", "trap":"trap", "terrorise":"terrorise","spam":"spam"}
