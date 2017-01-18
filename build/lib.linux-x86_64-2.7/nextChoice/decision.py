@@ -5,17 +5,22 @@ import operator
 import story_maker as sm
 
 # coherences
-anyway = ["DB9","MRCK","C3P8","Hal","R2D3","Jack","Deckard","Luc","Daxter","Pedro","Bianca","Dolores","Nosicaa","Lisa","Baltor","Psychlo", "Neurodark", "Turbomecanoid","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
+anyway = ["DB9","MRCK","C3P8","R2D3","Jack","Deckard","Luc","Daxter","Pedro","Bianca","Dolores","Nosicaa","Lisa","Baltor","Psychlo", "Neurodark", "Turbomecanoid","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
 noway = ["MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
-sf = ["MRCK","DB9","C3P8","R2D3","Metalshin2047","Hal","robot blood","spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer","robot", "lazer juice","light saber","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
-pirate = ["pirate","rhum","saber","gun","island", "village","ghost","monkey", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
-midage = ["knight","prince", "wizard", "princess", "fairy","tea","milk", "sword", "forest", "kingdom", "island", "village","ghost", "monkey", "dragon","witch","warlock","manor", "laboratory", "castle","island"]
-contextes = {"sf":sf,"pirate":pirate,"midage":midage}
+sf = ["robot blood","spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
+pirate = ["robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
+midage = ["robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock", "emperor","manor", "laboratory", "castle","island"]
+forest = ["forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "sword", "beer", "manor", "castle" ]
+science = ["scientist", "laboratory"]
+army = ["general","knight", "robot knight", "robot general", "spacecraft"]
+magic = ["robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
+contextes = {"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "sciences":science, "army":army, "magic":magic }
 
 women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]
 men = ["Jack","Deckard","Luc","Daxter","Pedro","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
-robots = ["C3P8","Hal","R2D3", "Metalshin2047","DB9","Moulinex", "MRCK", "36Flip","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
+robots = ["C3P8","R2D3", "Metalshin2047","DB9","Moulinex", "MRCK", "36Flip","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
 gender = {"woman":women, "man":men, "robot":robots}
+
 
 class decision_maker:
 
@@ -29,11 +34,19 @@ class decision_maker:
 		self.ch_sf_score = 0
 		self.ch_pirate_score = 0
 		self.ch_midage_score = 0
+		self.ch_forest_score = 0
+		self.ch_science_score = 0
+		self.ch_army_score = 0
+		self.ch_magic_score = 0
 		self.ch_most_likely_context = ""
 
 		self.r_sf_score = 0
 		self.r_pirate_score = 0
 		self.r_midage_score = 0
+		self.r_forest_score = 0
+		self.r_science_score = 0
+		self.r_army_score = 0
+		self.r_magic_score = 0
 		self.r_most_likely_context = ""
 
 		self.less_likely_context = ""
@@ -43,41 +56,45 @@ class decision_maker:
 
 	def update(self):
 
-		eta = 0.9 # forget quickly
+		eta = 1.
 
 		if self.last_child_move in sf:
-			self.ch_sf_score = (1-eta)*self.ch_sf_score + eta
-			self.ch_pirate_score *= (1-eta)
-			self.ch_midage_score *= (1-eta)
+			self.ch_sf_score += eta
 		if self.last_child_move in pirate:
-			self.ch_sf_score *= (1-eta)
-			self.ch_pirate_score = (1-eta)*self.ch_pirate_score + eta
-			self.ch_midage_score *= (1-eta)
+			self.ch_pirate_score += eta
 		if self.last_child_move in midage:
-			self.ch_sf_score *= (1-eta)
-			self.ch_pirate_score *= (1-eta)
-			self.ch_midage_score = (1-eta)*self.ch_midage_score + eta
+			self.ch_midage_score += eta
+		if self.last_child_move in forest:
+			self.ch_forest_score += eta
+		if self.last_child_move in science:
+			self.ch_science_score += eta
+		if self.last_child_move in magic:
+			self.ch_magic_score += eta
+		if self.last_child_move in army:
+			self.ch_army_score += eta
 
-		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000.}
+		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000., "science":self.ch_science_score+np.random.rand()/1000., "forest":self.ch_forest_score+np.random.rand()/1000., "magic":self.ch_magic_score+np.random.rand()/1000., "army":self.ch_army_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
 		if self.last_child_predict in sf:
-			self.r_sf_score = (1-eta)*self.r_sf_score + eta
-			self.r_pirate_score *= (1-eta)
-			self.r_midage_score *= (1-eta)
+			self.r_sf_score += eta
 		if self.last_child_predict in pirate:
-			self.r_sf_score *= (1-eta)
-			self.r_pirate_score = (1-eta)*self.r_pirate_score + eta
-			self.r_midage_score *= (1-eta)
+			self.r_pirate_score += eta
 		if self.last_child_predict in midage:
-			self.r_sf_score *= (1-eta)
-			self.r_pirate_score *= (1-eta)
-			self.r_midage_score = (1-eta)*self.r_midage_score + eta
+			self.r_midage_score += eta
+		if self.last_child_predict in forest:
+			self.r_forest_score += eta
+		if self.last_child_predict in science:
+			self.r_science_score += eta
+		if self.last_child_predict in magic:
+			self.r_magic_score += eta
+		if self.last_child_predict in army:
+			self.r_army_score += eta
 
-		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000.}
+		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+np.random.rand()/1000., "forest":self.r_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+np.random.rand()/1000., "army":self.r_army_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
-		values = {"sf":self.ch_sf_score+self.r_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+self.r_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+self.r_midage_score+np.random.rand()/1000.}
+		values = {"sf":self.ch_sf_score+self.r_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+self.r_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+self.ch_science_score+np.random.rand()/1000., "forest":self.r_forest_score+self.ch_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+self.ch_magic_score+np.random.rand()/1000., "army":self.r_army_score+self.ch_army_score+np.random.rand()/1000.}
 		print values
 		self.less_likely_context = min(values.iteritems(), key=operator.itemgetter(1))[0]
 
@@ -93,8 +110,8 @@ class decision_maker:
 			self.logic_names = gender[lcm]
 
 		if choice[0] in women+men+robots:
-			logic_choice = self.logic_names
-			illogic_choice = women+men+robots
+			logic_choice = list(set(choice).intersection(set(self.logic_names)))
+			illogic_choice = list(set(choice).intersection(set(women+men+robots)))
 			for x in logic_choice:
 				illogic_choice.remove(x)
 		else:
@@ -107,8 +124,8 @@ class decision_maker:
 
 		decision = ""
 		if self.condition == "predictable": # BE COHERENT take in account last move only
-			context_choice = list(set(contextes[self.ch_most_likely_context]).intersection(logic_choice))
-			larger_choice = list(set(contextes[self.ch_most_likely_context]+anyway).intersection(logic_choice))
+			context_choice = list(set(contextes[self.ch_most_likely_context]).intersection(set(logic_choice)))
+			larger_choice = list(set(contextes[self.ch_most_likely_context]+anyway).intersection(set(logic_choice)))
 			if len(context_choice)>0:
 				decision = np.random.choice(context_choice)
 			elif len(larger_choice)>0:

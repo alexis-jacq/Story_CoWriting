@@ -148,7 +148,7 @@ class page:
 		for child in self.mainframe.winfo_children(): child.grid_configure(padx=max(0,(x-900)/30.), pady=y/40.)
 
 	def set_title(self, title):
-		ttk.Label(self.mainframe, text=title).grid(column=2, row=0, sticky=(W,E))
+		ttk.Label(self.mainframe, text=title).grid(column=1, columnspan=4, row=0, sticky=(W,E))
 
 	def add_emoji(self):
 		ttk.Button(self.mainframe, text="good", image=good, compound="top", command=lambda:juge("good")).grid(column=1, row=4, sticky=N+S+E+W)

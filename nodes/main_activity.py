@@ -122,7 +122,6 @@ def onReceived(msg):
 
 robot = decision_maker("predictable")
 
-
 if __name__=="__main__":
 
 	rospy.init_node("main_activity")
