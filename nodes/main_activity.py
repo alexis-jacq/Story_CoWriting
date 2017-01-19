@@ -204,7 +204,7 @@ if __name__=="__main__":
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("peacefull peaople of the place are "+robot_choice, sm.C_Pp, robot_choice)
+	robot_chosen("peaople of the place are "+robot_choice, sm.C_Pp, robot_choice)
 
 	say("Ok your turn! we need a main character! what do you prefer, a man, a woman or a robot ?")
 	rospy.sleep(6)
@@ -344,7 +344,7 @@ if __name__=="__main__":
 			say("but I am choosing "+story.MCw+"!")
 			go_in = False
 		else:
-			say("Ok for "+story.MCw+", I agree with you !")
+			say("Ok for "+story.MCw+", good prediction !")
 			go_in = False
 	rospy.sleep(2)
 
@@ -610,7 +610,7 @@ if __name__=="__main__":
 
 	############################################## BG dogs
 
-	human_turn("Bad guy servants are ... ", sm.C_BGd)
+	human_turn("Bad guy servants are ... ", story.C_BGd)
 
 	while not chosen:
 		rospy.Subscriber('human_choice_topic', String, onNewChoice)
@@ -619,7 +619,7 @@ if __name__=="__main__":
 	chosen = False
 	story.BGd = choice
 	story.update()
-	human_chosen("Bad guy servants are "+story.BGd, sm.C_BGd, choice)
+	human_chosen("Bad guy servants are "+story.BGd, story.C_BGd, choice)
 
 	say(" bad guy is served by "+story.BGd+", hmm.")
 	rospy.sleep(4)

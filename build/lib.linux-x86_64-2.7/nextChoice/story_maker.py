@@ -3,13 +3,13 @@
 
 C_MC = ["Jack","Bianca","C3P8","Dolores","Deckard","Luc","Nosicaa","Hal","R2D3", "Metalshin2047"]
 C_MCg = ["man", "woman", "robot"]
-C_MCj_man = ["pirate", "detective","knight","space pioneer", "lumberjack", "prince", "wizard"]
-C_MCj_woman = ["pirate", "detective","knight","space pioneer", "lumberjack", "princess", "fairy"]
-C_MCj_robot = ["robot pirate", "robot detective","robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard"]
+C_MCj_man = ["pirate", "knight","space pioneer", "lumberjack", "prince", "wizard"]
+C_MCj_woman = ["pirate","knight","space pioneer", "lumberjack", "princess", "fairy"]
+C_MCj_robot = ["robot pirate", "robot knight","robot space pioneer", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard"]
 
 C_MCd = ["tea", "rhum", "lazer juice", "wine", "coffee", "beer", "milk"]
 
-C_MCw = ["light saber", "saber", "sword", "lazer gun", "gun","spoon"]
+C_MCw = ["light saber", "saber", "sword", "lazer gun", "gun","spoon","ax"]
 
 C_P = ["planet", "forest", "kingdom", "island", "village"]
 
@@ -20,7 +20,7 @@ C_SCs_robot= ["ghost robot", "alien robot", "robot monkey", "fisherman robot"]
 
 C_SC_dance = ["waltz","tango","polka","salsa","rock"]
 #C_Pp = add_s(C_SCs)
-C_Pp = C_SCs_human
+C_Pp = list(set(C_SCs_human + C_SCs_robot) - {"skeleton"})
 
 C_BG = ["Baltor","MarineLePen","Psychlo", "Neurodark", "Turbomecanoid","Ursula","Grimhilde"]
 C_BGg = ["man", "woman","robot"]
@@ -51,6 +51,7 @@ class story:
 		self.C_MCj = C_MCj_robot
 		self.C_SCs = C_SCs_robot
 		self.C_BGj = C_BGj_robot
+		self.C_BGd = C_BGd
 
 		self.P = "kingdom" # story place (child)
 		self.Pp = "alien" # place brave people (robot)
@@ -104,11 +105,11 @@ class story:
 
 		self.phrase1 = "."
 		if self.Ba in ["trip","trap"]:
-			self.phrase1 = " as soon as they were trying to walk:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
+			self.phrase1 = " as soon as they were trying to walk:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a "+self.BGd+" leg arises for a "+self.Ba_result+""+self.Ba_part+" and then the walking "+self.Pp+" fall down, nose on the floor''."
 		if self.Ba in ["poke"]:
-			self.phrase1 = " as soon as they were going outside:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
+			self.phrase1 = " as soon as they were going outside:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a "+self.BGd+" hand arises for a "+self.Ba_result+""+self.Ba_part+"."
 		if self.Ba in ["robe"]:
-			self.phrase1 = " as soon as they were not paying attention:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, an "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
+			self.phrase1 = " as soon as they were not paying attention:. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a "+self.BGd+" hand arises and "+self.Ba+" everything they have in their pokets."
 		if self.Ba in ["badmouth"]:
 			self.phrase1 = ":. ''No more "+self.Pp+" dare to have a walk outside since every ten meters, a team of "+self.BGd+" arises and launches hundreds of "+self.Ba_result+"s."
 		if self.Ba in ["blackmail"]:
@@ -128,6 +129,8 @@ class story:
 		self.Ba_part = self.C_Ba_part[self.Ba]
 		self.Ba_result = self.C_Ba_result[self.Ba]
 		self.Ba_target = self.C_Ba_target[self.Ba]
+
+		self.C_BGd = list(set(C_SCs_human + C_SCs_robot) - {self.Pp} - {self.SCs})
 
 		if self.MCg=="man":
 			self.MC_ppos = "his"
