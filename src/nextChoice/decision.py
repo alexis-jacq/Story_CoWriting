@@ -5,15 +5,15 @@ import operator
 import story_maker as sm
 
 # coherences
-anyway = ["robot", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
-noway = ["MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
-sf = ["robot blood","spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
-pirate = ["robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
-midage = ["robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock","robot warlock", "robot witch", "emperor","manor", "laboratory", "castle","island"]
-forest = ["forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "sword", "beer","robot warlock", "robot witch", "manor", "castle" ]
-science = ["scientist", "laboratory"]
-army = ["general","knight", "robot knight", "robot general", "spacecraft"]
-magic = ["robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
+anyway = ["robot blood","robot", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
+noway = ["poke","badmouth","MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth"]
+sf = ["robot","spam","robot space pioneer","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist", "laboratory","spacecraft","salsa","rock","spam"]
+pirate = ["robot","rob","robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
+midage = ["robot","terrorise","robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock","robot warlock", "robot witch", "emperor","manor", "laboratory", "castle","island"]
+forest = ["robot","forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "sword", "beer","robot warlock", "robot witch", "manor", "castle", "trap" ]
+science = ["robot","scientist", "laboratory","spam"]
+army = ["robot","general","knight", "robot knight", "robot general", "spacecraft","terrorise"]
+magic = ["robot","terrorise","robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
 contextes = {"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "sciences":science, "army":army, "magic":magic }
 
 women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]

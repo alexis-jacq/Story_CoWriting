@@ -15,7 +15,7 @@ C_P = ["planet", "forest", "kingdom", "island", "village"]
 
 C_SC = ["Daxter","Pedro","Lisa","DB9","Moulinex", "MRCK", "36Flip"]
 C_SCg = ["man", "woman","robot"]
-C_SCs_human= ["ghost", "alien", "monkey", "fisherman", "robot"]
+C_SCs_human= ["ghost", "alien", "monkey", "fisherman","skeleton"]
 C_SCs_robot= ["ghost robot", "alien robot", "robot monkey", "fisherman robot"]
 
 C_SC_dance = ["waltz","tango","polka","salsa","rock"]
@@ -29,7 +29,7 @@ C_BGj_woman = ["time travelor", "scientist", "emperor", "general", "witch", "que
 C_BGj_robot = ["robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch"]
 
 C_BGd = C_Pp
-C_Ba = ["trip", "poke", "badmouth", "trap", "rob", "blackmail", "terrorise", "spam"]
+C_Ba = ["poke", "badmouth", "trap", "rob", "terrorise", "spam"]
 
 C_BGp = ["manor", "spacecraft", "laboratory", "castle"]
 C_BGdrink = ["scotch","whisky","rhum","wine", "milk","blood", "robot blood"]
