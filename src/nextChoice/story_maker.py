@@ -28,7 +28,7 @@ C_BGj_man = ["time travelor", "scientist", "warlock", "emperor", "general"]
 C_BGj_woman = ["time travelor", "scientist", "emperor", "general", "witch", "queen"]
 C_BGj_robot = ["robot time travelor", "robot scientist", "robot warlock", "robot emperor", "robot general", "robot witch"]
 
-C_BGd = C_Pp
+C_BGd = C_SCs_human + C_SCs_robot
 C_Ba = ["poke", "badmouth", "trap", "rob", "terrorise", "spam"]
 
 C_BGp = ["manor", "spacecraft", "laboratory", "castle"]

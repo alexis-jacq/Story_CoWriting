@@ -5,16 +5,17 @@ import operator
 import story_maker as sm
 
 # coherences
-anyway = ["DB9","MRCK","C3P8","R2D3","Jack","Deckard","Luc","Daxter","Pedro","Bianca","Dolores","Nosicaa","Lisa","Baltor","Psychlo", "Neurodark", "Turbomecanoid","man", "woman", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
-noway = ["MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth", "spam"]
-sf = ["robot blood","spam","Turbomecanoid","Neurodark","robot detective","robot knight","robot space pioneer","robot pirate","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot", "robot monkey","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist","spacecraft","salsa","rock"]
-pirate = ["robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
-midage = ["robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock", "emperor","manor", "laboratory", "castle","island"]
-forest = ["forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "sword", "beer", "manor", "castle" ]
-science = ["scientist", "laboratory"]
-army = ["general","knight", "robot knight", "robot general", "spacecraft"]
-magic = ["robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
-contextes = {"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "sciences":science, "army":army, "magic":magic }
+anyway = ["robot", "detective", "wine", "coffee","waltz","tango","emperor","general","scientist","trip","trap","rob","terrorise","scotch","Wiskhy","rhum","wine", "milk"]
+noway = ["poke","badmouth","MarineLePen","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth"]
+sf = ["robot","spam","robot space pioneer","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist", "laboratory","spacecraft","salsa","rock","spam"]
+pirate = ["robot","rob","robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
+midage = ["robot","terrorise","robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock","robot warlock", "robot witch", "emperor","manor", "laboratory", "castle","island"]
+forest = ["robot","forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "sword", "beer","robot warlock", "robot witch", "manor", "castle", "trap" ]
+science = ["robot","scientist", "laboratory","spam"]
+robot = ["spam","robot","robot pirate","robot knight","robot princess", "robot prince","robot wizard", "robot ghost", "robot warlock", "robot witch", "robot monkey", "robot lumberjack","robot blood","robot time travelor","robot emperor", "robot general", "robot scientist", "robot fairy","ghost robot","robot fisherman", "robot dragon"]
+army = ["robot","general","knight", "robot knight", "robot general", "spacecraft","terrorise"]
+magic = ["robot","skeleton","terrorise","robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
+contextes = {"robot":robot,"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "sciences":science, "army":army, "magic":magic }
 
 women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]
 men = ["Jack","Deckard","Luc","Daxter","Pedro","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
@@ -38,6 +39,7 @@ class decision_maker:
 		self.ch_science_score = 0
 		self.ch_army_score = 0
 		self.ch_magic_score = 0
+		self.ch_robot_score = 0
 		self.ch_most_likely_context = ""
 
 		self.r_sf_score = 0
@@ -47,6 +49,7 @@ class decision_maker:
 		self.r_science_score = 0
 		self.r_army_score = 0
 		self.r_magic_score = 0
+		self.r_robot_score = 0
 		self.r_most_likely_context = ""
 
 		self.less_likely_context = ""
@@ -72,8 +75,10 @@ class decision_maker:
 			self.ch_magic_score += eta
 		if self.last_child_move in army:
 			self.ch_army_score += eta
+		if self.last_child_move in robot:
+			self.ch_robot_score += eta
 
-		values = {"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000., "science":self.ch_science_score+np.random.rand()/1000., "forest":self.ch_forest_score+np.random.rand()/1000., "magic":self.ch_magic_score+np.random.rand()/1000., "army":self.ch_army_score+np.random.rand()/1000.}
+		values = {"robot":self.ch_robot_score+np.random.rand()/1000.,"sf":self.ch_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+np.random.rand()/1000., "science":self.ch_science_score+np.random.rand()/1000., "forest":self.ch_forest_score+np.random.rand()/1000., "magic":self.ch_magic_score+np.random.rand()/1000., "army":self.ch_army_score+np.random.rand()/1000.}
 		self.ch_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
 		if self.last_child_predict in sf:
@@ -90,11 +95,13 @@ class decision_maker:
 			self.r_magic_score += eta
 		if self.last_child_predict in army:
 			self.r_army_score += eta
+		if self.last_child_predict in robot:
+			self.r_robot_score += eta
 
-		values = {"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+np.random.rand()/1000., "forest":self.r_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+np.random.rand()/1000., "army":self.r_army_score+np.random.rand()/1000.}
+		values = {"robot":self.r_robot_score+np.random.rand()/1000.,"sf":self.r_sf_score+np.random.rand()/1000., "pirate":self.r_pirate_score+np.random.rand()/1000., "midage":self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+np.random.rand()/1000., "forest":self.r_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+np.random.rand()/1000., "army":self.r_army_score+np.random.rand()/1000.}
 		self.r_most_likely_context = max(values.iteritems(), key=operator.itemgetter(1))[0]
 
-		values = {"sf":self.ch_sf_score+self.r_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+self.r_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+self.ch_science_score+np.random.rand()/1000., "forest":self.r_forest_score+self.ch_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+self.ch_magic_score+np.random.rand()/1000., "army":self.r_army_score+self.ch_army_score+np.random.rand()/1000.}
+		values = {"robot":self.r_robot_score+self.ch_robot_score+np.random.rand()/1000.,"sf":self.ch_sf_score+self.r_sf_score+np.random.rand()/1000., "pirate":self.ch_pirate_score+self.r_pirate_score+np.random.rand()/1000., "midage":self.ch_midage_score+self.r_midage_score+np.random.rand()/1000., "science":self.r_science_score+self.ch_science_score+np.random.rand()/1000., "forest":self.r_forest_score+self.ch_forest_score+np.random.rand()/1000., "magic":self.r_magic_score+self.ch_magic_score+np.random.rand()/1000., "army":self.r_army_score+self.ch_army_score+np.random.rand()/1000.}
 		print values
 		self.less_likely_context = min(values.iteritems(), key=operator.itemgetter(1))[0]
 
