@@ -120,12 +120,14 @@ def onReceived(msg):
 	global received
 	received = True
 
-robot = decision_maker("predictable")
+condition = "unpredictable"
+robot = decision_maker(condition)
 
 if __name__=="__main__":
 
 	rospy.init_node("main_activity")
 
+	rospy.loginfo("condition = "+condition)
 	story = story()
 	result = story.generate()
 	rospy.loginfo(result)

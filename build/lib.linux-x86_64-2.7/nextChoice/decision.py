@@ -9,13 +9,13 @@ anyway = ["robot", "detective", "wine", "coffee","waltz","tango","emperor","trip
 noway = ["poke","badmouth","36Flip","Moulinex","lumberjack","polka","robot warlock", "robot witch", "robot lumberjack", "robot prince", "robot princess", "robot fairy", "robot wizard","spoon","ghost robot","robot fisherman", "robot dragon","blackmail", "poke", "bad-bmouth"]
 sf = ["robot","spam","robot space pioneer","space pioneer", "lazer juice","light saber","lazer gun","planet","alien", "alien robot","time travelor","robot time travelor","robot emperor", "robot general", "robot scientist", "scientist", "laboratory","spacecraft","spam"]
 pirate = ["robot","rob","robot pirate","pirate","rhum","saber","gun","island", "village","fisherman", "fisherman","salsa","rock","warlock", "witch","manor", "castle","island"]
-midage = ["robot","terrorise","robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock","robot warlock", "robot witch", "emperor","manor", "laboratory", "castle","island"]
+midage = ["robot","terrorise","robot knight","robot princess", "robot prince","knight","prince", "princess", "fairy","tea","milk", "sword", "kingdom","ghost", "dragon","witch","warlock","robot warlock", "robot witch", "emperor", "queen", "castle"]
 forest = ["robot","forest","monkey", "robot monkey", "fairy", "lumberjack", "robot lumberjack", "ax", "beer","witch", "warlock","robot warlock", "robot witch", "manor", "castle", "trap" ]
 science = ["robot","scientist", "laboratory","spam"]
 robot = ["spam","robot","robot pirate","robot knight","robot princess", "robot prince","robot wizard", "robot ghost", "robot warlock", "robot witch", "robot monkey", "robot lumberjack","robot blood","robot time travelor","robot emperor", "robot general", "robot scientist", "robot fairy","ghost robot","robot fisherman", "robot dragon"]
 army = ["robot","general","knight", "robot knight", "robot general", "spacecraft","terrorise"]
 magic = ["robot","skeleton","terrorise","robot wizard", "wizard", "fairy", "sword", "kingdom","ghost", "robot ghost", "dragon","witch","warlock", "robot warlock", "robot witch","manor", "castle"]
-contextes = {"robot":robot,"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "sciences":science, "army":army, "magic":magic }
+contextes = {"robot":robot,"sf":sf,"pirate":pirate,"midage":midage, "forest":forest, "science":science, "army":army, "magic":magic }
 
 women = ["Bianca","Dolores","Nosicaa","Lisa","MarineLePen","Ursula","Grimhilde"]
 men = ["Jack","Deckard","Luc","Daxter","Pedro","Baltor","Psychlo", "Neurodark", "Turbomecanoid"]
@@ -166,7 +166,7 @@ class decision_maker:
 					context_choice = list(set(contextes[self.h_most_likely_context]+anyway).intersection(logic_choice))
 					if len(context_choice)>0:
 						decision = np.random.choice(context_choice)
-						self.coherances += 1
+						self.coherances += 3
 					else:
 						decision = np.random.choice(choice)
 				else: # coherent too probable, stay incoherent
@@ -177,9 +177,9 @@ class decision_maker:
 					else:
 						decision = np.random.choice(illogic_choice)
 			else: # predict incoherant
-				if self.randoms<self.coherances: # incoherent unprobable, be incoherant as predicted
+				if self.randoms<self.coherances and np.random.rand()>0.6: # incoherent unprobable, be incoherant as predicted
 					decision = lhp
-					self.randoms += 1
+					self.randoms += 2
 				else: # coherent unprobable, then, be coherent
 					context_choice = list(set(contextes[self.h_most_likely_context]+anyway).intersection(logic_choice))
 					if len(context_choice)>0:
