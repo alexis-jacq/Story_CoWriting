@@ -16,7 +16,7 @@ C_P = ["planet", "forest", "kingdom", "island", "village"]
 C_SC = ["Daxter","Pedro","Lisa","DB9","Moulinex", "MRCK", "36Flip"]
 C_SCs_human= ["ghost", "alien", "monkey", "fisherman","skeleton"]
 C_SCs_robot= ["ghost robot", "alien robot", "robot monkey", "fisherman robot"]
-C_SCt = list(set(C_SCs_human + C_SCs_robot) - {"skeleton"})
+C_SCt = list(set(C_SCs_human + C_SCs_robot) - {"fisherman"})
 
 C_SC_dance = ["waltz","tango","polka","salsa","rock"]
 #C_Pp = add_s(C_SCs)
@@ -79,7 +79,7 @@ class story:
 		self.C_Ba_target = {"trip":" walker", "poke":"walker", "badmouth":self.Pp, "rob":"walker", "blackmail":self.Pp, "trap":"walker","terrorise":"walker","spam":self.Pp}
 		self.C_Ba_result = {"trip":"trip", "poke":"poke", "badmouth":"critic", "rob":"rob", "blackmail":"blackmail", "trap":"trap", "terrorise":"terror","spam":"spam"}
 		self.C_Ba_results = {"trip":"trips", "poke":"pokes", "badmouth":"critics", "rob":"robs", "blackmail":"blackmails", "trap":"traps", "terrorise":"terrifying","spam":"spams"}
-		self.C_BG_tool = {"time travelor":"computer", "scientist":"computer", "warlock":"spell", "emperor":"computer", "general":"computer","witch":"spell"}
+		self.C_BG_tool = {"time travelor":"computer", "scientist":"computer", "warlock":"spell", "emperor":"computer", "general":"computer","witch":"spell","queen":"spell"}
 
 		# Dependent values
 

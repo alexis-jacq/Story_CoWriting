@@ -2,7 +2,7 @@
 
   <!-- also launch openface-tracker -->
   <include file="$(find openface_tracker)/launch/openface_tracker.launch">
-      <arg name="camera_device_arg" value="0" />
+      <arg name="camera_device_arg" value="1" />
       <arg name="show_tracking_arg" value="false" />
   </include>
 
