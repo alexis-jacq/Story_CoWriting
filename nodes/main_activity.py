@@ -136,16 +136,16 @@ if __name__=="__main__":
 
 	rospy.sleep(6)
 	say("hello, my name is Nando.")
-	rospy.sleep(4)
+	rospy.sleep(5)
 
 	say("do you want to write an amazing story with me ?")
 	rospy.sleep(3)
 
 	look_at("child_head")
-	rospy.sleep(1)
+	rospy.sleep(4)
 
 	say("OK ! first, we need to choose where the story takes place ! What do you prefere ?")
-	rospy.sleep(6)
+	rospy.sleep(7)
 
 	########################################## PLACE
 
@@ -377,44 +377,47 @@ if __name__=="__main__":
 	say("And it's my turn, we need a second character. What do you predict I will choose ?")
 	rospy.sleep(6)
 
-	############################################## SC GENDER
+	############################################## SC type
 
 	# prediction
 
-	human_predict("predict what the robot is going to choose ...", sm.C_SCg)
+	human_predict("predict what will be the second character ...", sm.C_SCt)
+
+	# HACK:
+	robot.set_SC_gender()
 
 	while not chosen:
 		rospy.Subscriber('human_prediction_topic', String, onNewPrediction)
 		rospy.sleep(0.05)
 
 	chosen = False
-	human_chosen("you predicted "+choice, sm.C_SCg, choice)
+	human_chosen("you predicted "+choice, sm.C_SCt, choice)
 	rospy.sleep(3)
 
 	# actual
 
-	robot_choice = robot.choose(last_human_choice, last_human_prediction, sm.C_SCg)
-	story.SCg= robot_choice; rospy.loginfo("robot_choice "+robot_choice)
+	robot_choice = robot.choose(last_human_choice, last_human_prediction, sm.C_SCt)
+	story.SCt= robot_choice; rospy.loginfo("robot_choice "+robot_choice)
 	story.update()
 
 	say("it could be a "+choice+"...")
 	rospy.sleep(2)
 
-	robot_turn("Second character is ...", sm.C_SCg)
+	robot_turn("Second character is ...", sm.C_SCt)
 	rospy.sleep(3)
 
 	point(robot_choice)
 	go_in = True
 	if go_in:
 		if robot_choice!=choice:
-			say("but I prefere a "+story.SCg+"!")
+			say("but I prefere a "+story.SCt+"!")
 			go_in = False
 		else:
 			say("Ok this is what I choose !")
 			go_in = False
 	rospy.sleep(2)
 
-	robot_chosen("The second character is a "+story.SCg, sm.C_SCg, robot_choice)
+	robot_chosen("The second character is a "+story.SCt, sm.C_SCt, robot_choice)
 
 	say("I also have to find a name ! What do you predict ?")
 	rospy.sleep(5)
@@ -478,48 +481,6 @@ if __name__=="__main__":
 	rospy.sleep(4)
 
 	look_at("child_head")
-	rospy.sleep(1)
-
-	say("Now, we have to choose what the second character is. And it's my turn ! what do you predict ?")
-	rospy.sleep(6)
-
-	############################################## SC specie
-
-	# prediction
-
-	human_predict("predict what the robot is going to choose for the second character ...", story.C_SCs)
-
-	chosen=False
-	while not chosen:
-		rospy.Subscriber('human_prediction_topic', String, onNewPrediction)
-		rospy.sleep(0.05)
-
-	chosen = False
-	human_chosen("you predicted "+choice, story.C_SCs, choice)
-	rospy.sleep(3)
-
-	# actual
-
-	robot_choice = robot.choose(last_human_choice, last_human_prediction, story.C_SCs)
-	story.SCs= robot_choice; rospy.loginfo("robot_choice "+robot_choice)
-	story.update()
-
-	say(choice+" is not a bad idea... ")
-	rospy.sleep(2)
-
-	robot_turn("Second character specie is...", story.C_SCs)
-	rospy.sleep(3)
-
-	point(robot_choice)
-	go_in = True
-	if go_in:
-		if robot_choice!=choice:
-			say("but "+story.SC_pper_s+" will be a "+story.SCs+"!")
-			go_in = False
-		else:
-			say("indeed, I go for "+story.SCs+"!")
-			go_in = False
-	robot_chosen("The second character is a "+story.SCs, story.C_SCs, robot_choice)
 	rospy.sleep(2)
 
 	say("Ok, now it is your turn, and we need to choose a bad guy. Is the bad guy a man, a woman or a robot ?")
@@ -690,10 +651,10 @@ if __name__=="__main__":
 	rospy.sleep(4)
 
 	look_at("child_head")
-	rospy.sleep(1)
+	rospy.sleep(2)
 
 	say("We have almost everything. I just still have to find the place of the bad guy. What do you predict ?")
-	rospy.sleep(6)
+	rospy.sleep(7)
 
 	############################################## BG place
 
@@ -737,12 +698,14 @@ if __name__=="__main__":
 	say("ok now I can guess the story, let me tell it for you.")
 	rospy.sleep(4)
 
+	rospy.loginfo("user coherence = "+str(robot.user_coherence))
+	rospy.loginfo("robot coherence = "+str(robot.robot_coherence))
+
 	result = story.generate()
 	rospy.loginfo(result)
 
 	say_long(result)
 	rospy.sleep(10)
-
 
 	say("Good by, it was a pleasure to work with you !")
 	rospy.sleep(4)
