@@ -120,7 +120,7 @@ def onReceived(msg):
 	global received
 	received = True
 
-condition = "unpredictable"
+condition = "predictable"
 robot = decision_maker(condition)
 
 if __name__=="__main__":

@@ -215,7 +215,7 @@ class decision_maker:
 		self.last_decision = decision
 
 		if self.last_decision in contextes[self.r_most_likely_context]+anyway+contextes[self.h_most_likely_context]:
-			self.user_coherence += 1
+			self.robot_coherence += 1
 
 		self.update()
 		return decision
