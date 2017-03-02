@@ -13,7 +13,7 @@ from std_msgs.msg import String, Empty, Header
 from naoStoryTelling import story_gestures as sg
 from nextChoice import story_maker as sm
 from nextChoice.story_maker import story
-from nextChoice.decision import *
+from nextChoice.decision2 import *
 
 from naoqi import ALProxy
 from naoqi import ALBroker
@@ -120,7 +120,7 @@ def onReceived(msg):
 	global received
 	received = True
 
-condition = "random"
+condition = ""
 robot = decision_maker(condition)
 
 if __name__=="__main__":

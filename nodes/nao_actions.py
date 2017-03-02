@@ -18,7 +18,7 @@ from naoqi import ALModule
 
 
 ############################################# global values
-NAO_IP = "146.193.224.236"
+NAO_IP = "192.168.1.64" #HACK : this should not be hardcoded !
 port = 9559
 speed = 0.1
 current_target = "/face_0"
@@ -96,7 +96,7 @@ if __name__=="__main__":
     #sg.telling_arms_gesturs(motionProxy,tts,speed,"hello")
 
     listener = tf.TransformListener()
-    listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(4.0))
+    listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(10.0))
 
     while not stop:
 
