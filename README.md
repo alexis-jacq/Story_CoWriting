@@ -7,7 +7,7 @@ Turn by turn, the human and the robot (NAO) pick an element of the story (place,
 
 When all elements are chosen, the robot tell the resulting story to the human and the text is displayed on the interface screen.
 
-At any moment of the Interaction (story-cowriting/story-telling) the human has the possibility to provide the robot with a feedback ("good", "lol", "wtf", "bad")
+At any moment of the Interaction (story-cowriting/story-telling) the human has the possibility to provide the robot with a feedback ("good", "lol", "absurd", "bad")
 
 Two possible condition: the robot is predictable, or un-predictable.
 
