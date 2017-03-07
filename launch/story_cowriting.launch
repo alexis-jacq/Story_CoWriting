@@ -2,16 +2,16 @@
 
   <!-- also launch openface-tracker -->
   <include file="$(find openface_tracker)/launch/openface_tracker.launch">
-      <arg name="camera_device_arg" value="1" />
+      <arg name="camera_device_arg" value="0" />
       <arg name="show_tracking_arg" value="false" />
   </include>
 
-  <node pkg="story_cowriting" type="nao_actions.py" name="nao_actions">
-  </node>
   <node pkg="story_cowriting" type="interface.py" name="interface">
     <param name="icones" value="$(find story_cowriting)/share"/>
   </node>
   <node pkg="story_cowriting" type="main_activity.py" name="main_activity">
+  </node>
+  <node pkg="story_cowriting" type="nao_actions.py" name="nao_actions">
   </node>
 
 

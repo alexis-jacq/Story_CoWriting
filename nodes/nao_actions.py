@@ -96,7 +96,7 @@ if __name__=="__main__":
     #sg.telling_arms_gesturs(motionProxy,tts,speed,"hello")
 
     listener = tf.TransformListener()
-    listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(10.0))
+    listener.waitForTransform('/base_footprint','/face_0', rospy.Time(0), rospy.Duration(4.0))
 
     while not stop:
 

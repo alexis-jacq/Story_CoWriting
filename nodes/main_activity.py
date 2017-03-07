@@ -120,7 +120,7 @@ def onReceived(msg):
 	global received
 	received = True
 
-condition = ""
+condition = "predictable"
 robot = decision_maker(condition)
 
 if __name__=="__main__":
@@ -384,7 +384,7 @@ if __name__=="__main__":
 	human_predict("predict what will be the second character ...", sm.C_SCt)
 
 	# HACK:
-	robot.set_SC_gender()
+	#robot.set_SC_gender()
 
 	while not chosen:
 		rospy.Subscriber('human_prediction_topic', String, onNewPrediction)
@@ -698,8 +698,8 @@ if __name__=="__main__":
 	say("ok now I can guess the story, let me tell it for you.")
 	rospy.sleep(4)
 
-	rospy.loginfo("user coherence = "+str(robot.user_coherence))
-	rospy.loginfo("robot coherence = "+str(robot.robot_coherence))
+	#rospy.loginfo("user coherence = "+str(robot.user_coherence))
+	#rospy.loginfo("robot coherence = "+str(robot.robot_coherence))
 
 	result = story.generate()
 	rospy.loginfo(result)
