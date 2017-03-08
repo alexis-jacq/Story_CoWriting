@@ -96,15 +96,15 @@ def unique(array):
 			out.append(mec)
 	return out
 
-################################################ window events
+################################################ window events +logging
 def human_choice(choice):
-	rospy.loginfo("human choice "+choice)
+	rospy.loginfo("human choice "+choice.replace(' ','_'))
 	msg = String()
 	msg.data = choice
 	pub_human_choice.publish(msg)
 
 def human_prediction(choice):
-	rospy.loginfo("human predict "+choice)
+	rospy.loginfo("human predict "+choice.replace(' ','_'))
 	msg = String()
 	msg.data = choice
 	pub_human_prediction.publish(msg)
