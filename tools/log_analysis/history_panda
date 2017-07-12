@@ -1,0 +1,13 @@
+
+>>> import pandas as pd
+>>> tips = pd.read_csv('withmeness-11-stdout.log', dtype=str, names=['msg','_','time','type','value'])
+>>> wmn = tips[tips['type']=='wmn_value']
+>>> vals = wmn['value']
+>>> vals = pd.to_numeric(vals)
+>>> import seaborn as sns
+/home/alexis/.local/lib/python2.7/site-packages/IPython/html.py:14: ShimWarning: The `IPython.html` package has been deprecated. You should import from `notebook` instead. `IPython.html.widgets` has moved to `ipywidgets`.
+  "`IPython.html.widgets` has moved to `ipywidgets`.", ShimWarning)
+>>> sns.set(style="darkgrid")
+>>> test = sns.tsplot(vals)
+>>> sns.plt.show()
+
