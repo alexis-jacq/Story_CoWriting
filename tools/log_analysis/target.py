@@ -13,7 +13,6 @@ file_subject = "withmeness-11-stdout"
 
 def counts(condition):
     all_vals = []
-    sums = []
     for i in range(60):
         try:
             name = condition + '/' + str(i) + '/' + file_subject + ".log"
@@ -25,27 +24,17 @@ def counts(condition):
             except IOError:
                 continue
 
-        table = table[table["type"]=="wmn_value"]
-        vals = table['value']
-        vals = pd.to_numeric(vals)
-        vals = vals.as_matrix()[:550]
-        time = table['time']
-        time = pd.to_numeric(time)
-        time = time.as_matrix()[:550]
-        time -= time[0]
+        table = table[table["type"]=="target"]
+        table = table["value"]
+        table = table.as_matrix()[:550]
+        score = np.array(table!="/away",dtype=float)
+        all_vals.append(score)
 
-        all_vals.append(vals)
-        sums.append(np.sum(vals))
-    return np.stack(all_vals), np.array(sums)
+    return np.stack(all_vals)
 
-all_vals_r,sums_r = counts(r)
-all_vals_s,sums_s = counts(s)
-all_vals_p,sums_p = counts(p)
-
-print(ttest_ind(sums_p,sums_s))
-print(ttest_ind(sums_p,sums_r))
-print(ttest_ind(sums_s,sums_r))
-
+all_vals_r = counts(r)
+all_vals_s = counts(s)
+all_vals_p = counts(p)
 sns.tsplot(all_vals_p,color='b')
 sns.tsplot(all_vals_s,color='g')
 sns.tsplot(all_vals_r,color='r')

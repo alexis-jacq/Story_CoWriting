@@ -36,12 +36,12 @@ def counts(condition, counter):
     return counter
 
 counters_p = counts(p, counters_p)
-counters_r = counts(r, counters_r)
 counters_s = counts(s, counters_s)
+counters_r = counts(r, counters_r)
 
 print(ttest_ind(counters_p,counters_s))
 print(ttest_ind(counters_p,counters_r))
 print(ttest_ind(counters_s,counters_r))
 
-table = np.array([counters_p,counters_r,counters_s])
+table = np.array([counters_p,counters_s,counters_r])
 ax = sns.barplot(data=table); sns.plt.show()

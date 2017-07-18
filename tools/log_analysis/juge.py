@@ -36,11 +36,11 @@ def counts(condition, counter):
     return counter
 
 counters_p = counts(p, counters_p)
-counters_r = counts(r, counters_r)
 counters_s = counts(s, counters_s)
+counters_r = counts(r, counters_r)
 
 key = "all"
-table = np.array([counters_p[key],counters_r[key],counters_s[key]])
+table = np.array([counters_p[key],counters_s[key],counters_r[key]])
 print(table)
 print(np.mean(counters_p[key]))
 print(np.mean(counters_s[key]))
