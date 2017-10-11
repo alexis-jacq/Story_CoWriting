@@ -153,7 +153,7 @@ class page:
 	def add_emoji(self):
 		ttk.Button(self.mainframe, text="good", image=good, compound="top", command=lambda:juge("good")).grid(column=1, row=4, sticky=N+S+E+W)
 		ttk.Button(self.mainframe, text="lol", image=lol, compound="top", command=lambda:juge("lol")).grid(column=2, row=4, sticky=N+S+E+W)
-		ttk.Button(self.mainframe, text="wtf", image=wtf, compound="top", command=lambda:juge("wtf")).grid(column=3, row=4, sticky=N+S+E+W)
+		ttk.Button(self.mainframe, text="absurd", image=wtf, compound="top", command=lambda:juge("wtf")).grid(column=3, row=4, sticky=N+S+E+W)
 		ttk.Button(self.mainframe, text="bad", image=bad, compound="top", command=lambda:juge("bad")).grid(column=4, row=4, sticky=N+S+E+W)
 
 	def update_trace(self,element):
